@@ -147,7 +147,10 @@ def plotly__beamline( survey=None, twiss=None, plotKeys=None ):
     for ik in range(nGraph):
         fig.update_xaxes( title_text=r"$s \textrm{[m]}$", row=ik+1, col=1, \
                           showticklabels=True)
-    fig.show()
+    if ( wsl ):
+        fig.write_html("plot.html", auto_open=False)
+    else:
+        fig.show()
 
 
 
