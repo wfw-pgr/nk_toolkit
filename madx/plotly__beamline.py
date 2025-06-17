@@ -7,21 +7,21 @@ import nk_toolkit.madx.load__tfs as ltf
 # ========================================================= #
 # ===  plotly__beamline.py                              === #
 # ========================================================= #
-def plotly__beamline( survey=None, twiss=None, plotKeys=None ):
+def plotly__beamline( survey=None, twiss=None, plotKeys=None, html=None ):
 
     # ------------------------------------------------- #
     # --- [0] constants                             --- #
     # ------------------------------------------------- #
     twissSets = [
-        { "title":r"$\textsf{position} \ (x,y)$"       , "keys":[ "x"    , "y"     ] },
-        { "title":r"$\textsf{momentum} \ (p_x,p_y)$"   , "keys":[ "px"   , "py"    ] },
-        { "title":r"$\beta_x, \beta_y$"                , "keys":[ "betx" , "bety"  ] },
-        { "title":r"$epsilon_x, epsilon_y$"            , "keys":[ "emitx", "emity" ] },
-        { "title":r"$\alpha_x, \alpha_y$"              , "keys":[ "alfx" , "alfy"  ] },
-        { "title":r"$D_x, D_y$"                        , "keys":[ "dx"   , "dy"    ] },
-        { "title":r"$\mu_x, \mu_y$"                    , "keys":[ "mux"  , "muy"   ] },
-        { "title":r"$\gamma_x, \gamma_y$"              , "keys":[ "gamx" , "gamy"  ] },
-        { "title":r"$beam size (\sigma_x, \sigma_y)$"  , "keys":[ "sigx" , "sigy"  ] },
+        { "title":"position (x,y)"                , "keys":[ "x"    , "y"     ] },
+        { "title":"momentum (p_x,p_y)"            , "keys":[ "px"   , "py"    ] },
+        { "title":"beta_x, beta_y"                , "keys":[ "betx" , "bety"  ] },
+        { "title":"epsilon_x, epsilon_y"          , "keys":[ "emitx", "emity" ] },
+        { "title":"alpha_x, alpha_y"              , "keys":[ "alfx" , "alfy"  ] },
+        { "title":"D_x, D_y"                      , "keys":[ "dx"   , "dy"    ] },
+        { "title":"mu_x, mu_y"                    , "keys":[ "mux"  , "muy"   ] },
+        { "title":"gamma_x, gamma_y"              , "keys":[ "gamx" , "gamy"  ] },
+        { "title":"beam size (sigma_x, sigma_y)"  , "keys":[ "sigx" , "sigy"  ] },
     ]
     color_map = {
         "sbend"      : "red",
@@ -138,17 +138,21 @@ def plotly__beamline( survey=None, twiss=None, plotKeys=None ):
     # ------------------------------------------------- #
     fig.update_layout(
         title       ="Beamline Layout from MAD-X",
-        xaxis_title =r"$s \ \textrm{[m]}$",
-        yaxis_title =r"$\textsf{BeamLine}$",
+        xaxis_title ="s [m}",
+        yaxis_title ="BeamLine",
         yaxis       = {"showticklabels":False, "type":"linear" },
         barmode     ="overlay",
         height      =300*nGraph,
     )
     for ik in range(nGraph):
-        fig.update_xaxes( title_text=r"$s \textrm{[m]}$", row=ik+1, col=1, \
+        fig.update_xaxes( title_text="s [m]", row=ik+1, col=1, \
                           showticklabels=True)
-    if ( wsl ):
-        fig.write_html("plot.html", auto_open=False)
+    if ( html ):
+        if ( not( os.path.exists( os.path.dirname(html) ) ) ):
+            print( f" [warning] Cannot Find html = {html}" )
+            html = "plot.html"
+        print( f" HTML File == {html}" )
+        fig.write_html( html, auto_open=False)
     else:
         fig.show()
 

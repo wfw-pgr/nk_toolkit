@@ -38,7 +38,7 @@ def madx( c, file="main.madx" ):
 # ===  plot command                                     === #
 # ========================================================= #
 @invoke.task
-def plot( c, surveyFile="out/survey.tfs", twissFile="out/twiss.tfs" ):
+def plot( c, surveyFile="out/survey.tfs", twissFile="out/twiss.tfs", html="out/plot.html" ):
     """plot analysis, like plot."""
     # ------------------------------------------------- #
     # --- [1] file check                            --- #
@@ -56,7 +56,7 @@ def plot( c, surveyFile="out/survey.tfs", twissFile="out/twiss.tfs" ):
     # ------------------------------------------------- #
     survey     = ltf.load__tfs( tfsFile=surveyFile )
     twiss      = ltf.load__tfs( tfsFile= twissFile )
-    pbl.plotly__beamline( survey=survey, twiss=twiss )    
+    pbl.plotly__beamline( survey=survey, twiss=twiss, html=html )
     return()
         
     
