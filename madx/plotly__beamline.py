@@ -59,7 +59,7 @@ def plotly__beamline( survey=None, twiss=None, plotKeys=None, html=None ):
     titles      += [ tgt["title"] for tgt in targets ]
     fig          = plotly.subplots.make_subplots( rows=nGraph, cols=1,
                                                   shared_xaxes     = True,
-                                                  vertical_spacing = 0.10,
+                                                  vertical_spacing = 0.05,
                                                   row_heights      = row_heights, 
                                                   subplot_titles   = titles )
     
@@ -142,7 +142,7 @@ def plotly__beamline( survey=None, twiss=None, plotKeys=None, html=None ):
         yaxis_title ="BeamLine",
         yaxis       = {"showticklabels":False, "type":"linear" },
         barmode     ="overlay",
-        height      =300*nGraph,
+        height      =400*nGraph,
     )
     for ik in range(nGraph):
         fig.update_xaxes( title_text="s [m]", row=ik+1, col=1, \
