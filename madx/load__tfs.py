@@ -5,6 +5,7 @@ import pandas as pd
 # ===  load__tfs                                        === #
 # ========================================================= #
 def load__tfs( tfsFile=None, silent=True ):
+    
     # ------------------------------------------------- #
     # --- [1] load file                             --- #
     # ------------------------------------------------- #
@@ -40,7 +41,7 @@ def load__tfs( tfsFile=None, silent=True ):
     # ------------------------------------------------- #
     # --- [3] load data contents                    --- #
     # ------------------------------------------------- #
-    df  = pd.read_csv( tfsFile, sep=r"\s+", skiprows=data_start, names=headers )
+    df  = pd.read_csv( tfsFile, sep=r"\s+", skiprows=data_start, names=headers, comment="#" )
     ret = { **metadata, **{ "keys":keys, "df":df } }
     return( ret )
 
