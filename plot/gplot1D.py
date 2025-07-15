@@ -1,8 +1,8 @@
 import os, sys, math
-import numpy                   as np 
-import matplotlib.pyplot       as plt
-import matplotlib.ticker       as tic
-import nk_toolkit.load__config as lcf
+import numpy                        as np 
+import matplotlib.pyplot            as plt
+import matplotlib.ticker            as tic
+import nk_toolkit.plot.load__config as lcf
 
 # ========================================================= #
 # === 1次元プロット描画用クラス                         === #

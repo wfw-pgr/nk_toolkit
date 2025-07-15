@@ -1,10 +1,10 @@
 import os, sys, math
-import numpy                   as np
-import matplotlib.pyplot       as plt
-import matplotlib.tri          as mtr
-import matplotlib.ticker       as tic
-import scipy.interpolate       as itp
-import nk_toolkit.load__config as lcf
+import numpy                        as np
+import matplotlib.pyplot            as plt
+import matplotlib.tri               as mtr
+import matplotlib.ticker            as tic
+import scipy.interpolate            as itp
+import nk_toolkit.plot.load__config as lcf
 
 # ========================================================= #
 # ===  2次元 カラーマップ描画用クラス                   === #
