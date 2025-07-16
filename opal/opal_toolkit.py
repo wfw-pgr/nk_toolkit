@@ -1,0 +1,166 @@
+import os, sys
+import scipy as sp
+import numpy as np
+
+# ========================================================= #
+# ===  load__opal_t7                                    === #
+# ========================================================= #
+
+def load__opal_t7( inpFile=None, structured=True ):
+
+    typelist = [ "2delectrostatic", "2dmagnetostatic" ]
+    
+    # ------------------------------------------------- #
+    # --- [1]  arguments                            --- #
+    # ------------------------------------------------- #
+    if ( inpFile is None ): sys.exit( "[load__opal_t7.py] inpFile == ???" )
+
+    # ------------------------------------------------- #
+    # --- [2] load header                           --- #
+    # ------------------------------------------------- #
+    with open(inpFile, "r") as f:
+        for line in f:
+            stripped = line.strip()
+            if ( stripped and not( stripped.startswith("#") ) ):
+                stripped =  stripped.split()
+                ftype    = (stripped[0]).lower()
+                break
+        if ( not( ftype in typelist ) ):
+            sys.exit( "[load__opal_t7] unknown type :: {}".format( ftype ) )
+        if ( ftype in [ "2delectrostatic", "2dmagnetostatic" ] ):
+            order        = stripped[1].lower()
+            nHeaderLines = 2
+        header = []
+        while( len( header ) < nHeaderLines ):
+            line     = next(f)  # 読み進める
+            stripped = line.strip()
+            if ( stripped and not( stripped.startswith("#") ) ):
+                header += [ stripped ]
+        if ( ftype in [ "2delectrostatic", "2dmagnetostatic" ] ):
+            x1Grid = [ float(val) for val in ( header[0] ).split() ]
+            x2Grid = [ float(val) for val in ( header[1] ).split() ]
+            if ( order.lower() == "xz" ):
+                zGrid, xGrid = x1Grid, x2Grid
+            else:
+                sys.exit( "not implemented" )
+        Data = np.loadtxt( f, comments="#" )
+
+    # ------------------------------------------------- #
+    # --- [3] return data                           --- #
+    # ------------------------------------------------- #
+    if ( structured ):
+        shape = ( int(zGrid[2]+1), int(xGrid[2]+1), 2 )
+        Data  = np.reshape( Data, shape )
+    return( Data )
+
+
+
+# ========================================================= #
+# ===  save__opal_t7                                    === #
+# ========================================================= #
+
+def save__opal_t7( outFile=None, Data=None, type=None, fmt="%15.8e", \
+                   xGrid=None, yGrid=None, zGrid=None, \
+                   freq=None, order=None, Nfourier=None ):
+
+    #  -- [HowTo] -- #
+    #  -- e.g. )  save = save__opal_t7( outFile=outFile, Data=Data, **params )
+    #  ------------- #
+    
+    # ------------------------------------------------- #
+    # --- [1] Arguments                             --- #
+    # ------------------------------------------------- #
+    if ( outFile is None ): sys.exit( "[load__opal_t7] outFile == ???" )
+    if ( Data    is None ): sys.exit( "[load__opal_t7] Data    == ???" )
+    if ( type    is None ): sys.exit( "[load__opal_t7] type    == ???" )
+    
+    # ------------------------------------------------- #
+    # --- [2] output depending on type              --- #
+    # ------------------------------------------------- #
+    header = []
+    if ( type in [ "2DElectroStatic", "2DMagnetoStatic" ] ):
+        if ( order is None ): order = "XZ"
+        Nx, Nz  = xGrid[2]-1, zGrid[2]-1
+        header += [ f"{type} {order}"     ]
+        header += [ f"{zGrid[0]} {zGrid[1]} {Nz}" ]
+        header += [ f"{xGrid[0]} {xGrid[1]} {Nx}" ]
+        header  = "\n".join( header )
+        np.savetxt( outFile, Data, header=header, comments="",fmt=fmt )
+        print( "[opal_toolkit.py] output :: {} ".format( outFile ) )
+    else:
+        print( "[opal_toolkit.py] unknown type :: {} ".format( type ) )
+        sys.exit()
+        
+    return()
+
+
+
+
+# ========================================================= #
+# ===  TM010 electric field                             === #
+# ========================================================= #
+def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, outFile="ef__TM010.T7" ):
+
+    z_,r_ = 0, 1
+    cv    = 3.0e8          # speed of light [m/s]
+    x01   = 2.405          # J0 の1つ目のゼロ
+
+    # ------------------------------------------------- #
+    # --- [1] grid make                             --- #
+    # ------------------------------------------------- #
+    import nkUtilities.equiSpaceGrid as esg
+    zGrid = [ 0.0, Lcav, Nz ]
+    xGrid = [ 0.0, Rcav, Nr ]
+    coord = esg.equiSpaceGrid( x1MinMaxNum=zGrid, x2MinMaxNum=xGrid, returnType="point" )
+    Er    = 0.0 * coord[:,r_]
+    Ez    = E0 * sp.special.j0( x01/Rcav * coord[:,r_] )  # 時刻 t = 0 のEz
+    Data  = np.concatenate( [ Ez[:,np.newaxis], Er[:,np.newaxis] ], axis=1 )
+
+    # ------------------------------------------------- #
+    # --- [2] return                                --- #
+    # ------------------------------------------------- #
+    if ( outFile is not None ):
+        type = "2DElectroStatic"
+        ret  = save__opal_t7( outFile=outFile, Data=Data, \
+                              xGrid=xGrid, zGrid=zGrid, type=type )
+    return( Data )
+
+
+# ========================================================= #
+# ===   Execution of Pragram                            === #
+# ========================================================= #
+
+if ( __name__=="__main__" ):
+
+    # ------------------------------------------------- #
+    # --- [1] calculate ef__TM010                   --- #
+    # ------------------------------------------------- #
+    ef      = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11 )
+    print( ef.shape )
+
+
+    # ------------------------------------------------- #
+    # --- [2] save opal t7                          --- #
+    # ------------------------------------------------- #
+    type    = "2DElectroStatic"
+    outFile = "output.t7"
+    xGrid   = [ 0.0, 1.0, 6 ]
+    zGrid   = [ -1.0, 1.0, 11 ]
+    import nkUtilities.equiSpaceGrid as esg
+    coord   = esg.equiSpaceGrid( x1MinMaxNum=zGrid, x2MinMaxNum=xGrid, \
+                                 returnType = "point" )
+    Ez      = coord[:,0]
+    Ex      = coord[:,1]
+    Data    = np.concatenate( [ Ez[:,np.newaxis], Ex[:,np.newaxis] ], axis=1 )
+    print( Data.shape )
+    params  = { "zGrid":zGrid, "xGrid":xGrid }
+    save__opal_t7( outFile=outFile, Data=Data, type="2DElectroStatic", **params )
+
+    # ------------------------------------------------- #
+    # --- [3] load opal t7                          --- #
+    # ------------------------------------------------- #
+    ret     = load__opal_t7( inpFile="output.t7" )
+    print( ret.shape )
+
+    
+    
