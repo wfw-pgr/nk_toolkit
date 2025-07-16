@@ -1,6 +1,8 @@
 import os, sys
-import scipy as sp
-import numpy as np
+import scipy                        as sp
+import numpy                        as np
+import nk_toolkit.plot.load__config as lcf
+import nk_toolkit.plot.gplot2D      as gp2
 
 # ========================================================= #
 # ===  load__opal_t7                                    === #
@@ -99,11 +101,13 @@ def save__opal_t7( outFile=None, Data=None, type=None, fmt="%15.8e", \
 # ========================================================= #
 # ===  TM010 electric field                             === #
 # ========================================================= #
-def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, outFile="ef__TM010.T7" ):
+def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, \
+               outFile="ef__TM010.T7", pngFile=None ):
 
-    z_,r_ = 0, 1
-    cv    = 3.0e8          # speed of light [m/s]
-    x01   = 2.405          # J0 の1つ目のゼロ
+    z_,r_   = 0, 1
+    ez_,er_ = 0, 1
+    cv      = 3.0e8          # speed of light [m/s]
+    x01     = 2.405          # J0 の1つ目のゼロ
 
     # ------------------------------------------------- #
     # --- [1] grid make                             --- #
@@ -123,6 +127,23 @@ def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, outFile="ef__TM010.T7
         type = "2DElectroStatic"
         ret  = save__opal_t7( outFile=outFile, Data=Data, \
                               xGrid=xGrid, zGrid=zGrid, type=type )
+    if ( pngFile is not None ):
+        config   = lcf.load__config()
+        config_  = {
+            "figure.pngFile"     : pngFile,
+            "figure.position"    : [ 0.16, 0.16, 0.86, 0.86 ], 
+            "ax1.x.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":6 },
+            "ax1.y.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":6 },
+            "ax1.x.label"        : "Z (m)",
+            "ax1.y.label"        : "R (m)",
+            "ax1.x.minor.nticks" : 1,
+            "cmp.level"          : { "auto":True, "min": 0.0, "max":1.0, "num":100 },
+            "cmp.colortable"     : "jet",
+        }
+        config = { **config, **config_ }
+        fig    = gp2.gplot2D( xAxis=coord[:,z_], yAxis=coord[:,r_], cMap=Data[:,ez_], \
+        	 	      config=config )
+    
     return( Data )
 
 
@@ -135,7 +156,7 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     # --- [1] calculate ef__TM010                   --- #
     # ------------------------------------------------- #
-    ef      = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11 )
+    ef      = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11, pngFile="ef.png" )
     print( ef.shape )
 
 
