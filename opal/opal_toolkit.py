@@ -106,18 +106,18 @@ def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, \
 
     z_,r_   = 0, 1
     ez_,er_ = 0, 1
-    cv      = 3.0e8          # speed of light [m/s]
     x01     = 2.405          # J0 の1つ目のゼロ
-
+    m2cm    = 1.0e2
+    
     # ------------------------------------------------- #
     # --- [1] grid make                             --- #
     # ------------------------------------------------- #
     import nkUtilities.equiSpaceGrid as esg
-    zGrid = [ 0.0, Lcav, Nz ]
-    xGrid = [ 0.0, Rcav, Nr ]
+    zGrid = [ 0.0, Lcav*m2cm, Nz ]
+    xGrid = [ 0.0, Rcav*m2cm, Nr ]
     coord = esg.equiSpaceGrid( x1MinMaxNum=zGrid, x2MinMaxNum=xGrid, returnType="point" )
     Er    = 0.0 * coord[:,r_]
-    Ez    = E0 * sp.special.j0( x01/Rcav * coord[:,r_] )  # 時刻 t = 0 のEz
+    Ez    = E0 * sp.special.j0( x01/Rcav*m2cm * coord[:,r_] )  # 時刻 t = 0 のEz
     Data  = np.concatenate( [ Ez[:,np.newaxis], Er[:,np.newaxis] ], axis=1 )
 
     # ------------------------------------------------- #
@@ -134,8 +134,8 @@ def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, \
             "figure.position"    : [ 0.16, 0.16, 0.86, 0.86 ], 
             "ax1.x.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":6 },
             "ax1.y.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":6 },
-            "ax1.x.label"        : "Z (m)",
-            "ax1.y.label"        : "R (m)",
+            "ax1.x.label"        : "Z (cm)",
+            "ax1.y.label"        : "R (cm)",
             "ax1.x.minor.nticks" : 1,
             "cmp.level"          : { "auto":True, "min": 0.0, "max":1.0, "num":100 },
             "cmp.colortable"     : "jet",
