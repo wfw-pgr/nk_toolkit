@@ -3,7 +3,7 @@ import numpy                        as np
 import pandas                       as pd
 import nk_toolkit.plot.load__config as lcf
 import nk_toolkit.plot.gplot1D      as gp1
-import nk_toolkit.opal.load__sdds   as lsd
+import nk_toolkit.opal.opal_toolkit as opk
 
 
 # ========================================================= #
@@ -16,7 +16,7 @@ def plot__statistics( inpFile=None, keys=None ):
     # ------------------------------------------------- #
     # --- [1] load .stat file                       --- #
     # ------------------------------------------------- #
-    data = lsd.load__sdds( inpFile=inpFile )
+    data = opk.load__sdds( inpFile=inpFile )
     if ( keys is None ): keys = data.keys()
     ylabels = { key:key for key in keys }
     
