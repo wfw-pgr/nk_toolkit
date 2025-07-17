@@ -1,7 +1,9 @@
-import os, sys
+import os, sys, io
 import scipy                        as sp
 import numpy                        as np
+import pandas                       as pd
 import nk_toolkit.plot.load__config as lcf
+import nk_toolkit.plot.gplot1D      as gp1
 import nk_toolkit.plot.gplot2D      as gp2
 
 # ========================================================= #
@@ -97,6 +99,62 @@ def save__opal_t7( outFile=None, Data=None, type=None, fmt="%15.8e", \
 
 
 
+# ========================================================= #
+# ===  load__sdds                                       === #
+# ========================================================= #
+def load__sdds( inpFile=None ):
+
+    # ------------------------------------------------- #
+    # --- [1] read lines                            --- #
+    # ------------------------------------------------- #
+    if ( inpFile is None ): sys.exit( "[opal_toolkit.py] inpFile == ???" )
+    with open( inpFile, 'r') as f:
+        lines = f.readlines()
+
+    # ------------------------------------------------- #
+    # --- [2] column name                           --- #
+    # ------------------------------------------------- #
+    columns = []
+    for i, line in enumerate(lines):
+        if line.strip().startswith("&column"):
+            for j in range(i, len(lines)):
+                if "name=" in lines[j]:
+                    name_line = lines[j].strip()
+                    name = name_line.split("=", 1)[1].strip().strip('",')
+                    columns.append(name)
+                if lines[j].strip() == "&end":
+                    break
+
+    # ------------------------------------------------- #
+    # --- [3] number of parameters                  --- #
+    # ------------------------------------------------- #
+    num_parameters = sum(1 for line in lines if line.strip().startswith("&parameter"))
+
+    # ------------------------------------------------- #
+    # --- [4] search &data section                  --- #
+    # ------------------------------------------------- #
+    data_start = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith("&data"):
+            for j in range(i, len(lines)):
+                if lines[j].strip() == "&end":
+                    data_start = j + 1
+                    break
+            break
+
+    # ------------------------------------------------- #
+    # --- [5] skip parameters                       --- #
+    # ------------------------------------------------- #
+    data_lines = lines[data_start + num_parameters:]
+
+    # ------------------------------------------------- #
+    # --- [6] read data                             --- #
+    # ------------------------------------------------- #
+    data = pd.read_csv( io.StringIO("".join( data_lines) ), sep=r"\s+", names=columns )
+    return( data )
+
+
+
 
 # ========================================================= #
 # ===  TM010 electric field                             === #
@@ -156,7 +214,8 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     # --- [1] calculate ef__TM010                   --- #
     # ------------------------------------------------- #
-    ef      = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11, pngFile="ef.png" )
+    ef = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11, outFile="test/ef__TM010.T7", \
+                    pngFile="test/ef__TM010.png" )
     print( ef.shape )
 
 
@@ -164,7 +223,7 @@ if ( __name__=="__main__" ):
     # --- [2] save opal t7                          --- #
     # ------------------------------------------------- #
     type    = "2DElectroStatic"
-    outFile = "output.t7"
+    outFile = "test/output.t7"
     xGrid   = [ 0.0, 1.0, 6 ]
     zGrid   = [ -1.0, 1.0, 11 ]
     import nkUtilities.equiSpaceGrid as esg
@@ -180,8 +239,16 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     # --- [3] load opal t7                          --- #
     # ------------------------------------------------- #
-    ret     = load__opal_t7( inpFile="output.t7" )
+    ret     = load__opal_t7( inpFile="test/output.t7" )
     print( ret.shape )
 
     
+    # ------------------------------------------------- #
+    # --- [4] load sddds ( sample.stat )            --- #
+    # ------------------------------------------------- #
+    inpFile = "test/sample.stat"
+    Data    = load__sdds( inpFile=inpFile )
+    print( Data )
+    
+
     
