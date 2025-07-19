@@ -7,7 +7,7 @@ import nk_toolkit.opal.opal_toolkit as opk
 
 
 # ========================================================= #
-# ===  plot__statistics.py                                === #
+# ===  plot__statistics.py                              === #
 # ========================================================= #
 def plot__statistics( inpFile=None, keys=None ):
 
@@ -16,7 +16,7 @@ def plot__statistics( inpFile=None, keys=None ):
     # ------------------------------------------------- #
     # --- [1] load .stat file                       --- #
     # ------------------------------------------------- #
-    data = opk.load__sdds( inpFile=inpFile )
+    data = opk.load__statistics( inpFile=inpFile )
     if ( keys is None ): keys = data.keys()
     ylabels = { key:key for key in keys }
     
@@ -48,7 +48,7 @@ def plot__statistics( inpFile=None, keys=None ):
         }
         config = { **config, **config_ }
         fig    = gp1.gplot1D( config=config )
-        fig.add__plot( xAxis=data["s"], yAxis=data[key], label="sample" )
+        fig.add__plot( xAxis=data["s"], yAxis=data[key] )
         fig.set__axis()
         fig.save__figure()
 
@@ -58,5 +58,5 @@ def plot__statistics( inpFile=None, keys=None ):
 # ========================================================= #
 
 if ( __name__=="__main__" ):
-    inpFile = "sample.stat"
+    inpFile = "opal/main.stat"
     plot__statistics( inpFile=inpFile )

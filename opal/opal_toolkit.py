@@ -1,4 +1,5 @@
 import os, sys, io
+import h5py
 import scipy                        as sp
 import numpy                        as np
 import pandas                       as pd
@@ -100,9 +101,9 @@ def save__opal_t7( outFile=None, Data=None, type=None, fmt="%15.8e", \
 
 
 # ========================================================= #
-# ===  load__sdds                                       === #
+# ===  load__opalStatistics                             === #
 # ========================================================= #
-def load__sdds( inpFile=None ):
+def load__statistics( inpFile=None ):
 
     # ------------------------------------------------- #
     # --- [1] read lines                            --- #
@@ -205,6 +206,37 @@ def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, \
     return( Data )
 
 
+
+# ========================================================= #
+# === load__opalHDF5.py                                 === #
+# ========================================================= #
+
+def load__opalHDF5( inpFile=None, steps=None, series=None ):
+    
+    # ------------------------------------------------- #
+    # --- [1] load HDF5 file                        --- #
+    # ------------------------------------------------- #
+    stack = {}
+    with h5py.File( inpFile, "r") as f:
+        if ( steps is not None ):
+            keys = [ "Step#{}".format( step ) for step in steps ]
+        else:
+            keys = f.keys()
+        for key in keys:
+            df         = pd.DataFrame( { ikey:f[key][ikey] for ikey in f[key].keys() } )
+            stack[key] = df.sort_values( by="id" ).reset_index(drop=True)
+            
+        if ( series is not None ):
+            stack = [ stack[key] for key in keys ]
+            stack = pd.concat( stack, axis=0, ignore_index=True )
+            stack = stack[ stack["id"].isin( series ) ]
+
+    # ------------------------------------------------- #
+    # --- [2] return step                           --- #
+    # ------------------------------------------------- #
+    return( stack )
+
+
 # ========================================================= #
 # ===   Execution of Pragram                            === #
 # ========================================================= #
@@ -247,8 +279,15 @@ if ( __name__=="__main__" ):
     # --- [4] load sddds ( sample.stat )            --- #
     # ------------------------------------------------- #
     inpFile = "test/sample.stat"
-    Data    = load__sdds( inpFile=inpFile )
+    Data    = load__statistics( inpFile=inpFile )
     print( Data )
     
+
+    # ------------------------------------------------- #
+    # --- [5] load opal particle info               --- #
+    # ------------------------------------------------- #
+    inpFile = "sample.h5"
+    series  = [ ik for ik in range(300) ]
+    ret     = load__opalHDF5( inpFile=inpFile, series=series )
 
     
