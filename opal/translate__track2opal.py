@@ -97,7 +97,7 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
     contents  = "// -- [2] beam line components   -- //;\n"
     drift_f   = "{0}: drift, L={1:.8}, elemedge={2:.8};\n"
     quadr_f   = "{0}: quadrupole, L={1:.8}, K1={2:.8}, elemedge={3:.8};\n"
-    rfcav_f   = "{0}: rfcavity, L={1:.8}, volt={2:.8}, lag={3:.8}, fmapfn={4}, " \
+    rfcav_f   = '{0}: rfcavity, L={1:.8}, volt={2:.8}, lag={3:.8}, fmapfn="{4}", ' \
         + "elemedge={5:.8};\n"
     
     for ik,elem in enumerate(seq):
@@ -136,7 +136,6 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
         if ( search ):
             Rcav = float( search.group(1) )
             Lcav = float( search.group(2) )
-            print( Rcav, Lcav )
         else:
             print( "[translate__track2opal.py] cannnot recognize (Rcav, Lcav) ... [ERROR] " )
             sys.exit()

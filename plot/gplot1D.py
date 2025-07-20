@@ -1,4 +1,5 @@
 import os, sys, math
+import scipy                        as sp
 import numpy                        as np 
 import matplotlib.pyplot            as plt
 import matplotlib.ticker            as tic
@@ -759,6 +760,7 @@ class gplot1D:
     # ===  scatter プロット 追加                            === #
     # ========================================================= #
     def add__scatter( self, xAxis=None, yAxis=None, cAxis=None, color=None, cmap=None, \
+                      density=False, bins=300, \
                       label=None, alpha=None, marker=None, markersize=None, markerwidth=None ):
         
         # ------------------------------------------------- #
@@ -772,6 +774,7 @@ class gplot1D:
         if ( label       is None ): label       = ' '*self.config["legend.labelLength"]
         if ( alpha       is None ): alpha       = self.config["plot.alpha"]
         if ( marker      is None ): marker      = self.config["plot.marker"]
+        if ( markersize  is None ): markersize  = self.config["plot.markersize"]
         
         # ------------------------------------------------- #
         # --- 軸設定                                    --- #
@@ -786,12 +789,17 @@ class gplot1D:
             if ( type( cmap[0] ) == str ):
                 import matplotlib.colors as mcl
                 cmap = mcl.ListedColormap( cmap )
+        if ( cAxis is None ) and ( density is True ):  #  -- density color -- 
+            stat, xedge, yedge, binNum = sp.stats.binned_statistic_2d(
+                xAxis, yAxis, None, statistic='count', bins=bins, expand_binnumbers=True )
+            flat_index = ( binNum[0]-1, binNum[1]-1 )
+            cAxis      = stat[ flat_index ]
             
         # ------------------------------------------------- #
         # --- プロット 追加                             --- #
         # ------------------------------------------------- #
         self.ax1.scatter( xAxis, yAxis , c=cAxis, cmap=cmap, label=label, \
-                          marker=marker, alpha =alpha   )
+                          marker=marker, s=markersize, alpha =alpha   )
 
     # ========================================================= #
     # ===  テキスト 追加                                    === #
@@ -836,7 +844,7 @@ class gplot1D:
             # -- 通常プロット -- #
             self.fig.savefig( pngFile, dpi=dpi, pad_inches=0, transparent=transparent )
         print( "[ save__figure() @gplot1D ] output :: {0}".format( pngFile ) )
-        # plt.close()
+        plt.close()
         return()
    
 
