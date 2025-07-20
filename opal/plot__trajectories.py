@@ -21,7 +21,7 @@ def plot__trajectories( hdf5File=None, statFile=None, series=None, obj="x", nCol
     pinfo    = opk.load__opalHDF5  ( inpFile=hdf5File, series=series )
     sinfo    = opk.load__statistics( inpFile=statFile )
     sL       = sinfo["s"]
-    colors   = plt.get_cmap( "jet", nColors )
+    colors   = plt.get_cmap( "plasma", nColors )
     
     # ------------------------------------------------- #
     # --- [2] configuration                         --- #
@@ -30,6 +30,7 @@ def plot__trajectories( hdf5File=None, statFile=None, series=None, obj="x", nCol
     config_  = {
         "figure.size"        : [10.5,3.5],
         "figure.position"    : [ 0.10, 0.12, 0.97, 0.95 ],
+        "figure.pngFile"     : "test/trajectories.png", 
         "ax1.x.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":11 },
         "ax1.y.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":11 },
         "ax1.x.label"        : "s [m]",
@@ -61,9 +62,9 @@ def plot__trajectories( hdf5File=None, statFile=None, series=None, obj="x", nCol
 
 if ( __name__=="__main__" ):
     npart    = int(1e4)
-    nplot    = int(1e4)
+    nplot    = int(1e3)
     obj      = "x"
-    hdf5File = "opal/main.h5"
-    statFile = "opal/main.stat"
+    hdf5File = "test/main.h5"
+    statFile = "test/main.stat"
     series   = np.random.choice( np.arange(1,npart+1), size=nplot, replace=False )
     plot__trajectories( hdf5File=hdf5File, statFile=statFile, series=series, obj=obj )

@@ -249,16 +249,16 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     # --- [1] calculate ef__TM010                   --- #
     # ------------------------------------------------- #
+    print( " -- calculate ef__TM010 --" )
     ef = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11, outFile="test/ef__TM010.T7", \
                     pngFile="test/ef__TM010.png" )
-    print( ef.shape )
-
 
     # ------------------------------------------------- #
     # --- [2] save opal t7                          --- #
     # ------------------------------------------------- #
+    print( " -- save opal t7 -- " )
     type    = "2DElectroStatic"
-    outFile = "test/output.t7"
+    outFile = "test/ef__sample.T7"
     xGrid   = [ 0.0, 1.0, 6 ]
     zGrid   = [ -1.0, 1.0, 11 ]
     import nkUtilities.equiSpaceGrid as esg
@@ -267,29 +267,28 @@ if ( __name__=="__main__" ):
     Ez      = coord[:,0]
     Ex      = coord[:,1]
     Data    = np.concatenate( [ Ez[:,np.newaxis], Ex[:,np.newaxis] ], axis=1 )
-    print( Data.shape )
     params  = { "zGrid":zGrid, "xGrid":xGrid }
     save__opal_t7( outFile=outFile, Data=Data, type="2DElectroStatic", **params )
 
     # ------------------------------------------------- #
     # --- [3] load opal t7                          --- #
     # ------------------------------------------------- #
-    ret     = load__opal_t7( inpFile="test/output.t7" )
-    print( ret.shape )
-
+    print( " -- load opal t7 -- " )
+    ret     = load__opal_t7( inpFile="test/ef__sample.T7" )
+    print( ret )
     
     # ------------------------------------------------- #
     # --- [4] load sddds ( sample.stat )            --- #
     # ------------------------------------------------- #
-    inpFile = "test/sample.stat"
+    print( " -- load statistics -- " )
+    inpFile = "test/main.stat"
     Data    = load__statistics( inpFile=inpFile )
     print( Data )
     
-
     # ------------------------------------------------- #
     # --- [5] load opal particle info               --- #
     # ------------------------------------------------- #
-    inpFile = "sample.h5"
+    inpFile = "test/main.h5"
     series  = [ ik for ik in range(300) ]
     ret     = load__opalHDF5( inpFile=inpFile, series=series )
 
