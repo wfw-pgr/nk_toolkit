@@ -131,6 +131,7 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
     fmapfnList = list( set( counts["fmapfnList"] ) )
     pattern    = r"Rcav([\d\.]+)_Lcav([\d\.]+)"
     for fmapfn in fmapfnList:
+        print( fmapfn )
         text   = os.path.splitext( os.path.basename( fmapfn ) )[0]
         search = re.search( pattern, text )
         if ( search ):
@@ -138,6 +139,8 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
             Lcav = float( search.group(2) )
         else:
             print( "[translate__track2opal.py] cannnot recognize (Rcav, Lcav) ... [ERROR] " )
+            print( "   text   :: {}".format( text    ) )
+            print( "   saerch :: {}".format( pattern ) )
             sys.exit()
         opk.ef__TM010( outFile=fmapfn, Lcav=Lcav, Rcav=Rcav, \
                        Nz=params["translate.rf.Nz"], Nr=params["translate.rf.Nr"] )
@@ -197,12 +200,11 @@ def convert_to_rfcavity( words, counts, params ):
     harmonics =   int(words[4])                    # harmonics
     Rcav      =   int(words[5]) * cm               # R-cavity  [cm]
     freq      = params["freq_0"] * harmonics * MHz # -- for LINAC, freq = f0 * harmon,  harmon=1
-    fmapfn    = os.path.join( params["file.fmap.dir"], "TM010__Rcav{0}_Lcav{1}.T7"\
-                              .format( Rcav, Lcav ) )
+    fmapfn    = os.path.join( params["file.fmap.dir"], \
+                              "TM010__Rcav{0}_Lcav{1}.T7".format( Rcav, Lcav ) )
     fmapfn_   = re.sub( r"^opal/", "", fmapfn )
     ret       = [ { "type":"rfcavity", "tag":tag, "L":L, "Rcav":Rcav, "volt":volt, "freq":freq, \
                     "lag":lag, "hormonics":harmonics, "fmapfn":fmapfn_, "at":counts["at"], } ]
-    fmapfn    = ""
     counts["Nrf"] += 1
     counts["at"]  += L
     counts["fmapfnList"] += [ fmapfn ]
