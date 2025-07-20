@@ -217,11 +217,14 @@ def load__opalHDF5( inpFile=None, steps=None, series=None ):
     # --- [1] load HDF5 file                        --- #
     # ------------------------------------------------- #
     stack = {}
-    with h5py.File( inpFile, "r") as f:
+    with h5py.File( inpFile, "r" ) as f:
         if ( steps is not None ):
-            keys = [ "Step#{}".format( step ) for step in steps ]
+            steps = sorted( steps )
+            keys  = [ "Step#{}".format( step ) for step in steps ]
         else:
-            keys = f.keys()
+            steps = sorted( [ int( key.replace( "Step#", "" ) ) for key in f.keys() ] )
+            keys  = [ "Step#{}".format( step ) for step in steps ]
+            
         for key in keys:
             df         = pd.DataFrame( { ikey:f[key][ikey] for ikey in f[key].keys() } )
             stack[key] = df.sort_values( by="id" ).reset_index(drop=True)
