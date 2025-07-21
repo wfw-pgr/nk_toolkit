@@ -1,0 +1,23 @@
+{
+
+    // ---------------------------- //
+    // --- [1] consntans        --- //
+    // ---------------------------- //
+    "beam.freq"              : 36.5 ,       // [MHz]
+    "rf.harmonics"           : 4    ,       // int   rf.freq = h * beam.freq
+
+    // ---------------------------- //
+    // --- [2] translate        --- //
+    // ---------------------------- //
+    "translate.rf.thickness" : 0.02 ,
+    "translate.rf.Nz"        : 21   ,
+    "translate.rf.Nr"        : 21   ,
+    
+    // ---------------------------- //
+    // --- [3] file             --- //
+    // ---------------------------- //
+    "file.sclinac"           : "track/sclinac.dat" , 
+    "file.fmap.dir"          : "opal/fmap/"        , 
+    "file.sequence"          : "opal/dlinac.seq"   , 
+    
+}

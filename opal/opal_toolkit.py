@@ -215,7 +215,7 @@ def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0e6, freq=None, \
     # ------------------------------------------------- #
     if ( outFile is not None ):
         type = "2DDynamic"
-        ret  = save__opal_t7( outFile=outFile, Data=Data, \
+        ret  = save__opal_t7( outFile=outFile, Data=Data, freq=freq, \
                               xGrid=xGrid, zGrid=zGrid, type=type )
     if ( pngFile is not None ):
         config   = lcf.load__config()

@@ -22,12 +22,14 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
     #  -- [1-2] load track-v38's results            --  #
     with open( params["file.sclinac"], "r" ) as f:
         lines  = f.readlines()
-    
+    #  -- [1-3] preparation                         --  #
+    params["rf.freq"] = params["beam.freq"] * params["rf.harmonics"]
+        
     # ------------------------------------------------- #
     # --- [2] analyze each line                     --- #
     # ------------------------------------------------- #
     seq    = []
-    counts = { "at":0.0, "N":0, "Nqm":0, "Nrf":0, "Ndr":0, "Nps":0, "fmapfnList":[] }
+    counts = { "at":0.0, "N":0, "Nqm":0, "Nrf":0, "Ndr":0, "fmapfnList":[] }
     for ik,line in enumerate(lines):
         words = ( line.split() )
         if ( not( len( words ) == 0 ) ):
@@ -94,7 +96,9 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
     # ------------------------------------------------- #
     # --- [4] convert into mad-x sequence           --- #
     # ------------------------------------------------- #
-    contents  = "// -- [2] beam line components   -- //;\n"
+    contents  = "\n// -------------------------------- //;\n"
+    contents +=   "// -- [2] beam line components   -- //;\n"
+    contents +=   "// -------------------------------- //;\n\n"
     drift_f   = "{0}: drift, L={1:.8}, elemedge={2:.8};\n"
     quadr_f   = "{0}: quadrupole, L={1:.8}, K1={2:.8}, elemedge={3:.8};\n"
     rfcav_f   = '{0}: rfcavity, L={1:.8}, volt={2:.8}, lag={3:.8}, fmapfn="{4}", ' \
@@ -142,11 +146,11 @@ def translate__track2opal( paramsFile="dat/parameters.json" ):
             print( "   text   :: {}".format( text    ) )
             print( "   saerch :: {}".format( pattern ) )
             sys.exit()
-        opk.ef__TM010( outFile=fmapfn, Lcav=Lcav, Rcav=Rcav, \
+        opk.ef__TM010( outFile=fmapfn, Lcav=Lcav, Rcav=Rcav, freq=params["rf.freq"], \
                        Nz=params["translate.rf.Nz"], Nr=params["translate.rf.Nr"] )
-            
     return()
-        
+
+
 # ========================================================= #
 # ===  convert_to_quad                                  === #
 # ========================================================= #
@@ -199,7 +203,7 @@ def convert_to_rfcavity( words, counts, params ):
     lag       = float(words[3])/180.0 *np.pi       #           [deg]
     harmonics =   int(words[4])                    # harmonics
     Rcav      =   int(words[5]) * cm               # R-cavity  [cm]
-    freq      = params["freq_0"] * harmonics * MHz # -- for LINAC, freq = f0 * harmon,  harmon=1
+    freq      = params["beam.freq"] * harmonics    # -- for LINAC, freq = f0 * harmon,  harmon=1  
     fmapfn    = os.path.join( params["file.fmap.dir"], \
                               "TM010__Rcav{0}_Lcav{1}.T7".format( Rcav, Lcav ) )
     fmapfn_   = re.sub( r"^opal/", "", fmapfn )
