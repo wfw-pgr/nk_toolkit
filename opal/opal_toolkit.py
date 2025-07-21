@@ -83,7 +83,7 @@ def save__opal_t7( outFile=None, Data=None, type=None, fmt="%15.8e", \
     # --- [2] output depending on type              --- #
     # ------------------------------------------------- #
     header = []
-    if ( type in [ "2DElectroStatic", "2DMagnetoStatic" ] ):
+    if ( type.lower() in [ "2delectrostatic", "2dmagnetostatic" ] ):   # 2D - ElectroStatic / MagnetoStatic 
         if ( order is None ): order = "XZ"
         Nx, Nz  = xGrid[2]-1, zGrid[2]-1
         header += [ f"{type} {order}"     ]
@@ -92,6 +92,23 @@ def save__opal_t7( outFile=None, Data=None, type=None, fmt="%15.8e", \
         header  = "\n".join( header )
         np.savetxt( outFile, Data, header=header, comments="",fmt=fmt )
         print( "[opal_toolkit.py] output :: {} ".format( outFile ) )
+        
+    elif ( type.lower() in [ "2ddynamic"] ):                           # 2D Dynamic
+        Ez_,Er_ = 0, 1
+        Ea_,Hp_ = 2, 3
+        if ( order is None ): order = "XZ"
+        Nx, Nz  = xGrid[2]-1, zGrid[2]-1
+        header += [ f"{type} {order}" ]
+        header += [ f"{zGrid[0]} {zGrid[1]} {Nz}" ]
+        header += [ f"{freq}" ]
+        header += [ f"{xGrid[0]} {xGrid[1]} {Nx}" ]
+        header  = "\n".join( header )
+        if ( Data.shape[1] == 3 ):
+            Ea   = np.sqrt( Data[:,Ez_]**2 + Data[:,Er_]**2 )
+            Data = np.insert( Data, 2, Ea, axis=1 )
+        np.savetxt( outFile, Data, header=header, comments="",fmt=fmt )
+        print( "[opal_toolkit.py] output :: {} ".format( outFile ) )
+    
     else:
         print( "[opal_toolkit.py] unknown type :: {} ".format( type ) )
         sys.exit()
@@ -158,38 +175,53 @@ def load__statistics( inpFile=None ):
 
 
 # ========================================================= #
-# ===  TM010 electric field                             === #
+# ===  TM010 mode electric field ( Ez, Er, Hp )         === #
 # ========================================================= #
-def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, \
+def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0e6, freq=None, \
                outFile="ef__TM010.T7", pngFile=None ):
 
     z_,r_   = 0, 1
     ez_,er_ = 0, 1
-    x01     = 2.405          # J0 の1つ目のゼロ
+    ea_,hp_ = 2, 3
+    x01     = 2.405            # J0 の1つ目のゼロ
     m2cm    = 1.0e2
+    MHz     = 1.0e6            # unit : [MHz]
+    mu0     = 4.0*np.pi*1.0e-7 # permeability
+    MV      = 1.0e6            # unit : [MV/m]
     
     # ------------------------------------------------- #
-    # --- [1] grid make                             --- #
+    # --- [1] grid make    ( calc in MKS )          --- #
     # ------------------------------------------------- #
+    omega   = 2.0*np.pi * freq * MHz
+    kc01    = x01 / Rcav
     import nkUtilities.equiSpaceGrid as esg
-    zGrid = [ 0.0, Lcav*m2cm, Nz ]
-    xGrid = [ 0.0, Rcav*m2cm, Nr ]
-    coord = esg.equiSpaceGrid( x1MinMaxNum=zGrid, x2MinMaxNum=xGrid, returnType="point" )
-    Er    = 0.0 * coord[:,r_]
-    Ez    = E0 * sp.special.j0( x01/Rcav*m2cm * coord[:,r_] )  # 時刻 t = 0 のEz
-    Data  = np.concatenate( [ Ez[:,np.newaxis], Er[:,np.newaxis] ], axis=1 )
-
+    zGrid   = [ 0.0, Lcav, Nz ]
+    xGrid   = [ 0.0, Rcav, Nr ]
+    coord   = esg.equiSpaceGrid( x1MinMaxNum=zGrid, x2MinMaxNum=xGrid, returnType="point" )
+    Er      = 0.0 * coord[:,r_]
+    Ez      =                  E0 * sp.special.j0( kc01*coord[:,r_] )  # 時刻 t = 0 のEz
+    Bp      = ( kc01/omega ) * E0 * sp.special.j1( kc01*coord[:,r_] )
+    Hp      = Bp / mu0
+    Ea      = np.sqrt( Er**2 + Ez**2 )
+    Data    = np.concatenate( [ Ez[:,np.newaxis]/MV, Er[:,np.newaxis]/MV,\
+                                Ea[:,np.newaxis]/MV, Hp[:,np.newaxis] ], axis=1 )
+    # -- re-define grid in cm for output -- #
+    zGrid   = [ 0.0, Lcav*m2cm, Nz ]
+    xGrid   = [ 0.0, Rcav*m2cm, Nr ]
+    coord   = esg.equiSpaceGrid( x1MinMaxNum=zGrid, x2MinMaxNum=xGrid, returnType="point" )
+    
     # ------------------------------------------------- #
     # --- [2] return                                --- #
     # ------------------------------------------------- #
     if ( outFile is not None ):
-        type = "2DElectroStatic"
+        type = "2DDynamic"
         ret  = save__opal_t7( outFile=outFile, Data=Data, \
                               xGrid=xGrid, zGrid=zGrid, type=type )
     if ( pngFile is not None ):
         config   = lcf.load__config()
+        ext      = os.path.splitext( pngFile )[1]
         config_  = {
-            "figure.pngFile"     : pngFile,
+            "figure.size"        : ( 6, 6 ), 
             "figure.position"    : [ 0.16, 0.16, 0.86, 0.86 ], 
             "ax1.x.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":6 },
             "ax1.y.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":6 },
@@ -199,10 +231,16 @@ def ef__TM010( Lcav=None, Rcav=None, Nz=11, Nr=11, E0=1.0, \
             "cmp.level"          : { "auto":True, "min": 0.0, "max":1.0, "num":100 },
             "cmp.colortable"     : "jet",
         }
-        config = { **config, **config_ }
-        fig    = gp2.gplot2D( xAxis=coord[:,z_], yAxis=coord[:,r_], cMap=Data[:,ez_], \
-        	 	      config=config )
-    
+        config   = { **config, **config_ }
+        pngFile_ = pngFile.replace( ext, "_Ez"+ext )
+        fig      = gp2.gplot2D( xAxis=coord[:,z_], yAxis=coord[:,r_], cMap=Data[:,ez_], \
+        	 	        config=config, pngFile=pngFile_ )
+        pngFile_ = pngFile.replace( ext, "_Er"+ext )
+        fig      = gp2.gplot2D( xAxis=coord[:,z_], yAxis=coord[:,r_], cMap=Data[:,er_], \
+        	 	        config=config, pngFile=pngFile_ )
+        pngFile_ = pngFile.replace( ext, "_Hp"+ext )
+        fig      = gp2.gplot2D( xAxis=coord[:,z_], yAxis=coord[:,r_], cMap=Data[:,hp_], \
+        	 	        config=config, pngFile=pngFile_ )
     return( Data )
 
 
@@ -251,7 +289,7 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     print( " -- calculate ef__TM010 --" )
     ef = ef__TM010( Lcav=0.5, Rcav=0.1, Nz=11, Nr=11, outFile="test/ef__TM010.T7", \
-                    pngFile="test/ef__TM010.png" )
+                    pngFile="test/ef__TM010.png", freq=36.5 )
 
     # ------------------------------------------------- #
     # --- [2] save opal t7                          --- #
