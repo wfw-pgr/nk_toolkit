@@ -207,6 +207,7 @@ def convert_to_rfcavity( words, counts, params ):
     fmapfn    = os.path.join( params["file.fmap.dir"], \
                               "TM010__Rcav{0}_Lcav{1}.T7".format( Rcav, Lcav ) )
     fmapfn_   = re.sub( r"^opal/", "", fmapfn )
+    volt      = volt / Lcav
     ret       = [ { "type":"rfcavity", "tag":tag, "L":L, "Rcav":Rcav, "volt":volt, "freq":freq, \
                     "lag":lag, "hormonics":harmonics, "fmapfn":fmapfn_, "at":counts["at"], } ]
     counts["Nrf"] += 1
