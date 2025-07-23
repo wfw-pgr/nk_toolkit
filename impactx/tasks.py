@@ -1,6 +1,6 @@
 import os, glob, subprocess
 import invoke
-
+import importlib.util
 
 # ========================================================= #
 # ===  execute impactx                                  === #
@@ -11,10 +11,10 @@ def impactx( ctx, logFile="impactx.log" ):
     cwd = os.getcwd()
     try:
         os.chdir( "impactx/" )
-        cmd = "python main_impactx.py"
-        with open( logFile, "w" ) as log:
-            subprocess.run( cmd.split(), check=True, \
-                            stdout=log, stderr=subprocess.STDOUT ) 
+        spec = importlib.util.spec_from_file_location( "main_impactx", "impactx/main_impactx.py" )
+        mod  = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module( mod )
+        mod.main_impactx()
     finally:
         os.chdir( cwd )
 
@@ -48,9 +48,9 @@ def post( ctx ):
 
 
 # ========================================================= #
-# ===  all = clean + impact + post                      === #
+# ===  all = clean + impactx + post                      === #
 # ========================================================= #
-@invoke.task(pre=[clean, impact, post])
+@invoke.task(pre=[clean, impactx, post])
 def all(ctx):
     """Run all steps: clean, impact, post."""
     pass
