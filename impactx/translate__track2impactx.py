@@ -102,7 +102,7 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
     quadr_f   = base_f + 'ExactQuad ( name="{0}", ds={1:.8}, k={2:.8}, nslice={3} )\n'
     rfcav_f   = base_f + 'RFCavity  ( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficients={6}, nslice={7} )\n'
     if ( params["translate.add_monitor"] ):
-        contents  += ( base_f + 'BeamMonitor( {0}, backend="h5")\n' ).format( "bpm" )
+        contents  += ( base_f + 'BeamMonitor( "{0}", backend="h5")\n' ).format( "bpm" )
     
     for ik,elem in enumerate(seq):
         
