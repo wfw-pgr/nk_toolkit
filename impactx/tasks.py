@@ -6,7 +6,7 @@ import importlib.util
 # ===  execute impactx                                  === #
 # ========================================================= #
 @invoke.task
-def impactx( ctx, logFile="impactx.log" ):
+def run( ctx, logFile="impactx.log" ):
     """Run the ImpactX simulation."""
     cwd = os.getcwd()
     cmd = "python main_impactx.py"
@@ -53,9 +53,9 @@ def post( ctx ):
 
 
 # ========================================================= #
-# ===  all = clean + impactx + post                      === #
+# ===  all = clean + run + post                         === #
 # ========================================================= #
-@invoke.task(pre=[clean, impactx, post])
+@invoke.task(pre=[clean, run, post])
 def all(ctx):
     """Run all steps: clean, impact, post."""
     pass
