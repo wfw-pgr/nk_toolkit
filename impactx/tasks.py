@@ -6,13 +6,15 @@ import invoke
 # ===  execute impactx                                  === #
 # ========================================================= #
 @invoke.task
-def impactx( ctx ):
+def impactx( ctx, logFile="impactx.log" ):
     """Run the ImpactX simulation."""
     cwd = os.getcwd()
     try:
         os.chdir( "impactx/" )
-        import main_impactx
-        main_impactx.main_impactx()
+        cmd = "python main_impactx.py"
+        with open( logFile, "w" ) as log:
+            subprocess.run( cmd.split(), check=True, \
+                            stdout=log, stderr=subprocess.STDOUT ) 
     finally:
         os.chdir( cwd )
 

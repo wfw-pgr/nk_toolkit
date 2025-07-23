@@ -100,7 +100,7 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
     base_f    = "{0:<8} = impactx.elements."
     drift_f   = base_f + 'ExactDrift( name="{0}", ds={1:.8}, nslice={2} )\n'
     quadr_f   = base_f + 'ExactQuad ( name="{0}", ds={1:.8}, k={2:.8}, nslice={3} )\n'
-    rfcav_f   = base_f + 'rfcavity  ( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficeints={6}, nslice={7} )\n'
+    rfcav_f   = base_f + 'RFCavity  ( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficients={6}, nslice={7} )\n'
     
     for ik,elem in enumerate(seq):
         
