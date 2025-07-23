@@ -13,9 +13,9 @@ def impactx( ctx, logFile="impactx.log" ):
     try:
         os.chdir( "impactx/" )
         with open("impactx.log", "w") as log:
-            process = subprocess.Popen( stdout=subprocess.PIPE, \
-                                        stderr=subprocess.STDOUT, \
-                                        text=True, bufsize=1 )
+            process = subprocess.Popen( cmd.split(), \
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, \
+                text=True, bufsize=1 )
             for line in process.stdout:
                 print( line, end="" )  # terminal stdout
                 log.write( line )      # save in log file
