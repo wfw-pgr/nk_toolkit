@@ -9,12 +9,17 @@ import importlib.util
 def impactx( ctx, logFile="impactx.log" ):
     """Run the ImpactX simulation."""
     cwd = os.getcwd()
+    cmd = "python main_impactx.py"
     try:
         os.chdir( "impactx/" )
-        spec = importlib.util.spec_from_file_location( "main_impactx", "impactx/main_impactx.py" )
-        mod  = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module( mod )
-        mod.main_impactx()
+        with open("impactx.log", "w") as log:
+            process = subprocess.Popen( stdout=subprocess.PIPE, \
+                                        stderr=subprocess.STDOUT, \
+                                        text=True, bufsize=1 )
+            for line in process.stdout:
+                print( line, end="" )  # terminal stdout
+                log.write( line )      # save in log file
+        process.wait()
     finally:
         os.chdir( cwd )
 
