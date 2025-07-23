@@ -1,0 +1,24 @@
+{
+
+    // ---------------------------- //
+    // --- [1] consntans        --- //
+    // ---------------------------- //
+    "beam.freq"              : 36.5 ,       // [MHz]
+    "beam.mass"              : 1876.0289,   // E0 : rest mass energy [MeV]   = 2.014 * 931.494
+    "rf.harmonics"           : 4    ,       // int   rf.freq = h * beam.freq
+
+    // ---------------------------- //
+    // --- [2] translate        --- //
+    // ---------------------------- //
+    "translate.rf.thickness" : 0.02 ,
+    "translate.rf.Nz"        : 21   ,
+    "translate.rf.Nr"        : 21   ,
+    "translate.nslice"       : 2    , 
+    
+    // ---------------------------- //
+    // --- [3] file             --- //
+    // ---------------------------- //
+    "file.sclinac"           : "track/sclinac.dat" , 
+    "file.sequence"          : "impactx/lattice_elements.py", 
+    
+}
