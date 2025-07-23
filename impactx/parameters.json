@@ -11,9 +11,8 @@
     // --- [2] translate        --- //
     // ---------------------------- //
     "translate.rf.thickness" : 0.02 ,
-    "translate.rf.Nz"        : 21   ,
-    "translate.rf.Nr"        : 21   ,
-    "translate.nslice"       : 2    , 
+    "translate.nslice"       : 25   ,
+    "translate.add_monitor"  : true , 
     
     // ---------------------------- //
     // --- [3] file             --- //

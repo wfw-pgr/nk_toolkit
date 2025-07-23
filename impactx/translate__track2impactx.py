@@ -101,6 +101,8 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
     drift_f   = base_f + 'ExactDrift( name="{0}", ds={1:.8}, nslice={2} )\n'
     quadr_f   = base_f + 'ExactQuad ( name="{0}", ds={1:.8}, k={2:.8}, nslice={3} )\n'
     rfcav_f   = base_f + 'RFCavity  ( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficients={6}, nslice={7} )\n'
+    if ( params["translate.add_monitor"] ):
+        contents  += ( base_f + 'BeamMonitor( {0}, backend="h5")\n' ).format( "bpm" )
     
     for ik,elem in enumerate(seq):
         
@@ -121,9 +123,24 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
             print( "[translate__track2impactx.py] unknown keywords :: {} ".format( elem["type"] ) )
             sys.exit()
 
-    elements  = [ elem["tag"] for elem in seq ]
+    # ------------------------------------------------- #
+    # --- [5] beam line definition                  --- #
+    # ------------------------------------------------- #
+    if ( params["translate.add_monitor"] ):
+        elements = ["bpm"]
+        for elem in seq:
+            if ( elem["type"].lower() in [ "quadrupole", "rfcavity" ] ):
+                elements += [ elem["tag"], "bpm" ]
+            else:
+                elements += [ elem["tag"] ]
+    else:
+        elements = [ elem["tag"] for elem in seq ]
+        
     contents += "beamline = [ " + ",".join( elements ) + " ]\n"
-            
+
+    # ------------------------------------------------- #
+    # --- [6] write in a file                       --- #
+    # ------------------------------------------------- #
     with open( params["file.sequence"], "w" ) as f:
         f.write( contents )
     return()
