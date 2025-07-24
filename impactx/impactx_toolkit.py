@@ -270,6 +270,9 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
         df     = df[ np.isfinite(df["xp"]) & \
                      np.isfinite(df["yp"]) & \
                      np.isfinite(df["tp"]) ]
+        if ( df.shape[0] == 0 ):
+            print( "[impactx_toolkit.py] [WARNING] no appropriate point data :: ik={0}, step={1}".format( ik, step ) )
+            continue
         coords = df[ ["xp", "yp", "tp"] ].to_numpy()
         cloud  = pv.PolyData( coords )
         # -- momentum & pid -- #
