@@ -263,6 +263,7 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
     # --- [2] save as vtk poly data                 --- #
     # ------------------------------------------------- #
     steps = sorted( Data["step"].unique() )
+    print( "steps == ", steps )
 
     for ik,step in enumerate(steps):
         # -- points coordinate make -- #
