@@ -32,7 +32,7 @@ def run( ctx, logFile="impactx.log" ):
 def prepare( ctx ):
     """initialize and prepare the ImpactX simulation."""
     paramsFile = "dat/parameters.json"
-    ret        = t2i.translate__track2impactx( paramsFile=paramsFile ):
+    ret        = t2i.translate__track2impactx( paramsFile=paramsFile )
 
     
 # ========================================================= #
