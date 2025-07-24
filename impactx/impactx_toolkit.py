@@ -55,7 +55,8 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
         ret["step"] = pd.factorize( ret["step"] )[0] + 1
     if ( random_choice is not None ):
         npart = len( set( ret["pid"] ) )
-        if random_choice > npart:
+        print( npart )
+        if ( random_choice > npart ):
             raise ValueError( f"random_choice ({random_choice}) > number of particles ({npart})")
         pids  = np.random.choice( np.arange(1,npart+1), size=random_choice, replace=False )
     if ( pids  is not None ):
