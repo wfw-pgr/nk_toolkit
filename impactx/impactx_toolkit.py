@@ -267,10 +267,16 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
     for ik,step in enumerate(steps):
         # -- points coordinate make -- #
         df     = Data[ Data["step"] == step ]
+        df     = df[ np.isfinite(df["xp"]) & \
+                     np.isfinite(df["yp"]) & \
+                     np.isfinite(df["tp"]) ]
         coords = df[ ["xp", "yp", "tp"] ].to_numpy()
         cloud  = pv.PolyData( coords )
         # -- momentum & pid -- #
         cloud.point_data["pid"]      = df["pid"].to_numpy()
+        cloud.point_data["x"]        = df["xp" ].to_numpy()
+        cloud.point_data["y"]        = df["yp" ].to_numpy()
+        cloud.point_data["t"]        = df["tp" ].to_numpy()
         cloud.point_data["momentum"] = df[ ["px", "py", "pz"] ].to_numpy()
     
         # -- save file -- #
