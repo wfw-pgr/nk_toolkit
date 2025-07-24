@@ -263,7 +263,6 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
     # --- [2] save as vtk poly data                 --- #
     # ------------------------------------------------- #
     steps = sorted( Data["step"].unique() )
-    print( "steps == ", steps )
 
     for ik,step in enumerate(steps):
         # -- points coordinate make -- #
@@ -274,13 +273,15 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
         if ( df.shape[0] == 0 ):
             print( "[impactx_toolkit.py] [WARNING] no appropriate point data :: ik={0}, step={1}".format( ik, step ) )
             continue
-        coords = df[ ["xp", "yp", "tp"] ].to_numpy()
-        cloud  = pv.PolyData( coords )
+        df["dt"] = df["tp"] - df["tp"].mean()
+        coords   = df[ ["xp", "yp", "dt"] ].to_numpy()
+        cloud    = pv.PolyData( coords )
         # -- momentum & pid -- #
         cloud.point_data["pid"]      = df["pid"].to_numpy()
         cloud.point_data["x"]        = df["xp" ].to_numpy()
         cloud.point_data["y"]        = df["yp" ].to_numpy()
         cloud.point_data["t"]        = df["tp" ].to_numpy()
+        cloud.point_data["dt"]       = df["dt" ].to_numpy()
         cloud.point_data["momentum"] = df[ ["px", "py", "pz"] ].to_numpy()
     
         # -- save file -- #
