@@ -1,6 +1,7 @@
 import os, glob, subprocess
 import invoke
-import nk_toolkit.impactx.impactx_toolkit as itk
+import nk_toolkit.impactx.impactx_toolkit          as itk
+import nk_toolkit.impactx.translate__track2impactx as t2i
 
 # ========================================================= #
 # ===  execute impactx                                  === #
@@ -24,6 +25,16 @@ def run( ctx, logFile="impactx.log" ):
         os.chdir( cwd )
 
         
+# ========================================================= #
+# ===  initilize & prepare                              === #
+# ========================================================= #
+@invoke.task
+def prepare( ctx ):
+    """initialize and prepare the ImpactX simulation."""
+    paramsFile = "dat/parameters.json"
+    ret        = t2i.translate__track2impactx( paramsFile=paramsFile ):
+
+    
 # ========================================================= #
 # ===  clean output files                               === #
 # ========================================================= #
