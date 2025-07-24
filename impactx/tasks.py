@@ -58,10 +58,11 @@ def post( ctx ):
     # ------------------------------- #
     # --- [3] trajectory          --- #
     # ------------------------------- #
-    hdf5File = "impactx/diags/openPMD/bpm.h5"
-    refpFile  = "impactx/diags/ref_particle.0.0"
+    hdf5File      = "impactx/diags/openPMD/bpm.h5"
+    refpFile      = "impactx/diags/ref_particle.0.0"
+    random_choice = 300
     itk.plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, \
-                            random_choice=None )
+                            random_choice=random_choice )
 
     # ------------------------------- #
     # --- [4] convert to vtk      --- #
