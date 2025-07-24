@@ -43,10 +43,13 @@ def clean( ctx ):
     """Remove output files from previous runs."""
     patterns = [ "impactx/diags.old.*", "impactx/diags", "impactx/__pychache__" ]
     for pattern in patterns:
-        for file in glob.glob( pattern ):
-            print(f"Removing {file}")
-            os.remove(file)
-
+        for path in glob.glob( pattern ):
+            if os.path.isfile(path):
+                print( f"Removing file {path}" )
+                os.remove(path)
+            elif os.path.isdir(path):
+                print( f"Removing directory {path}" )
+                shutil.rmtree(path)
             
 # ========================================================= #
 # ===  post analysis                                    === #
