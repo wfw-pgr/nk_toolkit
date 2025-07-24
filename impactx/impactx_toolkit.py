@@ -239,6 +239,48 @@ def plot__statistics( inpFile=None, pngDir="png/"  ):
     fig.save__figure()
 
 
+# ========================================================= #
+# ===  convert__hdf2vtk.py                              === #
+# ========================================================= #
+
+def convert__hdf2vtk( hdf5File=None, outFile=None, \
+                      pids=None, steps=None, random_choice=None ):
+
+    # ------------------------------------------------- #
+    # --- [1] arguments check                       --- #
+    # ------------------------------------------------- #
+    if ( os.path.exists( hdf5File ) ):
+        Data = load__impactHDF5( inpFile=hdf5File, random_choice=random_choice, \
+                                 pids=pids, steps=steps )
+    else:
+        raise FileNotFoundError( f"[ERROR] HDF5 File not Found :: {hdf5File}" )
+    if ( outFile is None ):
+        raise TypeError( f"[ERROR] outFile == {outFile} ???" )
+    else:
+        ext = os.path.splitext( outFile )[1]
+
+    # ------------------------------------------------- #
+    # --- [2] save as vtk poly data                 --- #
+    # ------------------------------------------------- #
+    steps = sorted( Data["step"].unique() )
+
+    for ik,step in enumerate(steps):
+        # -- points coordinate make -- #
+        df     = Data[ Data["step"] == step ]
+        coords = df[ ["xp", "yp", "tp"] ].to_numpy()
+        cloud  = pv.PolyData( coords )
+        # -- momentum & pid -- #
+        cloud.point_data["pid"]      = df["pid"].to_numpy()
+        cloud.point_data["momentum"] = df[ ["px", "py", "pz"] ].to_numpy()
+    
+        # -- save file -- #
+        houtFile = outFile.replace( ext, "-{0:06}".format(ik+1) + ext )
+        cloud.save( houtFile )
+        print( "[convert__hdf2vtk.py] outFile :: {} ".format( houtFile ) )
+    return()
+        
+
+
 
 # ========================================================= #
 # ===   Execution of Pragram                            === #
@@ -264,4 +306,11 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     inpFile = "test/reduced_beam_characteristics.0.0"
     plot__statistics( inpFile=inpFile )
+
+    # ------------------------------------------------- #
+    # --- [4] convert to paraview vtk               --- #
+    # ------------------------------------------------- #
+    hdf5File = "test/bpm.h5"
+    outFile  = "png/bpm.vtp"
+    ret      = convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
 
