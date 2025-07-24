@@ -41,7 +41,7 @@ def prepare( ctx ):
 @invoke.task
 def clean( ctx ):
     """Remove output files from previous runs."""
-    patterns = [ "impactx/diags.old.*", "impactx/diags", "impactx/__pychache__" ]
+    patterns = [ "impactx/diags.old.*", "impactx/diags", "impactx/__pycache__" ]
     for pattern in patterns:
         for path in glob.glob( pattern ):
             if os.path.isfile(path):
