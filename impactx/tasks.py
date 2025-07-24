@@ -1,6 +1,6 @@
 import os, glob, subprocess
 import invoke
-import importlib.util
+import nk_toolkit.impactx.impactx_toolkit as itk
 
 # ========================================================= #
 # ===  execute impactx                                  === #
