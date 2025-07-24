@@ -33,6 +33,7 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
     stack = {}
     with h5py.File( inpFile, "r" ) as f:
         steps = sorted( [ int( key ) for key in f["data"].keys() ] )
+        print( steps )
         for step in steps:
             key, df    = str(step), {}
             df["pid"]  = f["data"][key]["particles"]["beam"]["id"][:]
@@ -305,6 +306,7 @@ if ( __name__=="__main__" ):
     inpFile = "test/bpm.h5"
     Data    = load__impactHDF5( inpFile=inpFile )
     print( Data )
+    sys.exit()
 
     # ------------------------------------------------- #
     # --- [2] plot reference particle               --- #
