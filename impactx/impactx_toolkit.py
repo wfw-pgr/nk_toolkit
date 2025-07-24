@@ -1,8 +1,9 @@
-import os, sys
+import os, sys, tqdm
 import h5py
 import numpy   as np
 import pandas  as pd
 import pyvista as pv
+import matplotlib.pyplot as plt
 import nk_toolkit.plot.load__config as lcf
 import nk_toolkit.plot.gplot1D      as gp1
 
@@ -14,6 +15,7 @@ import nk_toolkit.plot.gplot1D      as gp1
 #  * load__impactHDF5
 #  * plot__refparticle
 #  * plot__statistics
+#  * plot__trajectory
 #  * convert__hdf2vtk
 #
 # 
@@ -240,6 +242,61 @@ def plot__statistics( inpFile=None, pngDir="png/"  ):
 
 
 # ========================================================= #
+# ===  plot__trajectories.py                            === #
+# ========================================================= #
+
+def plot__trajectories( hdf5File=None, refpFile=None, pids=None, random_choice=None, \
+                        cmap="plasma", nColors=128, pngDir="png/" ):
+
+    ylabels  = { "xp":r"$x$ [mm]"  , "yp":r"$y$ [mm]"  , "tp":r"$t$ [mm]", \
+                 "px":r"$p_x$ [mm]", "py":r"$p_y$ [mm]", "pz":r"$p_z$ [mm]" }
+    
+    # ------------------------------------------------- #
+    # --- [1] load HDF5 file                        --- #
+    # ------------------------------------------------- #
+    pinfo    = load__impactHDF5( inpFile=hdf5File, \
+                                 pids=pids, random_choice=random_choice )
+    rinfo    = pd.read_csv( refpFile, sep=r"\s+"  )
+    ref_s    = rinfo["s"]
+    colors   = plt.get_cmap( cmap, nColors )
+    if ( pids is None ):
+        pids = np.array( pinfo["pid"].unique(), dtype=np.int64 )
+    
+    # ------------------------------------------------- #
+    # --- [2] configuration                         --- #
+    # ------------------------------------------------- #
+    config   = lcf.load__config()
+    config_  = {
+        "figure.size"        : [10.5,3.5],
+        "figure.position"    : [ 0.10, 0.12, 0.97, 0.95 ],
+        "ax1.x.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":11 },
+        "ax1.y.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":11 },
+        "ax1.x.label"        : "s [m]",
+        "plot.marker"        : "none",
+        "plot.linestyle"     : "-", 
+        "plot.markersize"    : 0.2,
+    }
+    config   = { **config, **config_ }
+    pngFile  = os.path.join( pngDir, "traj__s-{}.png" )
+
+    # ------------------------------------------------- #
+    # --- [3] plot                                  --- #
+    # ------------------------------------------------- #
+    for obj in [ "xp","yp","tp","px","py","pz" ]:
+        fig = gp1.gplot1D( config=config, pngFile=pngFile.format( obj ) )
+        config["ax1.y.label"] = ylabels[obj]
+        for ik,pid in enumerate(tqdm.tqdm(pids)):
+            traj = ( pinfo[ pinfo["pid"] == pid ] )[obj].values
+            if ( len(traj) == 0 ): continue
+            xAxis  = ref_s[:(len(traj))]
+            hcolor = colors( ik%nColors )
+            fig.add__plot( xAxis=xAxis, yAxis=traj, color=hcolor )
+        fig.set__axis()
+        fig.save__figure()
+    return()
+
+
+# ========================================================= #
 # ===  convert__hdf2vtk.py                              === #
 # ========================================================= #
 
@@ -305,7 +362,6 @@ if ( __name__=="__main__" ):
     inpFile = "test/bpm.h5"
     Data    = load__impactHDF5( inpFile=inpFile )
     print( Data )
-    sys.exit()
 
     # ------------------------------------------------- #
     # --- [2] plot reference particle               --- #
@@ -320,8 +376,18 @@ if ( __name__=="__main__" ):
     plot__statistics( inpFile=inpFile )
 
     # ------------------------------------------------- #
-    # --- [4] convert to paraview vtk               --- #
+    # --- [4] plot trajectories                     --- #
+    # ------------------------------------------------- #
+    hdf5File = "test/bpm.h5"
+    refpFile = "test/ref_particle.0.0"
+    plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, random_choice=100 )
+    
+    # ------------------------------------------------- #
+    # --- [5] convert to paraview vtk               --- #
     # ------------------------------------------------- #
     hdf5File = "test/bpm.h5"
     outFile  = "png/bpm.vtp"
     ret      = convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
+
+
+    

@@ -56,7 +56,13 @@ def post( ctx ):
     itk.plot__statistics( inpFile=inpFile )
 
     # ------------------------------- #
-    # --- [3] convert to vtk      --- #
+    # --- [3] statistics          --- #
+    # ------------------------------- #
+    hdf5File = "impactx/diags/openPMD/bpm.h5"
+    itk.plot__statistics( inpFile=inpFile )
+
+    # ------------------------------- #
+    # --- [4] convert to vtk      --- #
     # ------------------------------- #
     hdf5File = "impactx/diags/openPMD/bpm.h5"
     outFile  = "png/bpm.vtp"
