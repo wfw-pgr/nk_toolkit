@@ -193,7 +193,7 @@ class gplot1D:
                            self.config["ax1.x.range"]["max"] )
         self.ax1.set_ylim( self.config["ax1.y.range"]["min"],
                            self.config["ax1.y.range"]["max"] )
-        
+
         # ------------------------------------------------- #
         # --- 軸タイトル 設定                           --- #
         # ------------------------------------------------- #
@@ -414,23 +414,38 @@ class gplot1D:
     # === データレンジ更新 for 複数プロット自動範囲用 === #
     # =================================================== #
     def update__DataRange( self, xAxis=None, yAxis=None, ax2=False ):
+        
         # ------------------------------------------------- #
         # --- 引数チェック                              --- #
         # ------------------------------------------------- #
         if ( ( xAxis is None ) or ( yAxis is None ) ):
             sys.exit(  "[ERROR] [@update__DataRange] xAxis or yAxis is None [ERROR]" )
 
+        # ------------------------------------------------- #
+        # --- NaN 除去                                  --- #
+        # ------------------------------------------------- #
+        mask   = np.isfinite( xAxis ) & np.isfinite( yAxis )
+        xAxis_ = xAxis[mask]
+        yAxis_ = yAxis[mask]
+
+        if ( xAxis_.size == 0 ) or ( yAxis_.size == 0 ):
+            print("[WARNING] [@update__DataRange] All data is NaN. Skipping range update.")
+            return
+
+        # ------------------------------------------------- #
+        # --- ax2 case                                  --- #
+        # ------------------------------------------------- #
         if ( ax2 ):
             if ( self.DataRange_ax2 is None ):
                 # -- DataRange_ax2 未定義のとき -- #
-                self.DataRange_ax2    = np.array( [ np.min( xAxis ), np.max( xAxis ),
-                                                    np.min( yAxis ), np.max( yAxis ) ] )
+                self.DataRange_ax2    = np.array( [ np.min( xAxis_ ), np.max( xAxis_ ),
+                                                    np.min( yAxis_ ), np.max( yAxis_ ) ] )
             else:
                 # -- DataRange_ax2 を更新する -- #
-                self.DataRange_ax2 = np.array( [ min( self.DataRange_ax2[0], np.min( xAxis ) ), \
-                                                 max( self.DataRange_ax2[1], np.max( xAxis ) ), \
-                                                 min( self.DataRange_ax2[2], np.min( yAxis ) ), \
-                                                 max( self.DataRange_ax2[3], np.max( yAxis ) ), ] )
+                self.DataRange_ax2 = np.array( [ min( self.DataRange_ax2[0], np.min( xAxis_ ) ), \
+                                                 max( self.DataRange_ax2[1], np.max( xAxis_ ) ), \
+                                                 min( self.DataRange_ax2[2], np.min( yAxis_ ) ), \
+                                                 max( self.DataRange_ax2[3], np.max( yAxis_ ) ), ] )
             return()
         # ------------------------------------------------- #
         # --- update DataRange for ax1                  --- #
@@ -438,16 +453,16 @@ class gplot1D:
         if ( self.DataRange is None ):
             # -- DataRange 未定義のとき -- #
             self.DataRange    = np.zeros( (4,) )
-            self.DataRange[0] = np.min( xAxis )
-            self.DataRange[1] = np.max( xAxis )
-            self.DataRange[2] = np.min( yAxis )
-            self.DataRange[3] = np.max( yAxis )
+            self.DataRange[0] = np.min( xAxis_ )
+            self.DataRange[1] = np.max( xAxis_ )
+            self.DataRange[2] = np.min( yAxis_ )
+            self.DataRange[3] = np.max( yAxis_ )
         else:
             # -- DataRange を更新する -- #
-            if( self.DataRange[0] > np.min( xAxis ) ): self.DataRange[0] = np.min( xAxis )
-            if( self.DataRange[1] < np.max( xAxis ) ): self.DataRange[1] = np.max( xAxis )
-            if( self.DataRange[2] > np.min( yAxis ) ): self.DataRange[2] = np.min( yAxis )
-            if( self.DataRange[3] < np.max( yAxis ) ): self.DataRange[3] = np.max( yAxis )
+            if( self.DataRange[0] > np.min( xAxis_ ) ): self.DataRange[0] = np.min( xAxis_ )
+            if( self.DataRange[1] < np.max( xAxis_ ) ): self.DataRange[1] = np.max( xAxis_ )
+            if( self.DataRange[2] > np.min( yAxis_ ) ): self.DataRange[2] = np.min( yAxis_ )
+            if( self.DataRange[3] < np.max( yAxis_ ) ): self.DataRange[3] = np.max( yAxis_ )
 
         
     # ========================================================= #
