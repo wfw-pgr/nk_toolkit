@@ -30,11 +30,10 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
     # ------------------------------------------------- #
     # --- [1] load HDF5 file                        --- #
     # ------------------------------------------------- #
-    stack = {}
+    stack = []
     with h5py.File( inpFile, "r" ) as f:
-        steps = sorted( [ int( key ) for key in f["data"].keys() ] )
-        print( steps )
-        for step in steps:
+        isteps = sorted( [ int( key ) for key in f["data"].keys() ] )
+        for step in isteps:
             key, df    = str(step), {}
             df["pid"]  = f["data"][key]["particles"]["beam"]["id"][:]
             df["xp"]   = f["data"][key]["particles"]["beam"]["position"]["x"][:]
@@ -44,7 +43,7 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
             df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
             df["pz"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
             df["step"] = np.full( df["pid"].shape, step, dtype=int )
-            stack[key] = pd.DataFrame( df )
+            stack     += [ pd.DataFrame( df ) ]
     ret = pd.concat( stack, ignore_index=True )
     
     # ------------------------------------------------- #
@@ -56,7 +55,6 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
         ret["step"] = pd.factorize( ret["step"] )[0] + 1
     if ( random_choice is not None ):
         npart = len( set( ret["pid"] ) )
-        print( npart )
         if ( random_choice > npart ):
             raise ValueError( f"random_choice ({random_choice}) > number of particles ({npart})")
         pids  = np.random.choice( np.arange(1,npart+1), size=random_choice, replace=False )
