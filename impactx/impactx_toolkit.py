@@ -313,4 +313,3 @@ if ( __name__=="__main__" ):
     hdf5File = "test/bpm.h5"
     outFile  = "png/bpm.vtp"
     ret      = convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
-

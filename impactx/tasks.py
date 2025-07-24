@@ -30,7 +30,7 @@ def run( ctx, logFile="impactx.log" ):
 @invoke.task
 def clean( ctx ):
     """Remove output files from previous runs."""
-    patterns = [ "impactx/*.h5", "impactx/*.bp" ]
+    patterns = [ "impactx/diags.old.*", "impactx/diags", "impactx/__pychache__" ]
     for pattern in patterns:
         for file in glob.glob( pattern ):
             print(f"Removing {file}")
@@ -43,13 +43,25 @@ def clean( ctx ):
 @invoke.task
 def post( ctx ):
     """Run post-analysis script."""
-    cwd = os.getcwd()
-    try:
-        os.chdir( "impactx/" )
-        import post_analysis
-        post_analysis.post_analysis()
-    finally:
-        os.chdir( cwd )
+    # ------------------------------- #
+    # --- [1] reference particle  --- #
+    # ------------------------------- #
+    inpFile  = "impactx/diag/ref_particle.0.0"
+    itk.plot__refparticle( inpFile=inpFile )
+
+    # ------------------------------- #
+    # --- [2] statistics          --- #
+    # ------------------------------- #
+    inpFile  = "impactx/diag/reduced_beam_characteristics.0.0"
+    itk.plot__refparticle( inpFile=inpFile )
+
+    # ------------------------------- #
+    # --- [3] convert to vtk      --- #
+    # ------------------------------- #
+    hdf5File = "impactx/diag/openPMD/bpm.h5"
+    outFile  = "png/bpm.vtp"
+    itk.convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
+    return()
 
 
 # ========================================================= #
