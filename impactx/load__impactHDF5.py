@@ -39,5 +39,6 @@ def load__impactHDF5( inpFile=None, ):
 # ========================================================= #
 
 if ( __name__=="__main__" ):
-    inpFile = "impactx/diags/openPMD/bmp.h5"
-    load__impactHDF5( inpFile=inpFile )
+    inpFile = "impactx/diags/openPMD/bpm.h5"
+    Data    = load__impactHDF5( inpFile=inpFile )
+    print( Data )
