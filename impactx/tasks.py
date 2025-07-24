@@ -46,20 +46,22 @@ def post( ctx ):
     # ------------------------------- #
     # --- [1] reference particle  --- #
     # ------------------------------- #
-    inpFile  = "impactx/diags/ref_particle.0.0"
-    itk.plot__refparticle( inpFile=inpFile )
+    refpFile  = "impactx/diags/ref_particle.0.0"
+    itk.plot__refparticle( inpFile=refpFile )
 
     # ------------------------------- #
     # --- [2] statistics          --- #
     # ------------------------------- #
-    inpFile  = "impactx/diags/reduced_beam_characteristics.0.0"
-    itk.plot__statistics( inpFile=inpFile )
+    statFile  = "impactx/diags/reduced_beam_characteristics.0.0"
+    itk.plot__statistics( inpFile=statFile )
 
     # ------------------------------- #
-    # --- [3] statistics          --- #
+    # --- [3] trajectory          --- #
     # ------------------------------- #
     hdf5File = "impactx/diags/openPMD/bpm.h5"
-    itk.plot__statistics( inpFile=inpFile )
+    refpFile  = "impactx/diags/ref_particle.0.0"
+    itk.plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, \
+                            random_choice=None )
 
     # ------------------------------- #
     # --- [4] convert to vtk      --- #
