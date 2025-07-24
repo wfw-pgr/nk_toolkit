@@ -53,7 +53,7 @@ def post( ctx ):
     # --- [2] statistics          --- #
     # ------------------------------- #
     inpFile  = "impactx/diags/reduced_beam_characteristics.0.0"
-    itk.plot__refparticle( inpFile=inpFile )
+    itk.plot__statistics( inpFile=inpFile )
 
     # ------------------------------- #
     # --- [3] convert to vtk      --- #
