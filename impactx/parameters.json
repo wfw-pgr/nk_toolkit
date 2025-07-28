@@ -12,7 +12,19 @@
     // ---------------------------- //
     "translate.rf.thickness" : 0.02 ,
     "translate.nslice"       : 25   ,
-    "translate.add_monitor"  : true , 
+    "translate.add_monitor"  : true ,
+    "translate.nonlinear"    : true ,
+
+    "plot.conf.refp"         : {
+        "ax1.x.range": { "auto":false, "min": 0.0, "max":30.0, "num":6 }
+    },
+    "plot.conf.stat"         : {
+        "ax1.x.range": { "auto":false, "min": 0.0, "max":30.0, "num":6 }
+    },
+    "plot.conf.traj"         : {
+        "ax1.x.range": { "auto":false, "min": 0.0, "max":30.0, "num":6 }
+    },
+    
     
     // ---------------------------- //
     // --- [3] file             --- //

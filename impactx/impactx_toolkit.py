@@ -71,7 +71,7 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
 # ========================================================= #
 # ===  plot__refparticle.py                             === #
 # ========================================================= #
-def plot__refparticle( inpFile=None, pngDir="png/" ):
+def plot__refparticle( inpFile=None, pngDir="png/", plot_conf=None  ):
 
     ylabels  = { "beta"       : r"$\beta$"        ,
                  "gamma"      : r"$\gamma$"       ,
@@ -97,8 +97,8 @@ def plot__refparticle( inpFile=None, pngDir="png/" ):
     # ------------------------------------------------- #
     # --- [2] plot config                           --- #
     # ------------------------------------------------- #
-    config   = lcf.load__config()
-    config_  = {
+    config  = lcf.load__config()
+    config_ = {
         "figure.size"        : [10.5,3.5],
         "figure.position"    : [ 0.10, 0.15, 0.97, 0.93 ],
         "ax1.x.range"        : { "auto":True, "min": 0.0, "max":1.0, "num":11 },
@@ -110,6 +110,8 @@ def plot__refparticle( inpFile=None, pngDir="png/" ):
         "legend.fontsize"    : 8.0, 
     }
     config = { **config, **config_ }
+    if ( plot_conf is not None ):
+        config = { **config, **plot_conf }        
 
     # ------------------------------------------------- #
     # --- [3] xyt range ( mean, min, max ) graph    --- #
@@ -129,7 +131,7 @@ def plot__refparticle( inpFile=None, pngDir="png/" ):
 # ========================================================= #
 # ===  plot__statistics.py                              === #
 # ========================================================= #
-def plot__statistics( inpFile=None, pngDir="png/"  ):
+def plot__statistics( inpFile=None, pngDir="png/", plot_conf=None  ):
 
     ylabels_ = { "x-range"        : "x [m]"                 ,
                  "y-range"        : "y [m]"                 ,
@@ -173,6 +175,9 @@ def plot__statistics( inpFile=None, pngDir="png/"  ):
         "legend.fontsize"    : 8.0, 
     }
     config = { **config, **config_ }
+    if ( plot_conf is not None ):
+        config = { **config, **plot_conf }        
+
 
     # ------------------------------------------------- #
     # --- [3] xyt range ( mean, min, max ) graph    --- #
@@ -246,7 +251,7 @@ def plot__statistics( inpFile=None, pngDir="png/"  ):
 # ========================================================= #
 
 def plot__trajectories( hdf5File=None, refpFile=None, pids=None, random_choice=None, \
-                        cmap="plasma", nColors=128, pngDir="png/" ):
+                        cmap="plasma", nColors=128, pngDir="png/", plot_conf=None ):
 
     ylabels  = { "xp":r"$x$ [mm]"  , "yp":r"$y$ [mm]"  , "tp":r"$t$ [mm]", \
                  "px":r"$p_x$ [mm]", "py":r"$p_y$ [mm]", "pz":r"$p_z$ [mm]" }
@@ -277,6 +282,9 @@ def plot__trajectories( hdf5File=None, refpFile=None, pids=None, random_choice=N
         "plot.markersize"    : 0.2,
     }
     config   = { **config, **config_ }
+    if ( plot_conf is not None ):
+        config = { **config, **plot_conf }        
+
     pngFile  = os.path.join( pngDir, "traj__s-{}.png" )
 
     # ------------------------------------------------- #

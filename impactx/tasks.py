@@ -1,4 +1,4 @@
-import os, glob, subprocess, shutil
+import os, glob, subprocess, shutil, json5
 import invoke
 import nk_toolkit.impactx.impactx_toolkit          as itk
 import nk_toolkit.impactx.translate__track2impactx as t2i
@@ -41,7 +41,8 @@ def prepare( ctx ):
 @invoke.task
 def clean( ctx ):
     """Remove output files from previous runs."""
-    patterns = [ "impactx/diags.old.*", "impactx/diags", "impactx/__pycache__" ]
+    patterns = [ "impactx/diags.old.*", "impactx/diags", "impactx/__pycache__",\
+                 "png/*.png" ]
     for pattern in patterns:
         for path in glob.glob( pattern ):
             if os.path.isfile(path):
@@ -55,19 +56,29 @@ def clean( ctx ):
 # ===  post analysis                                    === #
 # ========================================================= #
 @invoke.task
-def post( ctx ):
+def post( ctx, paramsFile="dat/parameters.json" ):
     """Run post-analysis script."""
+
+    if ( paramsFile is not None ):
+        with open( inpFile, "r" ) as f:
+            params = json5.load( f )
+    else:
+        params = { "plot.conf.refp":None, \
+                   "plot.conf.stat":None, \
+                   "plot.conf.traj":None  }
+        
     # ------------------------------- #
     # --- [1] reference particle  --- #
     # ------------------------------- #
+        
     refpFile  = "impactx/diags/ref_particle.0.0"
-    itk.plot__refparticle( inpFile=refpFile )
+    itk.plot__refparticle( inpFile=refpFile, plot_conf=params["plot.conf.refp"] )
 
     # ------------------------------- #
     # --- [2] statistics          --- #
     # ------------------------------- #
     statFile  = "impactx/diags/reduced_beam_characteristics.0.0"
-    itk.plot__statistics( inpFile=statFile )
+    itk.plot__statistics( inpFile=statFile, plot_conf=params["plot.stat.refp"]  )
 
     # ------------------------------- #
     # --- [3] trajectory          --- #
@@ -76,7 +87,7 @@ def post( ctx ):
     refpFile      = "impactx/diags/ref_particle.0.0"
     random_choice = 300
     itk.plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, \
-                            random_choice=random_choice )
+                            random_choice=random_choice, plot_conf=params["plot.conf.traj"] )
 
     # ------------------------------- #
     # --- [4] convert to vtk      --- #
