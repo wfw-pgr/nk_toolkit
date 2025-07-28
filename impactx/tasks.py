@@ -78,7 +78,7 @@ def post( ctx, paramsFile="dat/parameters.json" ):
     # --- [2] statistics          --- #
     # ------------------------------- #
     statFile  = "impactx/diags/reduced_beam_characteristics.0.0"
-    itk.plot__statistics( inpFile=statFile, plot_conf=params["plot.stat.refp"]  )
+    itk.plot__statistics( inpFile=statFile, plot_conf=params["plot.conf.stat"]  )
 
     # ------------------------------- #
     # --- [3] trajectory          --- #
