@@ -425,8 +425,8 @@ class gplot1D:
         # --- NaN 除去                                  --- #
         # ------------------------------------------------- #
         mask   = np.isfinite( xAxis ) & np.isfinite( yAxis )
-        xAxis_ = xAxis[mask]
-        yAxis_ = yAxis[mask]
+        xAxis_ = xAxis[mask].astype( np.float64 )
+        yAxis_ = yAxis[mask].astype( np.float64 )
 
         if ( xAxis_.size == 0 ) or ( yAxis_.size == 0 ):
             print("[WARNING] [@update__DataRange] All data is NaN. Skipping range update.")
