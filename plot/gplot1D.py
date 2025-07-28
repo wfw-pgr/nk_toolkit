@@ -189,10 +189,10 @@ class gplot1D:
         if ( yRange is not None ):
             self.config["ax1.y.range"]["min"] = yRange[0]
             self.config["ax1.y.range"]["max"] = yRange[1]
-        self.ax1.set_xlim( self.config["ax1.x.range"]["min"],
-                           self.config["ax1.x.range"]["max"] )
-        self.ax1.set_ylim( self.config["ax1.y.range"]["min"],
-                           self.config["ax1.y.range"]["max"] )
+        self.ax1.set_xlim( float( self.config["ax1.x.range"]["min"] ),
+                           float( self.config["ax1.x.range"]["max"] ) )
+        self.ax1.set_ylim( float( self.config["ax1.y.range"]["min"] ),
+                           float( self.config["ax1.y.range"]["max"] ) )
 
         # ------------------------------------------------- #
         # --- 軸タイトル 設定                           --- #
@@ -227,8 +227,8 @@ class gplot1D:
         # --- 軸範囲 直接設定  ( 優先順位 1 )           --- #
         # ------------------------------------------------- #
         if ( yRange is not None ): self.config["ax2.y.range"] = yRange
-        self.ax2.set_ylim( self.config["ax2.y.range"]["min"], \
-                           self.config["ax2.y.range"]["max"], )
+        self.ax2.set_ylim( float( self.config["ax2.y.range"]["min"] ), \
+                           float( self.config["ax2.y.range"]["max"] ), )
         
         # ------------------------------------------------- #
         # --- 軸タイトル 設定                           --- #
