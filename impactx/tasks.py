@@ -60,7 +60,7 @@ def post( ctx, paramsFile="dat/parameters.json" ):
     """Run post-analysis script."""
 
     if ( paramsFile is not None ):
-        with open( inpFile, "r" ) as f:
+        with open( paramsFile, "r" ) as f:
             params = json5.load( f )
     else:
         params = { "plot.conf.refp":None, \
