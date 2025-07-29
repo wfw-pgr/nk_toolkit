@@ -14,6 +14,11 @@
     "translate.nslice"       : 25   ,
     "translate.add_monitor"  : true ,
     "translate.nonlinear"    : true ,
+    "translate.aperture"     : null ,
+    "translate.trackmode"    : "nonlinear",
+    "translate.skip.rf"      : true , 
+    "translate.skip.dr"      : false, 
+    "translate.skip.qm"      : false, 
 
     "plot.conf.refp"         : {
         "ax1.x.range": { "auto":false, "min": 0.0, "max":30.0, "num":6 }

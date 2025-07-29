@@ -36,13 +36,16 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
             counts["N"]   += 1
             
             if   ( words[1].lower()  == "quad" ):
-                seq += convert_to_quad ( words, counts, params )
+                if not( params["translate.skip.qm"] ):
+                    seq += convert_to_quad ( words, counts, params )
 
             elif ( words[1].lower()  == "drift" ):
-                seq += convert_to_drift( words, counts, params )
+                if not( params["translate.skip.dr"] ):
+                    seq += convert_to_drift( words, counts, params )
                 
             elif ( words[1].lower()  == "rfgap" ):
-                seq += convert_to_rfcavity( words, counts, params )
+                if not( params["translate.skip.rf"] ):
+                    seq += convert_to_rfcavity( words, counts, params )
             
             else:
                 sys.exit( "[ERROR] undefined keyword :: {} ".format( words[1] ) )
