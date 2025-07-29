@@ -30,7 +30,7 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
     seq    = []
     counts = { "at":0.0, "N":0, "Nqm":0, "Nrf":0, "Ndr":0, }
     for ik,line in enumerate(lines):
-        line_ = re.sub( r"#.*", "", line )
+        line_ = re.sub( r"#.*", "", line ).strip()
         words = ( line_.split() )
         if ( not( len( words ) == 0 ) ):
             counts["N"]   += 1
