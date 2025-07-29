@@ -30,7 +30,8 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
     seq    = []
     counts = { "at":0.0, "N":0, "Nqm":0, "Nrf":0, "Ndr":0, }
     for ik,line in enumerate(lines):
-        words = ( line.split() )
+        line_ = re.sub( r"#.*", "", line )
+        words = ( line_.split() )
         if ( not( len( words ) == 0 ) ):
             counts["N"]   += 1
             
@@ -96,26 +97,33 @@ def translate__track2impactx( paramsFile="dat/parameters.json" ):
     # --- [4] convert into mad-x sequence           --- #
     # ------------------------------------------------- #
     contents  = "import impactx" + "\n\n"
+    contents += "ns = {}\n".format( params["translate.nslice"] )
     base_f    = "{0:<8} = impactx.elements."
-    drift_f   = base_f + 'ExactDrift( name="{0}", ds={1:.8}, nslice={2} )\n'
-    quadr_f   = base_f + 'ExactQuad ( name="{0}", ds={1:.8}, k={2:.8}, nslice={3} )\n'
-    rfcav_f   = base_f + 'RFCavity  ( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficients={6}, nslice={7} )\n'
+    if ( params["translate.trackmode"].lower() in ["nonlinear"] ):
+        drift_f   = base_f + 'ExactDrift( name="{0}", ds={1:.8}, aperture_x={2:.8}, aperture_y={2:.8}, nslice=ns )\n'
+        quadr_f   = base_f + 'ExactQuad ( name="{0}", ds={1:.8}, unit=1, k={2:.8}, aperture_x={3:.8}, aperture_y={3:.8}, nslice=ns )\n'
+        rfcav_f   = base_f + 'RFCavity  ( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficients={6}, aperture_x={7:.8}, aperture_y={7:.8}, nslice=ns )\n'
+    else:
+        drift_f   = base_f + 'Drift   ( name="{0}", ds={1:.8}, aperture_x={2:.8}, aperture_y={2:.8}, nslice=ns )\n'
+        quadr_f   = base_f + 'Quad    ( name="{0}", ds={1:.8}, k={2:.8}, aperture_x={3:.8}, aperture_y={3:.8}, nslice=ns )\n'
+        rfcav_f   = base_f + 'RFCavity( name="{0}", ds={1:.8}, escale={2:.8}, freq={3:.8}, phase={4:.8}, cos_coefficients={5}, sin_coefficients={6}, aperture_x={7:.8}, aperture_y={7:.8}, nslice=ns )\n'
+
     if ( params["translate.add_monitor"] ):
         contents  += ( base_f + 'BeamMonitor( "{0}", backend="h5")\n' ).format( "bpm" )
     
     for ik,elem in enumerate(seq):
         
         if   ( elem["type"].lower() == "drift"      ):
-            keys      = [ "tag", "L", "nslice" ]
+            keys      = [ "tag", "L", "aperture" ]
             contents += drift_f.format( *( [ elem[key] for key in keys ] ) )
             
         elif ( elem["type"].lower() == "quadrupole" ):
-            keys      = [ "tag", "L", "K1", "nslice" ]
+            keys      = [ "tag", "L", "K1", "aperture" ]
             contents += quadr_f.format( *( [ elem[key] for key in keys ] ) )
             
         elif ( elem["type"].lower() == "rfcavity"   ):
             keys      = [ "tag", "L", "escale", "freq", "phase", \
-                          "cos_coeff", "sin_coeff", "nslice"]
+                          "cos_coeff", "sin_coeff", "aperture"]
             contents += rfcav_f.format( *( [ elem[key] for key in keys ] ) )
             
         else:
@@ -159,10 +167,17 @@ def convert_to_quad( words, counts, params ):
     Ra             = float(words[5]) * cm
     L              = float(words[4]) * cm
     gradB          = Bq / Ra
-    K1             = gradB
-    nslice         = params["translate.nslice"]
+    if ( params["translate.nonlinear"] ):
+        K1         = gradB
+    else:
+        Brho       = 1.3
+        K1         = gradB / Brho
+    if ( params["translate.aperture"] is not None ):
+        aperture   = params["translate.aperture"]
+    else:
+        aperture   = Ra
     ret            = [ { "type":"quadrupole", "tag":tag,
-                         "K1":K1, "L":L, "at":counts["at"], "nslice":nslice } ]
+                         "K1":K1, "L":L, "at":counts["at"], "aperture":aperture } ]
     counts["Nqm"] += 1
     counts["at"]  += L
     return( ret )
@@ -177,9 +192,14 @@ def convert_to_drift( words, counts, params ):
 
     tag            = "dr{}".format( (counts["Ndr"]+1) )
     L              = float(words[2]) * cm
-    nslice         = params["translate.nslice"]
+    Ra             = float(words[3]) * cm
+    if ( params["translate.aperture"] is not None ):
+        aperture   = params["translate.aperture"]
+    else:
+        aperture   = Ra
+    
     ret            = [ { "type":"drift", "tag":tag, "L":L, \
-                         "nslice":nslice, "at":counts["at"] } ]
+                         "aperture":aperture, "at":counts["at"] } ]
     counts["Ndr"] += 1
     counts["at"]  += L
     return( ret )
@@ -201,7 +221,10 @@ def convert_to_rfcavity( words, counts, params ):
     harmonics =   int(words[4])                         # harmonics
     Rcav      =   int(words[5]) * cm                    # R-cavity  [cm]
     freq      = params["beam.freq"] * harmonics * MHz   # -- freq = fbeam * harmon
-    nslice    = params["translate.nslice"]
+    if ( params["translate.aperture"] is not None ):
+        aperture   = params["translate.aperture"]
+    else:
+        aperture   = Rcav
     escale    = volt / Lcav / params["beam.mass"]
     cos_coeff = [ 1.0, ]
     sin_coeff = [ 0.0, ]
@@ -209,7 +232,7 @@ def convert_to_rfcavity( words, counts, params ):
     sin_coeff = "[{}]".format( ",".join( [ str(val) for val in sin_coeff ] ) )
     ret       = [ { "type":"rfcavity", "tag":tag, "L":L, "Rcav":Rcav, "escale":escale, \
                     "freq":freq, "phase":phase, "hormonics":harmonics, "cos_coeff":cos_coeff, "sin_coeff":sin_coeff, \
-                    "at":counts["at"], "nslice":nslice } ]
+                    "at":counts["at"], "aperture":aperture } ]
     counts["Nrf"] += 1
     counts["at"]  += L
     return( ret )
