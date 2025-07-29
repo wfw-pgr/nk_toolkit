@@ -36,16 +36,20 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
     with h5py.File( inpFile, "r" ) as f:
         isteps = sorted( [ int( key ) for key in f["data"].keys() ] )
         for step in isteps:
-            key, df    = str(step), {}
-            df["pid"]  = f["data"][key]["particles"]["beam"]["id"][:]
-            df["xp"]   = f["data"][key]["particles"]["beam"]["position"]["x"][:]
-            df["yp"]   = f["data"][key]["particles"]["beam"]["position"]["y"][:]
-            df["tp"]   = f["data"][key]["particles"]["beam"]["position"]["t"][:]
-            df["px"]   = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
-            df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
-            df["pz"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
-            df["step"] = np.full( df["pid"].shape, step, dtype=int )
-            stack     += [ pd.DataFrame( df ) ]
+            try:
+                key, df    = str(step), {}
+                df["pid"]  = f["data"][key]["particles"]["beam"]["id"][:]
+                df["xp"]   = f["data"][key]["particles"]["beam"]["position"]["x"][:]
+                df["yp"]   = f["data"][key]["particles"]["beam"]["position"]["y"][:]
+                df["tp"]   = f["data"][key]["particles"]["beam"]["position"]["t"][:]
+                df["px"]   = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
+                df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
+                df["pz"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+                df["step"] = np.full( df["pid"].shape, step, dtype=int )
+                stack     += [ pd.DataFrame( df ) ]
+            except TypeError:
+                print( "[load__impactHDF5.py] detected TypeError at step == {}.. continue. ".format( step ) )
+                
     ret = pd.concat( stack, ignore_index=True )
     
     # ------------------------------------------------- #

@@ -2,7 +2,6 @@ import os, sys, json5, re
 import numpy          as np
 import pandas         as pd
 
-
 # ========================================================= #
 # ===  translate__track2impactx.py                      === #
 # ========================================================= #
