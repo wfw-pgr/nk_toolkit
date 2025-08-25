@@ -1,4 +1,4 @@
-import os, sys, tqdm
+import os, sys, tqdm, glob, json5
 import h5py
 import numpy   as np
 import pandas  as pd
@@ -94,9 +94,9 @@ def plot__refparticle( inpFile=None, pngDir="png/", plot_conf=None  ):
     # ------------------------------------------------- #
     # --- [1] load .stat file                       --- #
     # ------------------------------------------------- #
-    data    = pd.read_csv( inpFile, sep=r"\s+" )
-    data    = data.where( data.abs() <= THRESHOLD, np.nan )
-    xAxis   = data["s"]
+    data       = pd.read_csv( inpFile, sep=r"\s+" )
+    data       = data.where( data.abs() <= THRESHOLD, np.nan )
+    xAxis      = data["s"]
     
     # ------------------------------------------------- #
     # --- [2] plot config                           --- #
@@ -162,6 +162,11 @@ def plot__statistics( inpFile=None, pngDir="png/", plot_conf=None  ):
     data    = data.where( data.abs() <= THRESHOLD, np.nan )
     ylabels = { key:key for key in data.keys() }
     ylabels = { **ylabels, **ylabels_ }
+
+    nparticle_threshold = 0.10
+    if ( nparticle_threshold ):
+        fraction = ( data["charge_C"] ) / ( data["charge_C"][0] )
+        data     = data.where( fraction >= nparticle_threshold, np.nan )
     
     # ------------------------------------------------- #
     # --- [2] plot config                           --- #
@@ -188,7 +193,7 @@ def plot__statistics( inpFile=None, pngDir="png/", plot_conf=None  ):
     # ------------------------------------------------- #
     for xyt in ["x","y","t", "px","py","pt"]:
         config_  = {
-            "figure.pngFile" : os.path.join( pngDir, "refp__s-{0}-range.png".format( xyt ) ), 
+            "figure.pngFile" : os.path.join( pngDir, "stat__s-{0}-range.png".format( xyt ) ), 
             "ax1.y.label"    : ylabels["{}-range".format( xyt )],
         }
         config = { **config, **config_ }
@@ -309,6 +314,53 @@ def plot__trajectories( hdf5File=None, refpFile=None, pids=None, random_choice=N
 
 
 # ========================================================= #
+# ===  plot__postProcessed                              === #
+# ========================================================= #
+
+def plot__postProcessed( paramsFile="dat/parameters.json", \
+                         postFile="impactx/diags/postProcessed_beam.csv", plot_conf=None ):
+
+    # ------------------------------------------------- #
+    # --- [1] load post processed / set variables   --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+    data       = pd.read_csv( postFile )
+    plots      = {
+        "post__s-Ek":{ "xAxis":data["s_refp"], "yAxis":data["Ek"], "ylabel":"Energy (MeV)" },
+    }
+    xmin, xmax = np.min( data["s_refp"] ), np.max( data["s_refp"] )
+    
+    # ------------------------------------------------- #
+    # --- [2] plot config                           --- #
+    # ------------------------------------------------- #
+    config   = lcf.load__config()
+    config_  = {
+        "figure.size"        : [10.5,3.5],
+        "figure.position"    : [ 0.10, 0.15, 0.97, 0.93 ],
+        "ax1.x.range"        : { "auto":True, "min": xmin, "max":xmax, "num":11 },
+        "ax1.y.range"        : { "auto":True, "min":  0.0, "max": 1.0, "num":11 },
+        "ax1.x.label"        : "s [m]",
+        "ax1.x.minor.nticks" : 1, 
+        "plot.marker"        : "o",
+        "plot.markersize"    : 2.0,
+        "legend.fontsize"    : 8.0, 
+    }
+    config = { **config, **config_ }
+    if ( plot_conf is not None ):
+        config = { **config, **plot_conf }
+
+    # ------------------------------------------------- #
+    # --- [3] plot                                  --- #
+    # ------------------------------------------------- #
+    for key,contents in plots.items():
+        fig = gp1.gplot1D( config=config, pngFile="png/{}.png".format( key ) )
+        fig.add__plot( **contents )
+        fig.set__axis()
+        fig.save__figure()
+            
+
+# ========================================================= #
 # ===  convert__hdf2vtk.py                              === #
 # ========================================================= #
 
@@ -360,6 +412,53 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
     return()
         
 
+
+# ========================================================= #
+# ===  postProcessed__beam                              === #
+# ========================================================= #
+
+def postProcessed__beam( refpFile=None, statFile=None, paramsFile="dat/parameters.json", \
+                         outFile="impactx/diags/postProcessed_beam.csv" ):
+    
+    amu = 931.494   # [MeV]
+    
+    # ------------------------------------------------- #
+    # --- [1] arguments check                       --- #
+    # ------------------------------------------------- #
+    if ( refpFile is None ):
+        flist = glob.glob( "impactx/diags/ref_particle.*" )
+        if ( len( flist ) == 1 ):
+            refpFile = flist[0]
+        else:
+            sys.exit( "[plot__additionals] no refpFile " )
+    if ( statFile is None ):
+        flist = glob.glob( "impactx/diags/reduced_beam_characteristics.*" )
+        if ( len( flist ) == 1 ):
+            statFile = flist[0]
+        else:
+            sys.exit( "[plot__additionals] no statFile " )
+        
+    # ------------------------------------------------- #
+    # --- [2] load file                             --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+    refp = pd.read_csv( refpFile, sep=r"\s+" )
+    stat = pd.read_csv( statFile, sep=r"\s+" )
+
+    # ------------------------------------------------- #
+    # --- [3] additional plots                      --- #
+    # ------------------------------------------------- #
+    data           = {}
+    data["s_refp"] = refp["s"]
+    data["Ek"]     = params["beam.mass.amu"] * amu * ( refp["gamma"] - 1.0 )
+    df             = pd.DataFrame( data )
+    
+    # ------------------------------------------------- #
+    # --- [4] save and return                       --- #
+    # ------------------------------------------------- #
+    df.to_csv( outFile, index=False )
+    return()
 
 
 # ========================================================= #

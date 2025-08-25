@@ -216,8 +216,9 @@ def convert_to_rfcavity( words, counts, params ):
     MHz       = 1.0e+6
     cm        = 1.0e-2
     tag       = "rf{}".format( (counts["Nrf"]+1) )
-    
-    L         = 0.0
+    amu       = 931.494    # [MeV]
+
+    Ltmp      = 0.0                                     # tempolarily set as 0 to identify other element's position.
     Lcav      = params["translate.rf.thickness"]
     volt      = float(words[2])                         # volt :    [MV]
     phase     = float(words[3])                         #           [deg]
@@ -228,16 +229,16 @@ def convert_to_rfcavity( words, counts, params ):
         aperture   = params["translate.aperture"]
     else:
         aperture   = Rcav
-    escale    = volt / Lcav / params["beam.mass"]
+    escale    = volt / Lcav / ( params["beam.mass.amu"] * amu )
     cos_coeff = [ 1.0, ]
     sin_coeff = [ 0.0, ]
     cos_coeff = "[{}]".format( ",".join( [ str(val) for val in cos_coeff ] ) )
     sin_coeff = "[{}]".format( ",".join( [ str(val) for val in sin_coeff ] ) )
-    ret       = [ { "type":"rfcavity", "tag":tag, "L":L, "Rcav":Rcav, "escale":escale, \
+    ret       = [ { "type":"rfcavity", "tag":tag, "L":Ltmp, "Rcav":Rcav, "escale":escale, \
                     "freq":freq, "phase":phase, "hormonics":harmonics, "cos_coeff":cos_coeff, "sin_coeff":sin_coeff, \
                     "at":counts["at"], "aperture":aperture } ]
     counts["Nrf"] += 1
-    counts["at"]  += L
+    counts["at"]  += Ltmp
     return( ret )
 
     

@@ -56,7 +56,7 @@ def clean( ctx ):
 # ===  post analysis                                    === #
 # ========================================================= #
 @invoke.task
-def post( ctx, paramsFile="dat/parameters.json" ):
+def post( ctx, paramsFile="dat/parameters.json", trajectory=False, vtk=False, ext=".0.0" ):
     """Run post-analysis script."""
 
     if ( paramsFile is not None ):
@@ -70,31 +70,32 @@ def post( ctx, paramsFile="dat/parameters.json" ):
     # ------------------------------- #
     # --- [1] reference particle  --- #
     # ------------------------------- #
-        
-    refpFile  = "impactx/diags/ref_particle.0.0"
+    refpFile  = "impactx/diags/ref_particle" + ext
     itk.plot__refparticle( inpFile=refpFile, plot_conf=params["plot.conf.refp"] )
 
     # ------------------------------- #
     # --- [2] statistics          --- #
     # ------------------------------- #
-    statFile  = "impactx/diags/reduced_beam_characteristics.0.0"
+    statFile  = "impactx/diags/reduced_beam_characteristics" + ext
     itk.plot__statistics( inpFile=statFile, plot_conf=params["plot.conf.stat"]  )
 
     # ------------------------------- #
     # --- [3] trajectory          --- #
     # ------------------------------- #
-    hdf5File      = "impactx/diags/openPMD/bpm.h5"
-    refpFile      = "impactx/diags/ref_particle.0.0"
-    random_choice = 300
-    itk.plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, \
-                            random_choice=random_choice, plot_conf=params["plot.conf.traj"] )
+    if ( trajectory ):
+        hdf5File      = "impactx/diags/openPMD/bpm.h5"
+        refpFile      = "impactx/diags/ref_particle" + ext
+        random_choice = 300
+        itk.plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, \
+                                random_choice=random_choice, plot_conf=params["plot.conf.traj"] )
 
     # ------------------------------- #
     # --- [4] convert to vtk      --- #
     # ------------------------------- #
-    hdf5File = "impactx/diags/openPMD/bpm.h5"
-    outFile  = "png/bpm.vtp"
-    itk.convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
+    if ( vtk ):
+        hdf5File = "impactx/diags/openPMD/bpm.h5"
+        outFile  = "png/bpm.vtp"
+        itk.convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
     return()
 
 

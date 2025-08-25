@@ -3,20 +3,34 @@
     // ---------------------------- //
     // --- [1] consntans        --- //
     // ---------------------------- //
-    "beam.freq"              : 36.5 ,       // [MHz]
-    "beam.mass"              : 1876.0289,   // E0 : rest mass energy [MeV]   = 2.014 * 931.494
-    "rf.harmonics"           : 4    ,       // int   rf.freq = h * beam.freq
+    "beam.charge"                : +1.0 ,       // unit = [-qe]  -1.0 for electron, +1.0 for proton,
+    "beam.mass.amu"              : 2.014,       // mass [amu]
+    "beam.Ek.MeV/u"              :  20.0,       // kinetic energy [MeV]
+    "beam.u"                     :   2.0,       // number of nucleon
+    "beam.bunch_charge"          : 1.0e-12,     // charge of bunch in [C]
+    "beam.nparticles"            : 1e5  ,       // 
+    
+    "beam.freq"                  : 36.5 ,       // [MHz]
+    "beam.mass"                  : 1876.0289,   // E0 : rest mass energy [MeV]   = 2.014 * 931.494
+    "rf.harmonics"               : 4    ,       // int   rf.freq = h * beam.freq
+
+    "pic.trackmode"              : "nonlinear", // "nonlinear", "linear", "envelope"
+    "pic.particle_shape"         : 2,
+    "pic.space_charge"           : false,
+    "pic.slice_step_diagnostics" : true,
+    "pic.output.backend"         : ".h5", 
 
     // ---------------------------- //
     // --- [2] translate        --- //
     // ---------------------------- //
     "translate.rf.thickness" : 0.02 ,
-    "translate.nslice"       : 25   ,
+    "translate.nslice"       : 5    ,
     "translate.add_monitor"  : true ,
     "translate.nonlinear"    : true ,
-    "translate.aperture"     : null ,
+    "translate.aperture"     : 0.20 ,
     "translate.trackmode"    : "nonlinear",
-    "translate.skip.rf"      : true , 
+    
+    "translate.skip.rf"      : false, 
     "translate.skip.dr"      : false, 
     "translate.skip.qm"      : false, 
 
