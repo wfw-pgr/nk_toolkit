@@ -81,7 +81,7 @@ class gplot1D:
     # ===  プロット 追加                                    === #
     # ========================================================= #
     def add__plot( self, xAxis=None, yAxis=None, label=None, color=None, alpha=None, \
-                   linestyle=None, linewidth=None, \
+                   linestyle=None, linewidth=None, xlabel=None, ylabel=None, \
                    marker=None, markersize=None, markerwidth=None, kw={} ):
         
         # ------------------------------------------------- #
@@ -103,6 +103,8 @@ class gplot1D:
         # ------------------------------------------------- #
         # --- 軸設定                                    --- #
         # ------------------------------------------------- #
+        if ( xlabel is not None ): self.config["ax1.x.label"] = xlabel
+        if ( ylabel is not None ): self.config["ax1.y.label"] = ylabel
         self.xAxis, self.yAxis = xAxis, yAxis
         self.update__DataRange( xAxis=xAxis, yAxis=yAxis )
         self.set__axis()
@@ -839,7 +841,7 @@ class gplot1D:
     # ===  ファイル 保存                                    === #
     # ========================================================= #
     def save__figure( self, pngFile=None, dpi=None, transparent=None, minimal=None ):
-
+        
         # ------------------------------------------------- #
         # --- 引数設定                                  --- #
         # ------------------------------------------------- #
@@ -857,6 +859,7 @@ class gplot1D:
                               pad_inches=0, transparent=transparent )
         else:
             # -- 通常プロット -- #
+            if ( self.config["legend.sw"] ): self.set__legend()
             self.fig.savefig( pngFile, dpi=dpi, pad_inches=0, transparent=transparent )
         print( "[ save__figure() @gplot1D ] output :: {0}".format( pngFile ) )
         plt.close()
