@@ -56,7 +56,9 @@ def clean( ctx ):
 # ===  post analysis                                    === #
 # ========================================================= #
 @invoke.task
-def post( ctx, paramsFile="dat/parameters.json", trajectory=False, vtk=False, ext=".0.0" ):
+def post( ctx, paramsFile="dat/parameters.json", \
+          refp=True, stat=True, trajectory=False, vtk=False, postProcessed=True, \
+          ext=".0.0" ):
     """Run post-analysis script."""
 
     if ( paramsFile is not None ):
@@ -70,14 +72,16 @@ def post( ctx, paramsFile="dat/parameters.json", trajectory=False, vtk=False, ex
     # ------------------------------- #
     # --- [1] reference particle  --- #
     # ------------------------------- #
-    refpFile  = "impactx/diags/ref_particle" + ext
-    itk.plot__refparticle( inpFile=refpFile, plot_conf=params["plot.conf.refp"] )
+    if ( refp ):
+        refpFile  = "impactx/diags/ref_particle" + ext
+        itk.plot__refparticle( inpFile=refpFile, plot_conf=params["plot.conf.refp"] )
 
     # ------------------------------- #
     # --- [2] statistics          --- #
     # ------------------------------- #
-    statFile  = "impactx/diags/reduced_beam_characteristics" + ext
-    itk.plot__statistics( inpFile=statFile, plot_conf=params["plot.conf.stat"]  )
+    if ( stat ):
+        statFile  = "impactx/diags/reduced_beam_characteristics" + ext
+        itk.plot__statistics( inpFile=statFile, plot_conf=params["plot.conf.stat"]  )
 
     # ------------------------------- #
     # --- [3] trajectory          --- #
@@ -96,6 +100,17 @@ def post( ctx, paramsFile="dat/parameters.json", trajectory=False, vtk=False, ex
         hdf5File = "impactx/diags/openPMD/bpm.h5"
         outFile  = "png/bpm.vtp"
         itk.convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
+
+    # ------------------------------------------------- #
+    # --- [5] additional analysis                   --- #
+    # ------------------------------------------------- #
+    if ( postProcessed ):
+        refpFile   = None   # auto 
+        statFile   = None
+        paramsFile = "dat/parameters.json"
+        plot_conf  = None
+        itk.postProcessed__beam( refpFile=refpFile, statFile=statFile, paramsFile=paramsFile )
+        itk.plot__postProcessed( paramsFile=paramsFile, plot_conf=plot_conf )
     return()
 
 
