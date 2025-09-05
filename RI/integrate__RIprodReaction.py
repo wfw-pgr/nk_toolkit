@@ -1,10 +1,10 @@
 import os, sys, re, json5, math
-import numpy                      as np
-import scipy.interpolate          as itp
-import scipy.integrate            as itg
-import scipy.optimize             as opt
-import nkUtilities.load__config   as lcf
-import nkUtilities.gplot1D        as gp1
+import numpy                        as np
+import scipy.interpolate            as itp
+import scipy.integrate              as itg
+import scipy.optimize               as opt
+import nk_toolkit.plot.load__config as lcf
+import nk_toolkit.plot.gplot1D      as gp1
 
 
 # ========================================================= #
