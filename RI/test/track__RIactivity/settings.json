@@ -1,0 +1,118 @@
+{
+    
+    // ------------------------------------------------- //
+    // --- [1] General settings                      --- //
+    // ------------------------------------------------- //
+    "result.outFile"         : "dat/result.dat",
+    "series"                 :[ "beamON.01", "separation.01", "preparation.01" ],
+    "series.iterate"         :   1,
+    "series.time.unit"       : "d",           // [ "y", "d", "h", "m", "s" ]
+    "series.preprocess"      :  [], 
+    
+    "A0.init"                :0.0,            // (Bq)
+    "B0.init"                :0.0,      
+    "tHalf.A"                :[ 14.9, "d" ],  // [ value, unit ]
+    "tHalf.B"                :[  9.9, "d" ],
+
+    "mode.cumulative"        : true,
+    "mode.decayed"           : true, 
+    
+    // ------------------------------------------------- //
+    // --- [2] Yield rate                            --- //
+    // ------------------------------------------------- //
+    "Y.efficiency.type"      : "Yn_product_bq",
+    "Y.efficiency.value"     : 1.03e-8,
+    
+    // ---------------------------------------------------------------- //
+    //  [ "Yieldrate" (atoms/s), "Y_product", "Y_decayed" (Bq/s),
+    //    "Yn_product_wt", "Yn_decayed_wt" (Bq/mg/uA/s),
+    //    "Yn_product_bq", "Yn_decayed_Bq" (Bq/Bq/uA/s) ]
+    // ---------------------------------------------------------------- //
+    
+    "Y.normalize"            : true,
+    "Y.normalize.mg"         : null,         // (mg)
+    "Y.normalize.Bq"         : 56.9e3,       // (Bq)
+    "Y.normalize.uA"         : 203.0,        // (uA)
+    "Y.ratio.B/A"            : 0.445,        // if decayed, efficiency x A/B
+    //                                       // ( "product" mode is prefferable. )
+    "Y.recycle.factor"       : 1.0,          // recycle factor of target material.
+
+    // ------------------------------------------------- //
+    // --- [3] time sries settings                   --- //
+    // ------------------------------------------------- //
+
+    "beamON.01"              : {
+	"dt"                 : [ 1, "d" ], // [ time, unit ]  
+	"beam.relint"        : 1.0,          // relative Yield rate: Y  ==>  beam on/off = ( 1/0 )
+	"nPoints"            : 101,           // number of data samplings
+	"separation"         : false, 
+    },
+    "separation.01"          : {
+	"dt"                 : [ 20, "d" ],
+	"beam.relint"        : 0.0,
+	"nPoints"            : 301,
+	"separation"         : false,
+    }, 
+    "preparation.01"         : {
+	"dt"                 : [ 30, "d" ],  
+	"beam.relint"        : 0.0,
+	"nPoints"            : 601,
+	"separation"         : false, 
+    },
+    
+    // ------------------------------------------------- //
+    // --- [4] figure settings                       --- //
+    // ------------------------------------------------- //
+    "figure.num.label.A"     :"$N_{Ra225}$" , 
+    "figure.num.label.B"     :"$N_{Ac225}$" , 
+    "figure.act.label.A"     :"$A_{Ra225}$" ,
+    "figure.act.label.B"     :"$A_{Ac225}$" ,
+    "figure.act.label.C"     : "Cumulative" ,
+    "figure.inv.label.I"     : "Inventory"  ,
+    "figure.inv.label.C"     : "Cumulative Production" ,
+
+    "figure.num.config"      : {
+	"figure.size"        : [4.5,4.5],
+	"figure.pngFile"     : "png/time_vs_atoms.png", 
+	"figure.position"    : [ 0.16, 0.16, 0.84, 0.84 ] ,
+	"ax1.x.range"        : { "auto":false, "min":0.0, "max": 100, "num": 5 },
+	"ax1.y.range"        : { "auto":true , "min":0.0, "max": 100, "num":11 },
+	"ax1.x.label"        : "Time (d)"                 ,
+	"ax1.y.label"        : "Number of Atoms"          ,
+	"legend.location"    : "best"                     ,
+    }                                                     ,
+
+    "figure.act.config"      :{				  
+	"figure.size"        : [4.5,4.5],
+	"figure.pngFile"     : "png/time_vs_activity.png",
+	"figure.position"    : [ 0.16, 0.16, 0.84, 0.84 ]    ,
+	"ax1.y.normalize"    : 1.0e3, 
+	"ax2.y.normalize"    : 1.0e3, 
+	"ax1.x.range"        : { "auto":false, "min":0.0, "max":  30, "num":6 },
+	"ax1.y.range"        : { "auto":false, "min":0.0, "max":  10, "num":5 },
+	"ax2.y.range"        : { "auto":false, "min":0.0, "max":  50, "num":6 },
+	"ax1.x.label"        : "Time (d)"                    ,
+	"ax1.y.label"        : "Activity (GBq)"              ,
+	"ax2.y.label"        : "Cumulative Production (GBq)" ,
+	"legend.location"    : "upper left"                  ,
+    }, 
+
+    "figure.inv.label.I"     : "Inventory",
+    "figure.inv.label.C"     : "Cumulative Production",
+    
+    "figure.inv.config":{
+	"figure.size"        : [4.5,4.5],
+	"figure.pngFile"     : "png/time_vs_inventory.png",
+	"figure.position"    : [ 0.16, 0.16, 0.84, 0.84 ],
+	"ax1.y.normalize"    : 1.0e9, 
+	"ax2.y.normalize"    : 1.0e9, 
+	"ax1.x.range"        : { "auto":false, "min":0.0, "max": 100, "num":5 },
+	"ax1.y.range"        : { "auto":false, "min":0.0, "max":  12, "num":7 },
+	"ax2.y.range"        : { "auto":false, "min":0.0, "max":1200, "num":7 },
+	"ax1.x.label"        : "Time (d)"                    ,
+	"ax1.y.label"        : "Inventory (GBq)"             ,
+	"ax2.y.label"        : "Cumulative Production (GBq)" ,
+	"legend.location"    : "best"                        ,
+    },
+
+}

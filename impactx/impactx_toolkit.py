@@ -3,9 +3,10 @@ import h5py
 import numpy   as np
 import pandas  as pd
 import pyvista as pv
-import matplotlib.pyplot as plt
-import nk_toolkit.plot.load__config as lcf
-import nk_toolkit.plot.gplot1D      as gp1
+import matplotlib.pyplot               as plt
+import nk_toolkit.plot.load__config    as lcf
+import nk_toolkit.plot.gplot1D         as gp1
+import nk_toolkit.math.fourier_toolkit as ftk
 
 
 # ========================================================= #
@@ -17,7 +18,8 @@ import nk_toolkit.plot.gplot1D      as gp1
 #  * plot__statistics
 #  * plot__trajectory
 #  * convert__hdf2vtk
-#
+#  * compute__fourierCoefficients
+#  * adjust__RFcavityPhase
 # 
 # ========================================================= #
 
@@ -462,43 +464,227 @@ def postProcessed__beam( refpFile=None, statFile=None, paramsFile="dat/parameter
 
 
 # ========================================================= #
+# ===  compute__fourierCoefficients                     === #
+# ========================================================= #
+def compute__fourierCoefficients( xp=None, fx=None, nMode=None, \
+                                  pngFile=None, coefFile=None, tolerance=1.e-10 ):
+    
+    ret      = ftk.get__fourierCoeffs( xp, fx, nMode=nMode, tolerance=tolerance )
+    func     = ret["reconstruction"]
+    data     = np.concatenate( [ ret["cos"][:,np.newaxis], ret["sin"][:,np.newaxis] ], axis=1 )
+    if (  pngFile is not None ):
+        ftk.display__fourierExpansion( xp, fx, func=func, pngFile=pngFile )
+    if ( coefFile is not None ):
+        with open( coefFile, "w" ) as f:
+            np.savetxt( f, data, fmt="%15.8e" )
+    return( data )
+
+
+# ========================================================= #
+# ===  adjust__RFcavityPhase.py                         === #
+# ========================================================= #
+
+def adjust__RFcavityPhase( paramsFile="dat/beamline.json", \
+                           outFile="dat/adjust__RFcavityPhase.dat" ):
+    
+    cv     = 299792458.0
+    ns     = 1.e-9
+
+    # ------------------------------------------------- #
+    # --- [1] preparation                           --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+    bl       = params["beamline"]
+    omega    = 2.0*np.pi * params["freq"]
+    phi_t    = params["phase_tobe"]
+    Em0, Ek  = params["Em0"], params["Ek0"]
+    nElems   = len( bl )
+    
+    # ------------------------------------------------- #
+    # --- [2] use functions                         --- #
+    # ------------------------------------------------- #
+    def beta_from_Ek(Ek):
+        gamma = 1.0 + Ek/Em0
+        beta  = np.sqrt( 1.0 - 1.0/gamma**2 )
+        return( beta )
+
+    def dt_drift( L, Ek ):
+        beta = beta_from_Ek( Ek )
+        dt   = L / ( cv * beta )
+        return( dt )
+
+    def dt_cavity( L, V, Ek ):
+        Ek_out = Ek + V
+        v1     = beta_from_Ek(Ek    ) * cv
+        v2     = beta_from_Ek(Ek_out) * cv
+        dt     = L * (1.0/v1 + 1.0/v2) / 2.0   # 台形近似
+        return( dt )
+
+    def norm_angle( deg ):
+        deg = deg % 360.0
+        if ( deg > 180.0 ): deg = deg - 360.0
+        return( deg )
+
+    # ------------------------------------------------- #
+    # --- [3] main loop                             --- #
+    # ------------------------------------------------- #
+    t    = 0.0
+    rows = []
+    for i,el in enumerate( bl ):
+        t_in  = t
+        if ( el["type"] in ["cavity"] ):
+            dt   = dt_cavity( el["L"], el["V"], Ek )
+            V    = el["V"]
+            Ek  += V
+        elif ( el["type"] in ["drift"] ):
+            dt  = dt_drift( el["L"], Ek )
+            V   = 0.0
+        t     += dt
+        t_out  = t
+        t_mid  = 0.5*( t_in + t_out )
+        phi_o  = norm_angle( omega*t_mid /np.pi*180.0 )
+        phi_c  = norm_angle( phi_t - phi_o )
+        phi_t  = norm_angle( phi_t )
+        rows  += [ { "type"       : el["type"],
+                     "L[m]"       : el["L"],
+                     "V[MV]"      : V,
+                     "Ek[MeV]"    : Ek-V,
+                     "dt[ns]"     : dt/ns,
+                     "t_in[ns]"   : t_in/ns,
+                     "t_out[ns]"  : t_out/ns,
+                     "t_mid[ns]"  : t_mid/ns,
+                     "phi_o[deg]" : phi_o,
+                     "phi_c[deg]" : phi_c,
+                     "phi_t[deg]" : phi_t,
+                    } ]
+        
+    # ------------------------------------------------- #
+    # --- [4] return                                --- #
+    # ------------------------------------------------- #
+    df             = pd.DataFrame(rows)
+    ds             = df["L[m]"]
+    s_in           = np.concatenate( ( [0.0], np.cumsum(ds)[:-1] ) )
+    s_out          = np.cumsum(ds)
+    s_mid          = 0.5*( s_in + s_out )
+    df["s_in[m]"]  = s_in
+    df["s_mid[m]"] = s_mid
+    df["s_out[m]"] = s_out
+    df.to_csv( outFile )
+
+
+# ========================================================= #
+# ===  adjust__refpPhase.py                             === #
+# ========================================================= #
+def adjust__refpPhase( inpFile="impactx/diags/ref_particle.0", \
+                       phaseFile="dat/rfphase.csv", ext=None, freq=None, phi_t=0.0 ):
+    
+    cv = 299792458.0
+
+    # ------------------------------------------------- #
+    # --- [1] load file                             --- #
+    # ------------------------------------------------- #
+    if ( freq is None ):
+        sys.exit( "[adjust_refpPhase.py] freq == ??? " )
+    
+    if ( ext is not None ):
+        inpFile = os.path.splitext( inpFile )[0] + ext
+    refp        = pd.read_csv( inpFile, sep=r"\s+", engine="python" )
+    if ( os.path.exists( phaseFile ) ):
+        phasedb = pd.read_csv( phaseFile )
+        s_mid   = phasedb["s_mid[m]"].to_numpy()
+        phi_b   = phasedb["phi_c[deg]"].to_numpy()
+        phi_t   = phasedb["phi_t[deg]"].to_numpy()
+    else:
+        phi_b   = None
+    
+
+    # ------------------------------------------------- #
+    # --- [2] calculation                           --- #
+    # ------------------------------------------------- #
+    omega   = 2.0*np.pi * freq
+    spos    = refp["s"].to_numpy()
+    vp      = refp["beta"].to_numpy() * cv
+    ds      = spos[1:] - spos[:-1]
+    v_avg   = 0.5 * ( vp[:-1] + vp[1:] )
+    dt      = ds / v_avg
+    t_in    = np.concatenate( ([0.0], np.cumsum(dt)) )
+
+    # ------------------------------------------------- #
+    # --- [3] interpolation                         --- #
+    # ------------------------------------------------- #
+    t_mid = np.interp( s_mid, spos, t_in )
+    
+    # ------------------------------------------------- #
+    # --- [4] phase                                 --- #
+    # ------------------------------------------------- #
+    def norm_angle( deg ):
+        deg  = np.asarray( deg, dtype=float )
+        ret  = ( ( deg + 180.0 ) % 360.0 ) - 180.0
+        if ( len( ret ) == 1 ): ret = float( ret )
+        return( ret )
+    phi_o                 = norm_angle( t_mid * omega / np.pi * 180.0 ) 
+    phi_c                 = norm_angle( phi_t - phi_o )
+    phasedb["phi_o[deg]"] = phi_o
+    phasedb["phi_c[deg]"] = phi_c
+    phasedb["phi_b[deg]"] = phi_b
+    phasedb.to_csv( phaseFile, index=False )
+    return( phasedb )
+
+    
+# ========================================================= #
 # ===   Execution of Pragram                            === #
 # ========================================================= #
 
 if ( __name__=="__main__" ):
 
-    # ------------------------------------------------- #
-    # --- [1] load HDF5 file                        --- #
-    # ------------------------------------------------- #
-    inpFile = "test/bpm.h5"
-    Data    = load__impactHDF5( inpFile=inpFile )
-    print( Data )
+    # # ------------------------------------------------- #
+    # # --- [1] load HDF5 file                        --- #
+    # # ------------------------------------------------- #
+    # inpFile = "test/bpm.h5"
+    # Data    = load__impactHDF5( inpFile=inpFile )
+    # print( Data )
 
-    # ------------------------------------------------- #
-    # --- [2] plot reference particle               --- #
-    # ------------------------------------------------- #
-    inpFile = "test/ref_particle.0.0"
-    plot__refparticle( inpFile=inpFile )
+    # # ------------------------------------------------- #
+    # # --- [2] plot reference particle               --- #
+    # # ------------------------------------------------- #
+    # inpFile = "test/ref_particle.0.0"
+    # plot__refparticle( inpFile=inpFile )
     
-    # ------------------------------------------------- #
-    # --- [3] plot statistics                       --- #
-    # ------------------------------------------------- #
-    inpFile = "test/reduced_beam_characteristics.0.0"
-    plot__statistics( inpFile=inpFile )
+    # # ------------------------------------------------- #
+    # # --- [3] plot statistics                       --- #
+    # # ------------------------------------------------- #
+    # inpFile = "test/reduced_beam_characteristics.0.0"
+    # plot__statistics( inpFile=inpFile )
 
-    # ------------------------------------------------- #
-    # --- [4] plot trajectories                     --- #
-    # ------------------------------------------------- #
-    hdf5File = "test/bpm.h5"
-    refpFile = "test/ref_particle.0.0"
-    plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, random_choice=100 )
+    # # ------------------------------------------------- #
+    # # --- [4] plot trajectories                     --- #
+    # # ------------------------------------------------- #
+    # hdf5File = "test/bpm.h5"
+    # refpFile = "test/ref_particle.0.0"
+    # plot__trajectories( hdf5File=hdf5File, refpFile=refpFile, random_choice=100 )
     
-    # ------------------------------------------------- #
-    # --- [5] convert to paraview vtk               --- #
-    # ------------------------------------------------- #
-    hdf5File = "test/bpm.h5"
-    outFile  = "png/bpm.vtp"
-    ret      = convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
+    # # ------------------------------------------------- #
+    # # --- [5] convert to paraview vtk               --- #
+    # # ------------------------------------------------- #
+    # hdf5File = "test/bpm.h5"
+    # outFile  = "png/bpm.vtp"
+    # ret      = convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
 
+    # ------------------------------------------------- #
+    # --- [6] compute  fourier coeffs               --- #
+    # ------------------------------------------------- #
+    coefFile = "test/fourier_expansion.dat"
+    pngFile  = "test/fourier_expansion.png"
+    xp       = np.linspace( 0.0, 1.0, 101 )
+    fx       = np.sin( xp*np.pi )**2.0
+    nMode    = None
+    compute__fourierCoefficients( xp=xp, fx=fx, nMode=nMode, \
+                                  pngFile=pngFile, coefFile=coefFile )
 
+    # ------------------------------------------------- #
+    # --- [7] adjust phase shift                    --- #
+    # ------------------------------------------------- #
+    adjust__RFcavityPhase( paramsFile="test/beamline.json", \
+                           outFile="test/adjust__RFcavityPhase.dat" )
     

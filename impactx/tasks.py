@@ -32,8 +32,19 @@ def run( ctx, logFile="impactx.log" ):
 def prepare( ctx ):
     """initialize and prepare the ImpactX simulation."""
     paramsFile = "dat/parameters.json"
-    ret        = t2i.translate__track2impactx( paramsFile=paramsFile )
+    # ret        = t2i.translate__track2impactx( paramsFile=paramsFile )
+    itk.adjust__RFcavityPhase( paramsFile="dat/beamline.json", \
+                               outFile="dat/adjust__RFcavityPhase.dat" )
 
+    
+# ========================================================= #
+# ===  initilize & prepare                              === #
+# ========================================================= #
+@invoke.task
+def adjust( ctx ):
+    """initialize and prepare the ImpactX simulation."""
+    itk.adjust__refpPhase( freq=1.0e7 )
+    
     
 # ========================================================= #
 # ===  clean output files                               === #
