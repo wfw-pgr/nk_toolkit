@@ -30,7 +30,7 @@ import nk_toolkit.math.fourier_toolkit as ftk
 
 def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None, 
                       redefine_pid=True, redefine_step=True ):
-
+    
     # ------------------------------------------------- #
     # --- [1] load HDF5 file                        --- #
     # ------------------------------------------------- #
@@ -41,12 +41,12 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
             try:
                 key, df    = str(step), {}
                 df["pid"]  = f["data"][key]["particles"]["beam"]["id"][:]
-                df["xp"]   = f["data"][key]["particles"]["beam"]["position"]["x"][:]
-                df["yp"]   = f["data"][key]["particles"]["beam"]["position"]["y"][:]
-                df["tp"]   = f["data"][key]["particles"]["beam"]["position"]["t"][:]
-                df["px"]   = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
-                df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
-                df["pz"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+                df["xp"]   = f["data"][key]["particles"]["beam"]["position"]["x"][:] 
+                df["yp"]   = f["data"][key]["particles"]["beam"]["position"]["y"][:] 
+                df["tp"]   = f["data"][key]["particles"]["beam"]["position"]["t"][:] 
+                df["px"]   = f["data"][key]["particles"]["beam"]["momentum"]["x"][:] 
+                df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:] 
+                df["pt"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:] 
                 df["step"] = np.full( df["pid"].shape, step, dtype=int )
                 stack     += [ pd.DataFrame( df ) ]
             except TypeError:
@@ -265,7 +265,7 @@ def plot__trajectories( hdf5File=None, refpFile=None, pids=None, random_choice=N
                         cmap="plasma", nColors=128, pngDir="png/", plot_conf=None ):
 
     ylabels  = { "xp":r"$x$ [mm]"  , "yp":r"$y$ [mm]"  , "tp":r"$t$ [mm]", \
-                 "px":r"$p_x$ [mm]", "py":r"$p_y$ [mm]", "pz":r"$p_z$ [mm]" }
+                 "px":r"$p_x$ [mrad]", "py":r"$p_y$ [mrad]", "pz":r"$p_z$ [mrad]" }
     
     # ------------------------------------------------- #
     # --- [1] load HDF5 file                        --- #
@@ -585,8 +585,7 @@ def adjust__refpPhase( inpFile="impactx/diags/ref_particle.0", \
     # --- [1] load file                             --- #
     # ------------------------------------------------- #
     if ( freq is None ):
-        sys.exit( "[adjust_refpPhase.py] freq == ??? " )
-    
+        sys.exit( "[adjust_refpPhase.py] freq == ??? " )    
     if ( ext is not None ):
         inpFile = os.path.splitext( inpFile )[0] + ext
     refp        = pd.read_csv( inpFile, sep=r"\s+", engine="python" )

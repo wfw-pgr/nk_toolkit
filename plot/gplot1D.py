@@ -777,7 +777,7 @@ class gplot1D:
     # ===  scatter プロット 追加                            === #
     # ========================================================= #
     def add__scatter( self, xAxis=None, yAxis=None, cAxis=None, color=None, cmap=None, \
-                      density=False, bins=300, \
+                      density=False, bins=100, \
                       label=None, alpha=None, marker=None, markersize=None, markerwidth=None ):
         
         # ------------------------------------------------- #

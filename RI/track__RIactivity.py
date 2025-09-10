@@ -1,9 +1,11 @@
 import os, sys, json5, re
 import numpy                        as np
+import pandas                       as pd
 import nk_toolkit.plot.gplot1D      as gpl
 import nk_toolkit.plot.load__config as lcf
 
 time_, unit_ = 0, 1
+names        = [ "time", "Anum", "Bnum", "Aact", "Bact", "Bcum", "inventory" ]
 
 # ========================================================= #
 # ===  acquire__irradiatedAmount                        === #
@@ -261,10 +263,15 @@ def acquire__timeSeries( settingFile=None ):
     # ------------------------------------------------- #
     # --- [6] save and return                       --- #
     # ------------------------------------------------- #
-    if ( settings["result.outFile"] is not None ):
-        import nkUtilities.save__pointFile as spf
-        names = [ "time", "Anum", "Bnum", "Aact", "Bact", "Bcum", "inventory" ]
-        spf.save__pointFile( outFile=settings["result.outFile"], Data=tEvo, names=names )
+    if ( settings["result.file"] is not None ):
+        if ( os.path.splitext( settings["result.file"] )[1].lower() == ".csv" ):
+            df = pd.DataFrame( tEvo, columns=names )
+            df.to_csv( settings["result.file"], index=False )
+        else:
+            import nkUtilities.save__pointFile as spf
+            spf.save__pointFile( outFile=settings["result.file"], Data=tEvo, names=names )
+        print( "[track__RIactivity.py] output :: {}".format( settings["result.file"] ) )
+
     return( tEvo )
 
 
@@ -287,47 +294,90 @@ def draw__figure( Data=None, settings=None, settingFile=None ):
     # ------------------------------------------------- #
     # --- [3] plot ( Number of Atoms )              --- #
     # ------------------------------------------------- #
-    config = { **( lcf.load__config() ), **settings["figure.num.config"] }
-    fig    = gpl.gplot1D( config=config, pngFile=settings["figure.num.config"]["figure.pngFile"])
-    fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NA_], \
-                   color="C0", label=settings["figure.num.label.A"] )
-    if ( settings["mode.decayed"] ):
-        fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NB_], \
-                       color="C1", label=settings["figure.num.label.B"] )
-    fig.set__axis()
-    fig.save__figure()
+    if ( settings["figure.num.plot"] ):
+        config = { **( lcf.load__config() ), **settings["figure.num.config"] }
+        fig    = gpl.gplot1D( config=config, \
+                              pngFile=settings["figure.num.config"]["figure.pngFile"] )
+        fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NA_], \
+                       color="C0", label=settings["figure.num.label.A"] )
+        if ( settings["mode.decayed"] ):
+            fig.add__plot( xAxis=Data[:,t_], yAxis=Data[:,NB_], \
+                           color="C1", label=settings["figure.num.label.B"] )
+        fig.set__axis()
+        fig.save__figure()
 
     # ------------------------------------------------- #
     # --- [4] plot ( Activity )                     --- #
     # ------------------------------------------------- #
-    config = { **( lcf.load__config() ), **settings["figure.act.config"] }
-    fig    = gpl.gplot1D( config=config, pngFile=settings["figure.act.config"]["figure.pngFile"])
-    fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,AA_],\
-                    color="C0", label=settings["figure.act.label.A"] )
-    if ( settings["mode.decayed"] ):
-        fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,AB_],\
-                        color="C1", label=settings["figure.act.label.B"] )
-    if ( settings["mode.cumulative"] ):
-        fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_],\
-                        color="C2", label=settings["figure.act.label.C"] )
-        fig.set__axis2()
-    fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
-    fig.set__axis   ()
-    fig.save__figure()
+    if ( settings["figure.act.plot"] ):
+        config = { **( lcf.load__config() ), **settings["figure.act.config"] }
+        fig    = gpl.gplot1D( config=config, \
+                              pngFile=settings["figure.act.config"]["figure.pngFile"] )
+        fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,AA_],\
+                        color="C0", label=settings["figure.act.label.A"] )
+        if ( settings["mode.decayed"] ):
+            fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,AB_],\
+                            color="C1", label=settings["figure.act.label.B"] )
+        if ( settings["mode.cumulative"] ):
+            fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_],\
+                            color="C2", label=settings["figure.act.label.C"] )
+            fig.set__axis2()
+        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
+        fig.set__axis   ()
+        fig.save__figure()
     
     # ------------------------------------------------- #
     # --- [5] plot ( inventory )                    --- #
     # ------------------------------------------------- #
-    config = { **( lcf.load__config() ), **settings["figure.inv.config"] }
-    fig    = gpl.gplot1D( config=config )
-    fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,RM_], \
-                    color="C3", label=settings["figure.inv.label.I"] )
-    if ( settings["mode.cumulative"] ):
-        fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_], \
-                        color="C2", label=settings["figure.inv.label.C"] )
-    fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
-    fig.set__axis   ()
-    fig.save__figure()
+    if ( settings["figure.inv.plot"] ):
+        config = { **( lcf.load__config() ), **settings["figure.inv.config"] }
+        fig    = gpl.gplot1D( config=config )
+        fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,RM_], \
+                        color="C3", label=settings["figure.inv.label.I"] )
+        if ( settings["mode.cumulative"] ):
+            fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_], \
+                            color="C2", label=settings["figure.inv.label.C"] )
+        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
+        fig.set__axis   ()
+        fig.save__figure()
+        
+    return()
+
+
+# ========================================================= #
+# ===  save__summary                                    === #
+# ========================================================= #
+
+def save__summary( settingFile=None, tEvo=None ):
+
+    # ------------------------------------------------- #
+    # --- [1] data load                             --- #
+    # ------------------------------------------------- #
+    with open( settingFile, "r" ) as f:
+        settings = json5.load( f )
+    data    = pd.DataFrame( tEvo, columns=names )
+
+    # ------------------------------------------------- #
+    # --- [2] pack summary                          --- #
+    # ------------------------------------------------- #
+    avgd_Bcum = data["Bcum"].iloc[-1] / data["time"].iloc[-1]  # Bcum / day
+    norm_Bcum = avgd_Bcum * settings["summary.period"]  # Bcum / period
+    summary   = {
+        "last.time"       : data["time"].iloc[-1],
+        "last.Aact"       : data["Aact"].iloc[-1],
+        "last.Bact"       : data["Bact"].iloc[-1],
+        "last.Bcum"       : data["Bcum"].iloc[-1],
+        "last.inventory"  : data["inventory"].iloc[-1],
+        "average.Bcum"    : avgd_Bcum, 
+        "normalized.Bcum" : norm_Bcum, 
+    }
+
+    # ------------------------------------------------- #
+    # --- [3] save in a file                        --- #
+    # ------------------------------------------------- #
+    with open( settings["summary.file"], "w" ) as f:
+        json5.dump( summary, f, indent=4 )
+    print( "[track__RIactivity.py] output :: {}".format( settings["summary.file"] ) )
 
     return()
 
@@ -339,16 +389,21 @@ def draw__figure( Data=None, settings=None, settingFile=None ):
 def track__RIactivity( settingFile="dat/settings.json" ):
 
     # ------------------------------------------------- #
-    # --- [2] calcualte time series                 --- #
+    # --- [1] calcualte time series                 --- #
     # ------------------------------------------------- #
     tEvo = acquire__timeSeries( settingFile=settingFile )
 
     # ------------------------------------------------- #
-    # --- [3] draw figure                           --- #
+    # --- [2] write summary                         --- #
+    # ------------------------------------------------- #
+    ret  = save__summary( settingFile=settingFile, tEvo=tEvo )
+    
+    # ------------------------------------------------- #
+    # --- [2] draw figure                           --- #
     # ------------------------------------------------- #
     ret  = draw__figure( Data=tEvo, settingFile=settingFile )
     
-
+    
     
 # ========================================================= #
 # ===   Execution of Pragram                            === #
