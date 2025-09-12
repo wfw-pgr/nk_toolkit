@@ -360,16 +360,24 @@ def save__summary( settingFile=None, tEvo=None ):
     # ------------------------------------------------- #
     # --- [2] pack summary                          --- #
     # ------------------------------------------------- #
-    avgd_Bcum = data["Bcum"].iloc[-1] / data["time"].iloc[-1]  # Bcum / day
-    norm_Bcum = avgd_Bcum * settings["summary.period"]  # Bcum / period
+    if ( settings["summary.period"] > data["time"].iloc[-1] ):
+        avgd_Bcum = data["Bcum"].iloc[-1] / data["time"].iloc[-1]  # Bcum / day
+        avgd_inve = data["inventory"].iloc[-1] / data["time"].iloc[-1]
+        norm_Bcum = avgd_Bcum * settings["summary.period"]  # Bcum / period
+        norm_inve = avgd_inve * settings["summary.period"]
+    else:
+        ti, time  = settings["summary.period"], data["time"].values
+        norm_Bcum = np.interp( ti, time, data["Bcum"]     .values )
+        norm_inve = np.interp( ti, time, data["inventory"].values )
+    
     summary   = {
         "last.time"       : data["time"].iloc[-1],
         "last.Aact"       : data["Aact"].iloc[-1],
         "last.Bact"       : data["Bact"].iloc[-1],
         "last.Bcum"       : data["Bcum"].iloc[-1],
         "last.inventory"  : data["inventory"].iloc[-1],
-        "average.Bcum"    : avgd_Bcum, 
         "normalized.Bcum" : norm_Bcum, 
+        "normalized.inve" : norm_inve, 
     }
 
     # ------------------------------------------------- #
