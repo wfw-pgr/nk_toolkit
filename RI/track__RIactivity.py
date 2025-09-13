@@ -5,7 +5,7 @@ import nk_toolkit.plot.gplot1D      as gpl
 import nk_toolkit.plot.load__config as lcf
 
 time_, unit_ = 0, 1
-names        = [ "time", "Anum", "Bnum", "Aact", "Bact", "Bcum", "inventory" ]
+names        = [ "time", "Anum", "Bnum", "Aact", "Bact", "Bcum", "inventory", "refilled" ]
 
 # ========================================================= #
 # ===  acquire__irradiatedAmount                        === #
@@ -162,6 +162,7 @@ def acquire__timeSeries( settingFile=None ):
     obtained   = 0.0
     t0h, t1h   = 0.0, 0.0
     remaining  = 1.0
+    refill     = 0.0
     tinv       = exchange__timeUnit( time=1., unit=tunit, direction="invert" )
     sched_base = { "dt"                : [ 1.0, "s" ],
                    "beam.relint"       :   0.0,
@@ -202,7 +203,8 @@ def acquire__timeSeries( settingFile=None ):
         #  -- refill -- # 
         if ( sched["refill"] ):
             if ( sched["refill.timing"].lower() == "beggining" ):
-                remaining = sched["refill.factor"]
+                refill    += sched["refill.factor"] - remaining
+                remaining  = sched["refill.factor"]
                 
         # ------------------------------------------------- #
         # --- [4-3] update [A]                          --- #
@@ -231,14 +233,16 @@ def acquire__timeSeries( settingFile=None ):
         #  -- refill -- # 
         if ( sched["refill"] ):
             if ( sched["refill.timing"].lower() == "end" ):
-                remaining = sched["refill.factor"]
+                refill    += sched["refill.factor"] - remaining
+                remaining  = sched["refill.factor"]
 
         # ------------------------------------------------- #
         # --- [4-6] regular refill                      --- #
         # ------------------------------------------------- #
         if ( settings["refill.regular"] ):
             if ( ( (ik+1) % nRefill ) == 0 ):
-                remaining = settings["refill.regular.factor"]
+                refill    += settings["refill.regular.factor"] - remaining
+                remaining  = settings["refill.regular.factor"]
         
                 
         # ------------------------------------------------- #
@@ -249,11 +253,13 @@ def acquire__timeSeries( settingFile=None ):
         Aact, Bact     = ld_A*Anum, ld_B*Bnum
         Bcum           = np.repeat(       obtained, sched["nPoints"] )
         tgtE           = np.repeat( remaining*tgtO, sched["nPoints"] )
+        tgtR           = np.repeat( refill   *tgtO, sched["nPoints"] )
         A0_loc, B0_loc = A0_loc_, B0_loc_
         stack         += [ np.concatenate( [ t_loc[:,np.newaxis], \
                                              Anum [:,np.newaxis], Bnum[:,np.newaxis],\
                                              Aact [:,np.newaxis], Bact[:,np.newaxis],\
-                                             Bcum [:,np.newaxis], tgtE[:,np.newaxis] ], axis=1) ]
+                                             Bcum [:,np.newaxis], \
+                                             tgtE[:,np.newaxis], tgtR[:,np.newaxis] ], axis=1) ]
         
     # ------------------------------------------------- #
     # --- [5] concatenate data                      --- #
@@ -363,13 +369,16 @@ def save__summary( settingFile=None, tEvo=None ):
     if ( settings["summary.period"] > data["time"].iloc[-1] ):
         avgd_Bcum = data["Bcum"].iloc[-1] / data["time"].iloc[-1]  # Bcum / day
         avgd_inve = data["inventory"].iloc[-1] / data["time"].iloc[-1]
+        avgd_refi = data["refilled"] .iloc[-1] / data["time"].iloc[-1]
         norm_Bcum = avgd_Bcum * settings["summary.period"]  # Bcum / period
         norm_inve = avgd_inve * settings["summary.period"]
+        norm_refi = avgd_refi * settings["summary.period"]
     else:
         ti, time  = settings["summary.period"], data["time"].values
         norm_Bcum = np.interp( ti, time, data["Bcum"]     .values )
         norm_inve = np.interp( ti, time, data["inventory"].values )
-    
+        norm_refi = np.interp( ti, time, data["refilled"] .values )
+        
     summary   = {
         "last.time"       : data["time"].iloc[-1],
         "last.Aact"       : data["Aact"].iloc[-1],
@@ -378,6 +387,7 @@ def save__summary( settingFile=None, tEvo=None ):
         "last.inventory"  : data["inventory"].iloc[-1],
         "normalized.Bcum" : norm_Bcum, 
         "normalized.inve" : norm_inve, 
+        "normalized.refi" : norm_refi, 
     }
 
     # ------------------------------------------------- #
