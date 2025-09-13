@@ -21,16 +21,16 @@ def estimate__RIproduction( paramsFile=None ):
     # ------------------------------------------------- #
     if ( paramsFile is None ): sys.exit( "[estimate__RIproduction.py] paramsFile == ???" )
     import nkUtilities.json__formulaParser as jso
-    params       = jso.json__formulaParser( inpFile=paramsFile )
+    params = jso.json__formulaParser( inpFile=paramsFile )
     
     # ------------------------------------------------- #
     # --- [2] calculate parameters & define EAxis   --- #
     # ------------------------------------------------- #
     #  -- [2-1] energy axis                         --  #
-    EAxis        = np.linspace( params["integral.EAxis.min"], params["integral.EAxis.max"], \
+    EAxis  = np.linspace( params["integral.EAxis.min"], params["integral.EAxis.max"], \
                                 params["integral.EAxis.num"] )
     #  -- [2-2] calculate other parameters          --  #
-    params       = calculate__parameters( params=params )
+    params = calculate__parameters( params=params )
 
     # ------------------------------------------------- #
     # --- [3] load photon flux                      --- #
