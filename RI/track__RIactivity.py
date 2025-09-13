@@ -386,8 +386,8 @@ def save__summary( settingFile=None, tEvo=None ):
         "last.Bcum"       : data["Bcum"].iloc[-1],
         "last.inventory"  : data["inventory"].iloc[-1],
         "normalized.Bcum" : norm_Bcum, 
-        "normalized.inve" : norm_inve, 
-        "normalized.refi" : norm_refi, 
+        "normalized.inventory" : norm_inve, 
+        "normalized.refilled"  : norm_refi, 
     }
 
     # ------------------------------------------------- #
