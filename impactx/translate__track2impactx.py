@@ -18,6 +18,8 @@ def translate__track2impactx( paramsFile   ="dat/parameters.json", \
                                       trackBLFile  =trackBLFile, \
                                       impactxBLFile=impactxBLFile, \
                                       phaseFile    =phaseFile )
+    ret = adjust__driftlength( impactxBLFile=impactxBLFile, paramsFile=paramsFile )
+    ret = adjust__QmagnetStrength( impactxBLFile=impactxBLFile, paramsFile=paramsFile )
     return()
     
 
@@ -86,7 +88,7 @@ def extract__trackv38_beamline( trackFile="track/sclinac.dat", \
         volt      = float(words[2])                         # volt :    [MV]
         phase     = float(words[3])                         #           [deg]
         harmonics =   int(words[4])                         # harmonics
-        Ra        =   int(words[5]) * cm                    # R-cavity  [cm]
+        Ra        = float(words[5]) * cm                    # R-cavity  [cm]
         
         ret       = [ { "type":"rfcavity", "name":name, "ds":ds, \
                         "volt":volt, "phase":phase, "harmonics":harmonics, \
@@ -178,13 +180,15 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         # ------------------------------------------------- #
         Ek0         = params["beam.Ek.MeV/u"] * params["beam.u"]
         Em0         = params["beam.mass.amu"] * amu
-        omega       = params["beam.freq"] * params["beam.harmonics"] * 2.0 * np.pi
+        omega       = params["beam.freq"]     * params["beam.harmonics"] * 2.0*np.pi
         df          = pd.DataFrame.from_dict( elements, orient="index" )
+        # df["volt"]  = np.nan
+        # df["phase"] = np.nan
         df          = df.drop( columns=[ "k","aperture_x", "aperture_y", "harmonics" ], \
                                errors="ignore" )
         mask        = df["type"] == "rfcavity"
         df.loc[mask,"ds"] = params["translate.cavity.length"]
-        egain       = ( df["volt"] * np.cos( df["phase"] /180.0*np.pi ) ).fillna(0)    
+        egain       = ( df["volt"] * np.cos( df["phase"] /180.0*np.pi ) ).fillna(0)
         Ek_in       = np.concatenate( ([0.0], np.cumsum(egain)[:-1]) ) + Ek0
         Ek_out      = np.cumsum( egain ) + Ek0
         df["Ek"]    = 0.5*( Ek_in + Ek_out )
@@ -222,6 +226,104 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
                    "freq":freq, "phase":phase, \
                    "aperture_x":element["aperture_x"], "aperture_y":element["aperture_y"] } 
         return( ret )
+
+    # ========================================================= #
+    # ===  convert_to_rfgap                                 === #
+    # ========================================================= #
+    def convert__rfgap( element, params, phase_df ):
+        
+        amu    = 931.494
+        
+        # ------------------------------------------------- #
+        # --- [1] rfgap model of the trace3D code       --- #
+        # ------------------------------------------------- #
+        def rfgap( Vg     = 1.0,       # [MV]
+                   phi    = -45.0,     # [deg]   # for particle ??
+                   Ek     = 0.0,       # [MeV]
+                   mass   = 931.494,   # [MeV]
+                   charge = 1.0,       # [C/e]
+                   freq   = 146.0e6 ): # [Hz]
+        
+            cv      = 2.9979e8         # (m/s)
+            qa      = abs( charge )    # (C)
+        
+            # ------------------------------------------------- #
+            # --- [1] calculation                           --- #
+            # ------------------------------------------------- #
+            phis    =  phi/180.0*np.pi
+            lamb    =  cv / freq
+            Wi      =  Ek
+            dW      =  qa * Vg * np.cos(phis)
+            Wm      =  Wi + 0.5*dW
+            Wf      =  Wi +     dW
+            Weff    =  qa * Vg * np.sin(phis)
+            gamma_i = 1.0 + Wi/mass
+            gamma_m = 1.0 + Wm/mass
+            gamma_f = 1.0 + Wf/mass
+            bg_i    = np.sqrt( gamma_i**2 - 1.0 )
+            bg_m    = np.sqrt( gamma_m**2 - 1.0 )
+            bg_f    = np.sqrt( gamma_f**2 - 1.0 )
+            beta_m  = bg_m / gamma_m
+            kx      = (-1.0)*( np.pi*Weff ) / ( mass *   bg_m**2 * lamb ) 
+            ky      = (-1.0)*( np.pi*Weff ) / ( mass *   bg_m**2 * lamb )
+            kz      = (+2.0)*( np.pi*Weff ) / ( mass * beta_m**2 * lamb )
+            p0c     = np.sqrt( Ek**2 + 2.0*Ek*mass )  # (MeV)
+        
+            # ------------------------------------------------- #
+            # --- [2] r-matrix                              --- #
+            # ------------------------------------------------- #
+            #  -- trace3D notation --  #
+            # rmdiag  = bg_i / bg_f
+            # rm11    =   1.0
+            # rm22    = rmdiag
+            # rm33    =   1.0
+            # rm44    = rmdiag
+            # rm55    =   1.0
+            # rm66    = rmdiag
+            # rm21    = kx / bg_f
+            # rm43    = ky / bg_f
+            # rm65    = kz / bg_f
+            # kick6   = 0.0
+            
+            #  -- my notation ( for [T, PT] ) --  #
+            rmat_     = np.zeros( (7,7) )
+            rmat_[1,1] =   1.0
+            rmat_[2,2] = bg_i / bg_f
+            rmat_[3,3] =   1.0
+            rmat_[4,4] = bg_i / bg_f
+            rmat_[5,5] =   1.0
+            rmat_[6,6] = gamma_i / gamma_f    #  PT = dE/(p0 c)  !=  dp/p0
+            rmat_[2,1] = kx / bg_f
+            rmat_[4,3] = ky / bg_f
+            rmat_[6,5] = kz / ( gamma_f ) # -1 for impactx
+            # kick6     = dW / p0c
+            rmat       = ( np.copy( rmat_[1:,1:] ) ).tolist()    # list for json5 dump
+            
+            # ------------------------------------------------- #
+            # --- [3] return                                --- #
+            # ------------------------------------------------- #
+            # ret     = { "rm11":rm11, "rm21":rm21, "rm22":rm22, \
+                #             "rm33":rm33, "rm43":rm43, "rm44":rm44, \
+                #             "rm55":rm55, "rm65":rm65, "rm66":rm66, \
+                #             "kick6":kick6, \
+                #            }
+            return( rmat )
+
+        # ------------------------------------------------- #
+        # --- [2] set values for LinearMap              --- #
+        # ------------------------------------------------- #
+        name   = element["name"].replace( "rf", "gap" )
+        Vg     = element["volt"]
+        # phi    = phase_df["phi_c"].loc[ element["name"] ]
+        phi    = phase_df["phi_t"].loc[ element["name"] ]
+        Ek     = phase_df["Ek"].loc[ element["name"] ]
+        mass   = params["beam.mass.amu"] * amu
+        charge = params["beam.charge"]
+        freq   = params["beam.freq"] * params["beam.harmonics"]
+        Rmat   = rfgap( Vg=Vg, phi=phi, Ek=Ek, mass=mass, charge=charge, freq=freq )
+        ret    = { "type":"rfgap", "name":name, "ds":0.0, "R":Rmat  }
+        return( ret )
+
     
     # ------------------------------------------------- #
     # --- [2] call converter                        --- #
@@ -232,6 +334,10 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         if   ( elements[key]["type"].lower() in [ "rfcavity" ] ):
             ret            = convert__rfcavity( elements[key], params, phase_df )
             elements_[key] = { **ret, **params["translate.cavity.options" ] }
+            if ( params["translate.rfgap.trace3D"] ):
+                ret = convert__rfgap( elements[key], params, phase_df )
+                elements_[ ret["name"] ] = { **ret }
+                
         elif ( elements[key]["type"].lower() in [ "quadrupole" ] ):
             elements_[key] = { **elements[key], **params["translate.quad.options" ] }
         elif ( elements[key]["type"].lower() in [ "drift" ] ):
@@ -245,6 +351,89 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         json5.dump( beamline , f, indent=2 )
         print( "[translate__track2impactx.py] output :: {}".format( impactxBLFile ) )
     return( beamline )
+
+
+
+# ========================================================= #
+# ===  adjust__driftlength.py                           === #
+# ========================================================= #
+def adjust__driftlength( paramsFile="dat/parameters.json", \
+                         impactxBLFile = "dat/beamline_impactx.json", Lcav=None ):
+
+    # ------------------------------------------------- #
+    # --- [1] load data                             --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params   = json5.load( f )
+    with open( impactxBLFile, "r" ) as f:
+        beamline = json5.load( f )
+    sequence = beamline["sequence"]
+    elements = beamline["elements"]
+    nSeq     = len( sequence )
+    if ( Lcav is None ):
+        Lcav   = params["translate.cavity.length"]
+        Lcav_h = Lcav * 0.5
+
+    # ------------------------------------------------- #
+    # --- [2] re-length                             --- #
+    # ------------------------------------------------- #
+    for ik, seq in enumerate(sequence):
+        prev, next = None, None
+        if ( ik-1 >= 0    ): prev = sequence[ik-1]
+        if ( ik+1 <  nSeq ): next = sequence[ik+1]
+        if ( elements[seq]["type"].lower() in [ "rfcavity" ] ):
+            if ( prev is not None ):
+                if ( elements[prev]["type"] in ["drift"] ):
+                    if ( elements[prev]["ds"] > Lcav_h ):
+                        elements[prev]["ds"] -= Lcav_h
+            if ( next is not None ):
+                if ( elements[next]["type"] in ["drift"] ):
+                    if ( elements[next]["ds"] > Lcav_h ):
+                        elements[next]["ds"] -= Lcav_h
+    beamline["elements"] = elements
+
+    # ------------------------------------------------- #
+    # --- [3] save and return                       --- #
+    # ------------------------------------------------- #
+    with open( impactxBLFile, "w" ) as f:
+        json5.dump( beamline , f, indent=2 )
+        print( "[adjust__driftlength] output :: {}".format( impactxBLFile ) )
+    return( beamline )
+
+
+# ========================================================= #
+# ===  adjust__QmagnetStrength                          === #
+# ========================================================= #
+def adjust__QmagnetStrength( paramsFile="dat/parameters.json", \
+                             impactxBLFile="dat/beamline_impactx.json" ):
+    
+    # ------------------------------------------------- #
+    # --- [1] load data                             --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params   = json5.load( f )
+    with open( impactxBLFile, "r" ) as f:
+        beamline = json5.load( f )
+    sequence = beamline["sequence"]
+    elements = beamline["elements"]
+    factor   = params["translate.quad.factor"]
+
+    # ------------------------------------------------- #
+    # --- [2] beam line                             --- #
+    # ------------------------------------------------- #
+    for key,item in elements.items():
+        if ( elements[key]["type"].lower() in ["quadrupole"] ):
+            elements[key]["k"] = elements[key]["k"] * factor
+    beamline["elements"] = elements
+
+    # ------------------------------------------------- #
+    # --- [3] dump again                            --- #
+    # ------------------------------------------------- #
+    with open( impactxBLFile, "w" ) as f:
+        json5.dump( beamline , f, indent=2 )
+        print( "[adjust__driftlength] output :: {}".format( impactxBLFile ) )
+    return( beamline )
+    
 
 
 # ========================================================= #

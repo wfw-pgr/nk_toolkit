@@ -3,6 +3,7 @@ import h5py
 import numpy   as np
 import pandas  as pd
 import pyvista as pv
+import scipy   as sp
 import matplotlib.pyplot               as plt
 import nk_toolkit.plot.load__config    as lcf
 import nk_toolkit.plot.gplot1D         as gp1
@@ -423,6 +424,7 @@ def postProcessed__beam( refpFile=None, statFile=None, paramsFile="dat/parameter
                          outFile="impactx/diags/postProcessed_beam.csv" ):
     
     amu = 931.494   # [MeV]
+    cv  = 2.998e8
     
     # ------------------------------------------------- #
     # --- [1] arguments check                       --- #
@@ -451,10 +453,15 @@ def postProcessed__beam( refpFile=None, statFile=None, paramsFile="dat/parameter
     # ------------------------------------------------- #
     # --- [3] additional plots                      --- #
     # ------------------------------------------------- #
-    data           = {}
-    data["s_refp"] = refp["s"]
-    data["Ek"]     = params["beam.mass.amu"] * amu * ( refp["gamma"] - 1.0 )
-    df             = pd.DataFrame( data )
+    data               = {}
+    data["s_refp"]     = refp["s"]
+    data["Ek"]         = params["beam.mass.amu"] * amu * ( refp["gamma"] - 1.0 )
+    freq               = params["beam.freq"] # * params["beam.harmonics"]
+    data["s_stat"]     = stat["s"]
+    data["phase_min"]  = stat["t_min" ] / cv * freq * 180.0
+    data["phase_avg"]  = stat["t_mean"] / cv * freq * 180.0
+    data["phase_max"]  = stat["t_max" ] / cv * freq * 180.0
+    df                 = pd.DataFrame( data )
     
     # ------------------------------------------------- #
     # --- [4] save and return                       --- #
@@ -466,17 +473,34 @@ def postProcessed__beam( refpFile=None, statFile=None, paramsFile="dat/parameter
 # ========================================================= #
 # ===  compute__fourierCoefficients                     === #
 # ========================================================= #
-def compute__fourierCoefficients( xp=None, fx=None, nMode=None, \
-                                  pngFile=None, coefFile=None, tolerance=1.e-10 ):
+def compute__fourierCoefficients( xp=None, fx=None, nMode=None, normalize=True, \
+                                  pngFile=None, coefFile=None, tolerance=1.e-10, a0_as_2a0=True ):
     
     ret      = ftk.get__fourierCoeffs( xp, fx, nMode=nMode, tolerance=tolerance )
     func     = ret["reconstruction"]
+    if ( normalize ):
+        volt = sp.integrate.simpson( fx, x=xp )
+        # fx   = fx / volt
+        ret["cos"] = ret["cos"] / volt
+        ret["sin"] = ret["sin"] / volt
+        # norm       = np.linalg.norm( fx )
+        # ret["cos"] = ret["cos"] / norm
+        # ret["sin"] = ret["sin"] / norm
+    if ( a0_as_2a0 ):
+        ret["cos"][0] = 2.0 * ret["cos"][0]
     data     = np.concatenate( [ ret["cos"][:,np.newaxis], ret["sin"][:,np.newaxis] ], axis=1 )
     if (  pngFile is not None ):
         ftk.display__fourierExpansion( xp, fx, func=func, pngFile=pngFile )
     if ( coefFile is not None ):
         with open( coefFile, "w" ) as f:
-            np.savetxt( f, data, fmt="%15.8e" )
+            sc = ",".join( [ "{:16.8e}".format( val ) for val in ret["cos"] ] )
+            ss = ",".join( [ "{:16.8e}".format( val ) for val in ret["sin"] ] )
+            st = "[ {} ]\n".format(sc) + "[ {} ]\n".format(ss)
+            f.write( st )
+            # -- old -- #
+            # np.savetxt( f, data, fmt="%15.8e" )
+            # print( "[impactx_toolkit.py] outfile :: {} ".format( coefFile ) )
+            # -- old -- #
     return( data )
 
 
