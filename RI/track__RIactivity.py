@@ -160,6 +160,7 @@ def acquire__timeSeries( settingFile=None ):
     # ------------------------------------------------- #
     stack      = []
     obtained   = 0.0
+    obtained_  = 0.0
     t0h, t1h   = 0.0, 0.0
     remaining  = 1.0
     refill     = 0.0
@@ -190,6 +191,7 @@ def acquire__timeSeries( settingFile=None ):
         t0h    = t1h          # (tunit)
         t1h    = t1h + dt     # (tunit)
         Y0h    = sched["beam.relint"] * Y0 * remaining
+        obtained_ = obtained
         
         # ------------------------------------------------- #
         # --- [4-2] separation ( [B] -> 0.0 )           --- #
@@ -251,7 +253,11 @@ def acquire__timeSeries( settingFile=None ):
         t_loc          = np.linspace( t0h, t1h, sched["nPoints"] )
         Anum, Bnum     = func_A( t_loc ), func_B( t_loc )
         Aact, Bact     = ld_A*Anum, ld_B*Bnum
-        Bcum           = np.repeat(       obtained, sched["nPoints"] )
+        if   ( sched["separation.timing"].lower() == "beggining" ):
+            Bcum       = np.repeat(       obtained, sched["nPoints"] )
+        elif ( sched["separation.timing"].lower() == "end" ):
+            Bcum       = np.repeat(      obtained_, sched["nPoints"] )
+            Bcum[-1]   = obtained
         tgtE           = np.repeat( remaining*tgtO, sched["nPoints"] )
         tgtR           = np.repeat( refill   *tgtO, sched["nPoints"] )
         A0_loc, B0_loc = A0_loc_, B0_loc_
