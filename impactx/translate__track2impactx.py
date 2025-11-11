@@ -16,7 +16,7 @@ def translate__track2impactx( paramsFile   ="dat/parameters.json", \
                                       trackBLFile  =trackBLFile )
     ret = translate__impactxElements( paramsFile   =paramsFile, \
                                       trackBLFile  =trackBLFile, \
-                                      impactxBLFile=impactxBLFile, \
+                                      impactxBLFile=impactxBLFile,\
                                       phaseFile    =phaseFile )
     ret = adjust__driftlength( impactxBLFile=impactxBLFile, paramsFile=paramsFile )
     ret = adjust__QmagnetStrength( impactxBLFile=impactxBLFile, paramsFile=paramsFile )
@@ -180,7 +180,7 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         # ------------------------------------------------- #
         Ek0         = params["beam.Ek.MeV/u"] * params["beam.u"]
         Em0         = params["beam.mass.amu"] * amu
-        omega       = params["beam.freq"]     * params["beam.harmonics"] * 2.0*np.pi
+        omega       = params["beam.freq.Hz"]     * params["beam.harmonics"] * 2.0*np.pi
         df          = pd.DataFrame.from_dict( elements, orient="index" )
         # df["volt"]  = np.nan
         # df["phase"] = np.nan
@@ -194,6 +194,8 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         df["Ek"]    = 0.5*( Ek_in + Ek_out )
         df["gamma"] = 1.0 + df["Ek"]/Em0
         df["beta"]  = np.sqrt( 1.0 - 1.0/df["gamma"]**2 )
+        Em0_GeV     = Em0 * 1e6 / 1e9   # MeV -> GeV 
+        df["Brho"]  = 3.3356 * df["beta"] * df["gamma"] * Em0_GeV / params["beam.charge.qe"]
         vp          = df["beta"] * cv
         dt          = df["ds"].to_numpy() / vp.to_numpy()
         t_in        = np.concatenate( ([0.0], np.cumsum(dt)[:-1] ) )
@@ -208,6 +210,7 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         # ------------------------------------------------- #
         # --- [2-3] return                              --- #
         # ------------------------------------------------- #
+        # if ( ( phaseFile is not None ) and ( not( params["translate.cavity.phase.fromfile"] ) ) ) :
         if ( phaseFile is not None ):
             df.to_csv( phaseFile )
         return( df )
@@ -219,13 +222,27 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         amu    = 931.494  # [MeV]
         Em0    = params["beam.mass.amu"] * amu
         ds     = params["translate.cavity.length"]
-        freq   = params["beam.freq"] * params["beam.harmonics"]
+        freq   = params["beam.freq.Hz"] * params["beam.harmonics"]
         escale = element["volt"] / ds / Em0
         phase  = phase_df["phi_c"].loc[ element["name"] ]
         ret    = { "type":element["type"], "name":element["name"], "ds":ds, "escale":escale, \
                    "freq":freq, "phase":phase, \
                    "aperture_x":element["aperture_x"], "aperture_y":element["aperture_y"] } 
         return( ret )
+
+    # ------------------------------------------------- #
+    # --- [3] convert shortrf                       --- #
+    # ------------------------------------------------- #
+    def convert__shortrf( element, params, phase_df ):
+        amu    = 931.494  # [MeV]
+        Em0    = params["beam.mass.amu"] * amu
+        V      = element["volt"] / Em0
+        freq   = params["beam.freq.Hz"] * params["beam.harmonics"]
+        phase  = params["translate.cavity.phase"]
+        ret    = { "type":"shortrf", "name":element["name"], "V":V, "freq":freq, "phase":phase } 
+        return( ret )
+
+
 
     # ========================================================= #
     # ===  convert_to_rfgap                                 === #
@@ -314,12 +331,11 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
         # ------------------------------------------------- #
         name   = element["name"].replace( "rf", "gap" )
         Vg     = element["volt"]
-        # phi    = phase_df["phi_c"].loc[ element["name"] ]
         phi    = phase_df["phi_t"].loc[ element["name"] ]
         Ek     = phase_df["Ek"].loc[ element["name"] ]
         mass   = params["beam.mass.amu"] * amu
-        charge = params["beam.charge"]
-        freq   = params["beam.freq"] * params["beam.harmonics"]
+        charge = params["beam.charge.qe"]
+        freq   = params["beam.freq.Hz"]  * params["beam.harmonics"]
         Rmat   = rfgap( Vg=Vg, phi=phi, Ek=Ek, mass=mass, charge=charge, freq=freq )
         ret    = { "type":"rfgap", "name":name, "ds":0.0, "R":Rmat  }
         return( ret )
@@ -329,29 +345,72 @@ def translate__impactxElements( paramsFile   ="dat/parameters.json", \
     # --- [2] call converter                        --- #
     # ------------------------------------------------- #
     phase_df  = guess__RFcavityPhase( elements=elements, params=params, phaseFile=phaseFile )
+    if   ( params["mode.linear"] ):
+        elements = convert__MaryLie2MADX( elements=elements, phase_df=phase_df, retype=True  )
+    elif ( params["translate.quad.options"]["unit"] == 0 ):
+        elements = convert__MaryLie2MADX( elements=elements, phase_df=phase_df, retype=False )
+    if   ( params["translate.cavity.phase.fromfile"] ):
+        phase_df_ = pd.read_csv( params["file.adjust_phase"] )
+        phase_df_ = phase_df_.set_index( "name" )
+        phase_df  = phase_df .set_index( "name" )
+        phase_df.update( phase_df_, overwrite=True )
+        phase_df.to_csv( "dat/temp.csv" )
     elements_ = {}
-    for key in sequence:
+    for key in sequence:        
         if   ( elements[key]["type"].lower() in [ "rfcavity" ] ):
-            ret            = convert__rfcavity( elements[key], params, phase_df )
-            elements_[key] = { **ret, **params["translate.cavity.options" ] }
-            if ( params["translate.rfgap.trace3D"] ):
-                ret = convert__rfgap( elements[key], params, phase_df )
+            if   ( params["translate.cavity.type"] in ["rfcavity"] ):
+                ret            = convert__rfcavity( elements[key], params, phase_df )
+                elements_[key] = { **ret, **params["translate.rfcavity.options" ] }
+            elif ( params["translate.cavity.type"] in ["shortrf" ] ):
+                ret            = convert__shortrf( elements[key], params, phase_df )
+                elements_[key] = { **ret, **params["translate.shortrf.options" ] }
+            if   ( params["translate.cavity.rfgap"] ):
+                ret            = convert__rfgap( elements[key], params, phase_df )
                 elements_[ ret["name"] ] = { **ret }
                 
-        elif ( elements[key]["type"].lower() in [ "quadrupole" ] ):
+        elif ( elements[key]["type"].lower() in [ "quadrupole", "quadrupole.linear" ] ):
             elements_[key] = { **elements[key], **params["translate.quad.options" ] }
-        elif ( elements[key]["type"].lower() in [ "drift" ] ):
+        elif ( elements[key]["type"].lower() in [ "drift", "drift.linear" ] ):
             elements_[key] = { **elements[key], **params["translate.drift.options"] }
 
+    # ------------------------------------------------- #
+    # --- [3] skip components                       --- #
+    # ------------------------------------------------- #
+    if ( params["translate.skip.rf"] ):
+        elements_ = { k:v for k,v in elements_.items()
+                      if not( v["type"].lower() in ["rfcavity","rfgap","shortrf"] ) }
+    if ( params["translate.skip.qm"] ):
+        elements_ = { k:v for k,v in elements_.items()
+                      if not( v["type"].lower() in ["quadrupole","quadrupole.linear"] ) }
+    if ( params["translate.skip.dr"] ):
+        elements_ = { k:v for k,v in elements_.items()
+                      if not( v["type"].lower() in ["drift","drift.linear"] ) }
+    
+    
     # ------------------------------------------------- #
     # --- [3] save and return                       --- #
     # ------------------------------------------------- #
     beamline["elements"] = elements_
+    beamline["sequence"] = list( elements_.keys() )
     with open( impactxBLFile, "w" ) as f:
         json5.dump( beamline , f, indent=2 )
         print( "[translate__track2impactx.py] output :: {}".format( impactxBLFile ) )
     return( beamline )
 
+
+# ========================================================= #
+# ===  convert__MaryLie2MADX                            === #
+# ========================================================= #
+def convert__MaryLie2MADX( elements=None, phase_df=None, retype=True ):
+    for key in elements.keys():
+        if ( elements[key]["type"] == "quadrupole" ):
+            elements[key]["k"]        = elements[key]["k"] / phase_df.loc[ key, "Brho" ]
+            if ( retype ):
+                elements[key]["type"] = "quadrupole.linear"
+        if ( elements[key]["type"] == "drift" ):
+            if ( retype ):
+                elements[key]["type"] = "drift.linear"
+    return( elements )
 
 
 # ========================================================= #
@@ -383,11 +442,11 @@ def adjust__driftlength( paramsFile="dat/parameters.json", \
         if ( ik+1 <  nSeq ): next = sequence[ik+1]
         if ( elements[seq]["type"].lower() in [ "rfcavity" ] ):
             if ( prev is not None ):
-                if ( elements[prev]["type"] in ["drift"] ):
+                if ( elements[prev]["type"] in ["drift", "drift.linear"] ):
                     if ( elements[prev]["ds"] > Lcav_h ):
                         elements[prev]["ds"] -= Lcav_h
             if ( next is not None ):
-                if ( elements[next]["type"] in ["drift"] ):
+                if ( elements[next]["type"] in ["drift", "drift.linear"] ):
                     if ( elements[next]["ds"] > Lcav_h ):
                         elements[next]["ds"] -= Lcav_h
     beamline["elements"] = elements
@@ -422,7 +481,7 @@ def adjust__QmagnetStrength( paramsFile="dat/parameters.json", \
     # --- [2] beam line                             --- #
     # ------------------------------------------------- #
     for key,item in elements.items():
-        if ( elements[key]["type"].lower() in ["quadrupole"] ):
+        if ( elements[key]["type"].lower() in ["quadrupole", "quadrupole.linear"] ):
             elements[key]["k"] = elements[key]["k"] * factor
     beamline["elements"] = elements
 

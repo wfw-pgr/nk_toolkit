@@ -1,10 +1,13 @@
 import os, sys, tqdm, glob, json5
+import impactx
 import h5py
 import numpy   as np
 import pandas  as pd
 import pyvista as pv
 import scipy   as sp
+import amrex.space3d as amr
 import matplotlib.pyplot               as plt
+import matplotlib.patches              as patches
 import nk_toolkit.plot.load__config    as lcf
 import nk_toolkit.plot.gplot1D         as gp1
 import nk_toolkit.math.fourier_toolkit as ftk
@@ -21,6 +24,7 @@ import nk_toolkit.math.fourier_toolkit as ftk
 #  * convert__hdf2vtk
 #  * compute__fourierCoefficients
 #  * adjust__RFcavityPhase
+#  * plot__lattice
 # 
 # ========================================================= #
 
@@ -30,7 +34,9 @@ import nk_toolkit.math.fourier_toolkit as ftk
 # ========================================================= #
 
 def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None, 
-                      redefine_pid=True, redefine_step=True ):
+                      redefine_pid=True, redefine_step=True, step_start=0 ):
+
+    default_step_start = 1
     
     # ------------------------------------------------- #
     # --- [1] load HDF5 file                        --- #
@@ -38,6 +44,13 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
     stack = []
     with h5py.File( inpFile, "r" ) as f:
         isteps = sorted( [ int( key ) for key in f["data"].keys() ] )
+        if   ( steps is None ):
+            pass
+        elif ( isinstance( steps, ( list, tuple, np.ndarray ) ) ):
+            isteps = sorted( set(isteps) & set( steps ) )
+        elif ( isinstance( steps, ( int, float ) ) ):
+            index  = np.linspace( 0,len(isteps)-1, int(steps), dtype=int )
+            isteps = [ isteps[ik] for ik in index ]
         for step in isteps:
             try:
                 key, df    = str(step), {}
@@ -47,8 +60,9 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
                 df["tp"]   = f["data"][key]["particles"]["beam"]["position"]["t"][:] 
                 df["px"]   = f["data"][key]["particles"]["beam"]["momentum"]["x"][:] 
                 df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:] 
-                df["pt"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:] 
-                df["step"] = np.full( df["pid"].shape, step, dtype=int )
+                df["pt"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+                kstep      = step + ( step_start - default_step_start )
+                df["step"] = np.full( df["pid"].shape, kstep, dtype=int )
                 stack     += [ pd.DataFrame( df ) ]
             except TypeError:
                 print( "[load__impactHDF5.py] detected TypeError at step == {}.. continue. ".format( step ) )
@@ -59,9 +73,9 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
     # --- [2] return                                --- #
     # ------------------------------------------------- #
     if ( redefine_pid  ):
-        ret["pid"]  = pd.factorize( ret["pid"]  )[0] + 1
+        ret["pid"]  = pd.factorize( ret["pid"]  )[0] + step_start
     if ( redefine_step ):
-        ret["step"] = pd.factorize( ret["step"] )[0] + 1
+        ret["step"] = pd.factorize( ret["step"] )[0] + step_start
     if ( random_choice is not None ):
         npart = len( set( ret["pid"] ) )
         if ( random_choice > npart ):
@@ -69,8 +83,9 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
         pids  = np.random.choice( np.arange(1,npart+1), size=random_choice, replace=False )
     if ( pids  is not None ):
         ret   = ret[ ret["pid"].isin( pids ) ]
-    if ( steps is not None ):
-        ret   = ret[ ret["step"].isin( steps ) ]
+    # if ( steps is not None ):
+    #     ret   = ret[ ret["step"].isin( steps ) ]
+        
     return( ret )
 
 
@@ -146,8 +161,8 @@ def plot__statistics( inpFile=None, pngDir="png/", plot_conf=None  ):
                  "px-range"       : "px"                    ,
                  "py-range"       : "py"                    ,
                  "pt-range"       : "pt"                    ,
-                 "sig_xyt"        : "RMS beam size [m]"     , 
-                 "sig_pxyt"       : "Momentum"              ,
+                 "sigma_xyt"      : "RMS beam size [m]"     , 
+                 "sigma_pxyt"     : "Momentum"              ,
                  "alpha_xyt"      : r"$\alpha$"             ,
                  "beta_xyt"       : r"$\beta$ [m]"          ,
                  "dispersion_xy"  : r"$Dispersion$"         ,
@@ -201,9 +216,9 @@ def plot__statistics( inpFile=None, pngDir="png/", plot_conf=None  ):
         }
         config = { **config, **config_ }
         fig    = gp1.gplot1D( config=config )
-        fig.add__plot( xAxis=data["s"], yAxis=data[xyt+"_mean"], label="Mean" )
-        fig.add__plot( xAxis=data["s"], yAxis=data[xyt+"_min"] , label="Min"  )
-        fig.add__plot( xAxis=data["s"], yAxis=data[xyt+"_max"] , label="Max"  )
+        fig.add__plot( xAxis=data["s"], yAxis=data["mean_"+xyt], label="Mean" )
+        fig.add__plot( xAxis=data["s"], yAxis=data["min_"+xyt] , label="Min"  )
+        fig.add__plot( xAxis=data["s"], yAxis=data["max_"+xyt] , label="Max"  )
         fig.set__axis()
         fig.set__legend()
         fig.save__figure()
@@ -211,7 +226,7 @@ def plot__statistics( inpFile=None, pngDir="png/", plot_conf=None  ):
     # ------------------------------------------------- #
     # --- [4] statistics graph                      --- #
     # ------------------------------------------------- #
-    for stat in [ "sig_{}", "sig_p{}", "alpha_{}", "beta_{}", \
+    for stat in [ "sigma_{}", "sigma_p{}", "alpha_{}", "beta_{}", \
                   "emittance_{}", "emittance_{}n" ]:
         gname    = stat.format( "xyt" )
         config_  = {
@@ -456,11 +471,11 @@ def postProcessed__beam( refpFile=None, statFile=None, paramsFile="dat/parameter
     data               = {}
     data["s_refp"]     = refp["s"]
     data["Ek"]         = params["beam.mass.amu"] * amu * ( refp["gamma"] - 1.0 )
-    freq               = params["beam.freq"] # * params["beam.harmonics"]
+    freq               = params["beam.freq.Hz"] # * params["beam.harmonics"]
     data["s_stat"]     = stat["s"]
-    data["phase_min"]  = stat["t_min" ] / cv * freq * 180.0
-    data["phase_avg"]  = stat["t_mean"] / cv * freq * 180.0
-    data["phase_max"]  = stat["t_max" ] / cv * freq * 180.0
+    data["phase_min"]  = stat["min_t" ] / cv * freq * 180.0
+    data["phase_avg"]  = stat["mean_t"] / cv * freq * 180.0
+    data["phase_max"]  = stat["max_t" ] / cv * freq * 180.0
     df                 = pd.DataFrame( data )
     
     # ------------------------------------------------- #
@@ -654,7 +669,338 @@ def adjust__refpPhase( inpFile="impactx/diags/ref_particle.0", \
     phasedb.to_csv( phaseFile, index=False )
     return( phasedb )
 
+
+# ========================================================= #
+# ===  plot__lattice                                    === #
+# ========================================================= #
+
+def plot__lattice( latticeFile=None, ax=None, \
+                   height=1.0, y0=0.0, pngFile=None, label=False ):
+
+    qf_plot = { "color":"royalblue", "alpha":0.8 }
+    qd_plot = { "color":"tomato"   , "alpha":0.8 }
+    rf_plot = { "color":"orange"   , "alpha":0.8 }
+    dr_plot = { "color":"grey"     , "alpha":0.8 }
     
+    # ------------------------------------------------- #
+    # --- [1] load lattice file                     --- #
+    # ------------------------------------------------- #
+    with open( latticeFile, "r" ) as f:
+        loaded   = json5.load( f )
+        sequence = loaded["sequence"]
+        elements = { seq:loaded["elements"][seq] for seq in sequence }
+    lattice = pd.DataFrame.from_dict( elements, orient="index" )
+    lattice = lattice[ [ "name", "type", "ds", "k" ] ]
+    ds      = lattice.loc[ :,"ds" ].to_numpy()
+    lattice["s_in"]  = np.cumsum( np.insert( ds, 0, 0.0 ) )[:-1]
+    lattice["s_out"] = np.cumsum( ds )
+    
+    # ------------------------------------------------- #
+    # --- [2] prepare figure / axis                 --- #
+    # ------------------------------------------------- #
+    if ( ax is None ):
+        fig,ax   = plt.subplots( figsize=(8,2) )
+        given_ax = False
+    else:
+        fig      = ax.figure
+        given_ax = True
+
+    # ------------------------------------------------- #
+    # --- [3] draw lattice elements                 --- #
+    # ------------------------------------------------- #
+    for _, row in lattice.iterrows():
+        s0,s1  = row["s_in"], row["s_out"]
+        etype  = str( row["type"] ).lower()
+        name   = str( row["name"] )
+        width  = s1 - s0
+        k      = row["k"]
+        
+        # -- [3-1] QF/QD -- #
+        if   ( etype in ["quadrupole", "quadrupole.linear" ] ):
+            if ( row["k"] > 0 ):
+                ax.add_patch( patches.Rectangle( (s0,y0), width, height, **qf_plot ) )
+            else:
+                ax.add_patch( patches.Rectangle( (s0,y0-height), width, height, **qd_plot ) )
+        # -- [3-2] RFcavity -- #
+        elif ( etype in ["rfcavity", "rfgap" ] ):
+            ax.add_patch( patches.Polygon( [ [s0,y0], [s1,y0+0.5*height], [s1,y0-0.5*height] ],
+                                           closed=True, **rf_plot ) )
+        # -- [3-3] drift  -- #
+        elif ( etype in ["drift","drift.linear"] ):
+            ax.plot( [s0,s1], [y0,y0], **dr_plot )
+        # -- [3-4] その他（黒線） -- #
+        else:
+            ax.plot([s0, s1], [y0, y0], color="black", lw=1 )
+            
+        # --- ラベルを中央に配置 --- #
+        if ( label ):
+            ax.text( (s0+s1)/2, y0+1.1*height*np.sign(y0+0.1),
+                     name, ha="center", va="bottom", fontsize=7 )
+
+    # ------------------------------------------------- #
+    # --- [4] axis settings                         --- #
+    # ------------------------------------------------- #
+    if ( not( given_ax ) ):
+        ax.set_xlim( lattice["s_in"].min(), lattice["s_out"].max() )
+        ax.set_ylim( -1.5*height, 1.5*height )
+        ax.set_xlabel("s [m]")
+        ax.set_yticks([])
+        ax.grid( False )
+
+        legend_handles = [
+            patches.Patch( color="royalblue", label="QF"),
+            patches.Patch( color="tomato"   , label="QD"),
+            patches.Patch( color="orange"   , label="RFcavity"),
+            plt.Line2D([0], [0], color="gray", lw=2, label="Drift")
+        ]
+        plt.tight_layout()
+        ax.legend( handles=legend_handles, loc="upper right", ncol=4, fontsize=6 )
+        
+        if ( pngFile is not None ):
+            ax.axis( "off" )
+            ax.set_facecolor("none")
+            plt.savefig( pngFile, dpi=300 )
+            plt.close()
+        else:
+            plt.show()
+
+    return( lattice )
+
+
+# ========================================================= #
+# ===  get__energy.py                                   === #
+# ========================================================= #
+
+def get__energy( paramsFile="dat/parameters.json" ):
+
+    amu = 931.494
+
+    # ------------------------------------------------- #
+    # --- [1] functions                             --- #
+    # ------------------------------------------------- #
+    def step_mapping( step_bpm ):
+        return( (step_bpm-1)*2 )
+    
+    # ------------------------------------------------- #
+    # --- [2] load data                             --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+    bpm   = load__impactHDF5( inpFile=params["file.bpm"] )
+    ref   = pd.read_csv( params["file.ref"], sep=r"\s+" )
+
+    # ------------------------------------------------- #
+    # --- [3] get energy                            --- #
+    # ------------------------------------------------- #
+    Em0       = params["beam.mass.amu"] * amu
+    Ek0       = params["beam.Ek.MeV/u"] * params["beam.u"]
+    Et0       = Em0 + Ek0
+    p0c       = np.sqrt( Et0**2 - Em0**2 )
+    gamma     = ref.loc[ step_mapping( bpm["step"] ), "gamma" ].to_numpy()
+    Ek_ref    = ( gamma - 1.0 ) * Em0
+    Ek        = Ek_ref + p0c * bpm["pt"].to_numpy()
+    return( Ek )
+
+
+
+# ========================================================= #
+# ===  get__particles.py                                === #
+# ========================================================= #
+
+def get__particles( paramsFile="dat/parameters.json", bpmFile=None, refFile=None, \
+                    steps=None, pids=None ):
+
+    amu = 931.494
+    cv  = 2.99792458e8
+    
+    # ------------------------------------------------- #
+    # --- [1] functions                             --- #
+    # ------------------------------------------------- #
+    def step_mapping( step_bpm ):
+        return( (step_bpm-1)*2 )
+    
+    # ------------------------------------------------- #
+    # --- [2] load data                             --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+    if ( bpmFile is None ):
+        bpmFile = params["file.bpm"]
+    if ( refFile is None ):
+        refFile = params["file.ref"]
+    bpm         = load__impactHDF5( inpFile=bpmFile, pids=pids, \
+                                    steps=steps, redefine_step=False, \
+                                    step_start=0 ).reset_index( drop=True )
+    ref         = pd.read_csv( refFile, sep=r"\s+" )
+
+    # ------------------------------------------------- #
+    # --- [3] concatenate ref / particle data       --- #
+    # ------------------------------------------------- #
+    ref_df  = ref.loc[ bpm["step"], : ]
+    slist   = [ "s","beta","gamma", "x","y","z","t", "px","py","pz","pt" ]
+    renames = { s:"ref_"+s for s in slist }
+    ref_df  = ( ref_df[ slist ] ).rename( columns=renames ).reset_index( drop=True )
+    bpm     = pd.concat( [ bpm, ref_df ], axis=1 )
+
+    # ------------------------------------------------- #
+    # --- [4] get energy /                          --- #
+    # ------------------------------------------------- #
+    Em0        = params["beam.mass.amu"] * amu
+    Ek0        = params["beam.Ek.MeV/u"] * params["beam.u"]
+    Et0        = Em0 + Ek0
+    p0c        = np.sqrt( Et0**2 - Em0**2 )
+    Ek_ref     = ( bpm["ref_gamma"] - 1.0 ) * Em0
+    bpm["dEk"] =          p0c * bpm["pt"].to_numpy()
+    bpm["Ek"]  = Ek_ref + p0c * bpm["pt"].to_numpy()
+    bpm["dt"]  = bpm["tp"]  / cv
+    return( bpm )
+
+
+
+# ========================================================= #
+# ===  set__beamlineComponents                          === #
+# ========================================================= #
+
+def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx.json",
+                            add_bpm=True ):
+
+    # ------------------------------------------------- #
+    # --- [1] load json file                        --- #
+    # ------------------------------------------------- #
+    if ( beamlineFile is not None ):
+        with open( beamlineFile, "r" ) as f:
+            beamline = json5.load( f )
+        elements = beamline["elements"]
+    if ( elements is None ):
+        print( "[impactx_toolkit.py] elements == ??? " )
+        sys.exit()
+        
+    # ------------------------------------------------- #
+    # --- [2] set beam components                   --- #
+    # ------------------------------------------------- #
+    stack  = []
+    if ( add_bpm ):
+        bpm    = impactx.elements.BeamMonitor( "bpm", backend="h5" )
+        stack += [ bpm ]
+    for key,elem in elements.items():
+        elem_ = { key:val for key,val in elem.items() if ( key != "type" ) }
+        
+        if   ( elem["type"] in [ "rfcavity" ]   ):
+            bcomp = impactx.elements.RFCavity  ( **elem_ )
+
+        elif ( elem["type"] in [ "shortrf"  ]   ):
+            bcomp = impactx.elements.ShortRF   ( **elem_ )
+
+        elif ( elem["type"] in [ "rfgap" ] ):
+            Rmat = impactx.Map6x6.identity()
+            for ii in range(6):
+                for ij in range(6):
+                    Rmat[ii+1,ij+1] = elem_["R"][ii][ij]
+            elem_["R"] = Rmat
+            bcomp = impactx.elements.LinearMap ( **elem_ )
+            
+        elif ( elem["type"] in [ "quadrupole" ]   ):
+            bcomp = impactx.elements.ExactQuad ( **elem_ )
+
+        elif ( elem["type"] in [ "drift" ]        ):
+            bcomp = impactx.elements.ExactDrift( **elem_ )
+            
+        elif ( elem["type"] in [ "quadrupole.linear" ]  ):
+            elem_ = { k:v for k,v in elem_.items() if k not in ["int_order", "mapsteps", "unit"] }
+            bcomp = impactx.elements.Quad ( **elem_ )
+
+        elif ( elem["type"] in [ "drift.linear" ] ):
+            bcomp = impactx.elements.Drift( **elem_ )
+
+        else:
+            sys.exit( "[main_impactx.py] unknown element type :: {} ".format( elem["type"] ) )
+
+        stack += [ bcomp ]
+        if ( add_bpm ):
+            stack += [ bpm ]
+
+    # ------------------------------------------------- #
+    # --- [3] return                                --- #
+    # ------------------------------------------------- #
+    beamline = stack
+    return( beamline )
+
+
+# ========================================================= #
+# ===  set__manualReferenceParticle.py                  === #
+# ========================================================= #
+
+def set__manualReferenceParticle( particle_container=None,  # particle_container of impactx
+                                  ref_xyt=[0.,0.,0.], ref_pxyt=[0.,0.,0.], 
+                                  n_part=2,                 # #.of particles : min. => 2
+                                 ):
+    x_, y_, t_ = 0, 1, 2
+    MeV        = 1.e6
+    
+    # ------------------------------------------------- #
+    # --- [1] set particle distribution             --- #
+    # ------------------------------------------------- #
+    dx_podv  = amr.PODVector_real_std()
+    dy_podv  = amr.PODVector_real_std()
+    dt_podv  = amr.PODVector_real_std()
+    dpx_podv = amr.PODVector_real_std()
+    dpy_podv = amr.PODVector_real_std()
+    dpt_podv = amr.PODVector_real_std()
+    w_podv   = amr.PODVector_real_std()
+    
+    for ik in range( n_part ):
+        dx_podv.push_back ( ref_xyt[x_]  )
+        dy_podv.push_back ( ref_xyt[y_]  )
+        dt_podv.push_back ( ref_xyt[t_]  )
+        dpx_podv.push_back( ref_pxyt[x_] )
+        dpy_podv.push_back( ref_pxyt[y_] )
+        dpt_podv.push_back( ref_pxyt[t_] )
+        w_podv.push_back  (   1.0        )
+
+    refp   = particle_container.ref_particle()
+    qm_eeV = refp.charge_qe / ( refp.mass_MeV * MeV )
+    particle_container.add_n_particles( dx_podv , dy_podv , dt_podv ,
+                                        dpx_podv, dpy_podv, dpt_podv,
+                                        qm_eeV  , w=w_podv )
+    return( particle_container )
+
+
+# ========================================================= #
+# ===  translate__ExactQuad_to_ExactDrift               === #
+# ========================================================= #
+
+def translate__ExactQuad_to_ExactDrift( inpFile="dat/beamline_impactx.json",
+                                        outFile="dat/beamline_noExactQuad.json" ):
+
+    # ------------------------------------------------- #
+    # --- [1] import beamline file                  --- #
+    # ------------------------------------------------- #
+    with open( inpFile, "r" ) as f:
+        beamline = json5.load( f )
+    sequence = beamline["sequence"]
+    elements = beamline["elements"]
+
+    # ------------------------------------------------- #
+    # --- [2] translate ( ExactQuad -> ExactDrift ) --- #
+    # ------------------------------------------------- #
+    elements_ = {}
+    for key,elem in elements.items():
+        if ( elem["type"].lower() == "quadrupole" ):
+            elem = { "type":"drift", "name":elem["name"], "ds":elem["ds"] }
+        elements_[key] = elem
+            
+    # ------------------------------------------------- #
+    # --- [3] export virtual beamline               --- #
+    # ------------------------------------------------- #
+    beamline_ = { "elements":elements_, "sequence":sequence }
+    if ( outFile is not None ):
+        with open( outFile, "w" ) as f:
+            json5.dump( beamline_, f, indent=4 )
+            print( "[translate__ExactQuad_to_ExactDrift] output :: {} ".format( outFile ) )
+    return( beamline_ )
+
+
+
 # ========================================================= #
 # ===   Execution of Pragram                            === #
 # ========================================================= #
@@ -694,20 +1040,34 @@ if ( __name__=="__main__" ):
     # outFile  = "png/bpm.vtp"
     # ret      = convert__hdf2vtk( hdf5File=hdf5File, outFile=outFile )
 
-    # ------------------------------------------------- #
-    # --- [6] compute  fourier coeffs               --- #
-    # ------------------------------------------------- #
-    coefFile = "test/fourier_expansion.dat"
-    pngFile  = "test/fourier_expansion.png"
-    xp       = np.linspace( 0.0, 1.0, 101 )
-    fx       = np.sin( xp*np.pi )**2.0
-    nMode    = None
-    compute__fourierCoefficients( xp=xp, fx=fx, nMode=nMode, \
-                                  pngFile=pngFile, coefFile=coefFile )
+    # # ------------------------------------------------- #
+    # # --- [6] compute  fourier coeffs               --- #
+    # # ------------------------------------------------- #
+    # coefFile = "test/fourier_expansion.dat"
+    # pngFile  = "test/fourier_expansion.png"
+    # xp       = np.linspace( 0.0, 1.0, 101 )
+    # fx       = np.sin( xp*np.pi )**2.0
+    # nMode    = None
+    # compute__fourierCoefficients( xp=xp, fx=fx, nMode=nMode, \
+    #                               pngFile=pngFile, coefFile=coefFile )
+
+    # # ------------------------------------------------- #
+    # # --- [7] adjust phase shift                    --- #
+    # # ------------------------------------------------- #
+    # adjust__RFcavityPhase( paramsFile="test/beamline.json", \
+    #                        outFile="test/adjust__RFcavityPhase.dat" )
+    
+
+    # # ------------------------------------------------- #
+    # # --- [8] plot__lattice                         --- #
+    # # ------------------------------------------------- #
+    # latticeFile = "dat/beamline_impactx.json"
+    # pngFile     = "lattice.png"
+    # plot__lattice( latticeFile=latticeFile, pngFile=pngFile )
 
     # ------------------------------------------------- #
-    # --- [7] adjust phase shift                    --- #
+    # --- [9] get__particles                        --- #
     # ------------------------------------------------- #
-    adjust__RFcavityPhase( paramsFile="test/beamline.json", \
-                           outFile="test/adjust__RFcavityPhase.dat" )
+    particles = get__particles( paramsFile="dat/parameters.json" )
+    
     
