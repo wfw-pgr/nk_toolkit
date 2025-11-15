@@ -91,7 +91,6 @@ class gplot1D:
         if ( xAxis       is None ): xAxis       = self.xAxis
         if ( yAxis       is None ): sys.exit( " [gplot1D.py] yAxis == ?? " )
         if ( xAxis       is None ): xAxis       = np.arange( yAxis.size ) # - インデックス代用-#
-        if ( label       is None ): label       = ' '*self.config["legend.labelLength"]
         if ( color       is None ): color       = self.config["plot.color"]
         if ( alpha       is None ): alpha       = self.config["plot.alpha"]
         if ( linestyle   is None ): linestyle   = self.config["plot.linestyle"]
@@ -548,7 +547,7 @@ class gplot1D:
     # ========================================================= #
     # ===  カーソル 描画                                    === #
     # ========================================================= #
-    def add__cursor( self, xAxis=None, yAxis=None, axis="ax1", \
+    def add__cursor( self, xAxis=None, yAxis=None, axis="ax1", label=None, \
                      color=None, linestyle=None, linewidth=None ):
 
         confname = axis + ".cursor." + "{}"
@@ -585,7 +584,7 @@ class gplot1D:
         # ------------------------------------------------- #
         if ( yAxis is not None ):
             MinMax = theAxis.get_xlim()
-            theAxis.hlines( yAxis, MinMax[0], MinMax[1], \
+            theAxis.hlines( yAxis, MinMax[0], MinMax[1], label=label, \
                             **plot_settings )
 
             
