@@ -33,6 +33,6 @@ def transcribe( c, inpFile, outFile=None, bitrate="64k", workDir="workDir",
     os.makedirs( workDir, exist_ok=True )
 
     ret = wfs.whisper__fromSound( inpFile=inpFile, outFile=outFile, model=model, \
-                                  bitrate=bitrate, workDir=workDir, logFile=logFile )
+                                  bitrate=bitrate, work_dir=workDir, logFile=logFile )
     print(f"[transcription] {ret}")
     
