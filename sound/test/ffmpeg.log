@@ -1,0 +1,45 @@
+ffmpeg version 7.1.1 Copyright (c) 2000-2025 the FFmpeg developers
+  built with Apple clang version 16.0.0 (clang-1600.0.26.6)
+  configuration: --prefix=/usr/local/Cellar/ffmpeg/7.1.1_3 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags='-Wl,-ld_classic' --enable-ffplay --enable-gnutls --enable-gpl --enable-libaom --enable-libaribb24 --enable-libbluray --enable-libdav1d --enable-libharfbuzz --enable-libjxl --enable-libmp3lame --enable-libopus --enable-librav1e --enable-librist --enable-librubberband --enable-libsnappy --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libtesseract --enable-libtheora --enable-libvidstab --enable-libvmaf --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-lzma --enable-libfontconfig --enable-libfreetype --enable-frei0r --enable-libass --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-libspeex --enable-libsoxr --enable-libzmq --enable-libzimg --disable-libjack --disable-indev=jack --enable-videotoolbox --enable-audiotoolbox
+  libavutil      59. 39.100 / 59. 39.100
+  libavcodec     61. 19.101 / 61. 19.101
+  libavformat    61.  7.100 / 61.  7.100
+  libavdevice    61.  3.100 / 61.  3.100
+  libavfilter    10.  4.100 / 10.  4.100
+  libswscale      8.  3.100 /  8.  3.100
+  libswresample   5.  3.100 /  5.  3.100
+  libpostproc    58.  3.100 / 58.  3.100
+Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'sample.m4a':
+  Metadata:
+    major_brand     : M4A 
+    minor_version   : 0
+    compatible_brands: M4A isommp42
+    creation_time   : 2025-11-19T07:33:55.000000Z
+    title           : 新規録音
+    voice-memo-uuid : E1BA593A-CDA0-45A2-A90E-425B84FDFC47
+    encoder         : com.apple.VoiceMemos (iPad バージョン14.7.8（ビルド23H730）)
+  Duration: 00:00:03.86, start: 0.000000, bitrate: 72 kb/s
+  Stream #0:0[0x1](und): Audio: aac (LC) (mp4a / 0x6134706D), 48000 Hz, mono, fltp, 64 kb/s (default)
+      Metadata:
+        creation_time   : 2025-11-19T07:33:55.000000Z
+        handler_name    : Core Media Audio
+        vendor_id       : [0][0][0][0]
+Stream mapping:
+  Stream #0:0 -> #0:0 (aac (native) -> mp3 (libmp3lame))
+Press [q] to stop, [?] for help
+Output #0, mp3, to 'workDir/sample.mp3':
+  Metadata:
+    major_brand     : M4A 
+    minor_version   : 0
+    compatible_brands: M4A isommp42
+    voice-memo-uuid : E1BA593A-CDA0-45A2-A90E-425B84FDFC47
+    TIT2            : 新規録音
+    TSSE            : Lavf61.7.100
+  Stream #0:0(und): Audio: mp3, 48000 Hz, mono, fltp, 64 kb/s (default)
+      Metadata:
+        creation_time   : 2025-11-19T07:33:55.000000Z
+        handler_name    : Core Media Audio
+        vendor_id       : [0][0][0][0]
+        encoder         : Lavc61.19.101 libmp3lame
+[out#0/mp3 @ 0x7fdb8c006700] video:0KiB audio:30KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: 1.353524%
+size=      31KiB time=00:00:03.86 bitrate=  65.3kbits/s speed=63.8x    

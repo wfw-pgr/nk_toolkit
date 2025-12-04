@@ -74,7 +74,7 @@ class gplot2D:
             self.add__cMap( xAxis     = self.xAxis, yAxis   = self.yAxis,     \
                             cMap      = self.cMap , levels  = self.cmpLevels  )
             if ( self.config["clb.sw"]      ):
-                self.set__colorBar()
+                self.set__colorbar()
             if ( self.config["cmp.point.sw"] ):
                 self.add__point( xAxis=self.xAxis, yAxis=self.yAxis )
             instantOut = True
@@ -139,6 +139,10 @@ class gplot2D:
             self.cImage = self.ax1.pcolormesh( xAxis_, yAxis_, self.cMap, \
                                                alpha =self.config["cmp.alpha"], \
                                                cmap  =self.config["cmp.colortable"], \
+                                               zorder=0 )
+        elif ( self.config["cmp.cmpmode"].lower() in [ "imshow" ] ):
+            self.cImage = self.ax1.imshow    ( self.cMap, \
+                                               alpha =self.config["cmp.alpha"], \
                                                zorder=0 )
         elif ( self.config["cmp.cmpmode"].lower() in [ "tricontourf" ] ):
             triangulated = mtr.Triangulation( xAxis_, yAxis_ )
@@ -556,7 +560,7 @@ class gplot2D:
     # ========================================================= #
     # ===  カラーバー 描画 ルーチン                         === #
     # ========================================================= #
-    def set__colorBar( self ):
+    def set__colorbar( self ):
         # ------------------------------------------------- #
         # --- 準備                                      --- #
         # ------------------------------------------------- #

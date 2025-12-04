@@ -13,9 +13,10 @@ yfilmsize_px  = 300          # (pixel)
 # ===  analyze__OHPFilmExperiment                       === #
 # ========================================================= #
 
-def analyze__OHPFilmExperiment( inpFile=None, Lx=15.0, Ly=15.0, method="gauss-fit-projection" ):
+def analyze__OHPFilmExperiment( inpFile=None, Lx=15.0, Ly=15.0, method="gauss-fit-projection", manual_center=None ):
     
     edges   = detect__OHPsheetEdge( inpFile=inpFile, \
+                                    manual_center=manual_center, 
                                     bbcheckFile="png/image_bbcheck.png",
                                     croppedFile="png/image_cropped.png" )
     shift   = measure__beamshift  ( image=edges["image_cropped"], Lx=Lx, Ly=Ly, \
@@ -36,8 +37,7 @@ def analyze__OHPFilmExperiment( inpFile=None, Lx=15.0, Ly=15.0, method="gauss-fi
 # ===  detect OHP sheet's edge point and crop it        === #
 # ========================================================= #
 
-def detect__OHPsheetEdge( inpFile=None, bbcheckFile=None, croppedFile=None ):
-
+def detect__OHPsheetEdge( inpFile=None, bbcheckFile=None, croppedFile=None, manual_center=None ):
 
     # ------------------------------------------------- #
     # --- [1] load images                           --- #
@@ -55,7 +55,6 @@ def detect__OHPsheetEdge( inpFile=None, bbcheckFile=None, croppedFile=None ):
     yrange_broad  = [ int(ypeak-yfilmsize_px*2), int(ypeak+yfilmsize_px*2) ]
     xprofiles     = blur[ yrange_tight[0]:yrange_tight[1], xrange_broad[0]:xrange_broad[1] ]
     yprofiles     = blur[ yrange_broad[0]:yrange_broad[1], xrange_tight[0]:xrange_tight[1] ]
-
 
     # ------------------------------------------------- #
     # --- [3] search max. derivative point          --- #
@@ -75,6 +74,9 @@ def detect__OHPsheetEdge( inpFile=None, bbcheckFile=None, croppedFile=None ):
         yR        = int( np.argmin( diff ) + yrange_broad[0] )
         ystack   += [ [ yL, yR ] ]
 
+    xstack = np.array( xstack )
+    ystack = np.array( ystack )
+    
     # ------------------------------------------------- #
     # --- [4] edge/center point under ristriction   --- #
     # ------------------------------------------------- #
@@ -82,8 +84,13 @@ def detect__OHPsheetEdge( inpFile=None, bbcheckFile=None, croppedFile=None ):
     yedges    = np.median( np.array( ystack ), axis=0 )
     xcenter   = round( np.average( xedges ) )
     ycenter   = round( np.average( yedges ) )
+    if ( manual_center is not None ):
+        xcenter = manual_center[0]
+        ycenter = manual_center[1]
     xLCR      = [ int(xcenter-xfilmsize_px/2), int(xcenter), int(xcenter+xfilmsize_px/2) ]
     yBCT      = [ int(ycenter-yfilmsize_px/2), int(ycenter), int(ycenter+yfilmsize_px/2) ]
+    print( "( xLeft  , xCenter, xRight ) = ({0[0]},{0[1]},{0[2]})".format( xLCR ) )
+    print( "( yBottom, yCenter, yTop   ) = ({0[0]},{0[1]},{0[2]})".format( yBCT ) )
     img8_bw   = cv2.normalize( img16, None, 0, 255, cv2.NORM_MINMAX).astype( np.uint8 )
     img8_bw   = cv2.bitwise_not( img8_bw )
     img       = cv2.cvtColor( img8_bw, cv2.COLOR_GRAY2BGR )
@@ -303,14 +310,15 @@ if ( __name__=="__main__" ):
     # ------------------------------------------------- #
     # --- [2] settings                              --- #
     # ------------------------------------------------- #
-    Lx, Ly  = 15.0, 15.0
-    method  = "gauss-fit-projection"
-
+    Lx, Ly        = 15.0, 15.0
+    method        = "gauss-fit-projection"
+    manual_center = [ 1614, 900 ]
 
     # ------------------------------------------------- #
     # --- [3] call analyzer                         --- #
     # ------------------------------------------------- #
-    analyze__OHPFilmExperiment( inpFile=inpFile, method=method, Lx=Lx, Ly=Ly )
+    analyze__OHPFilmExperiment( inpFile=inpFile, method=method, \
+                                manual_center=manual_center, Lx=Lx, Ly=Ly )
     
 
 

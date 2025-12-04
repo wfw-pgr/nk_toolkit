@@ -163,17 +163,17 @@
     // ------------------------------------------------- //
     //  -- カラーバー 一般設定     --  //
     "clb.sw"                : true,
-    "clb.position"          : [0.50,0.92,0.88,0.94],
+    "clb.position"          : [0.52,0.93,0.88,0.95],
     "clb.orientation"       : "horizontal",
     //  -- カラーバー 目盛         --  //
     "clb.nLabel"            : 2,
     "clb.fontsize"          : 12,
     //  -- カラーバー タイトル     --  //
     "clb.title"             : null,
-    "clb.title.position"    : [0.65,0.92],
-    "clb.title.fontsize"    : 20,
+    "clb.title.position"    : [0.60,0.96],
+    "clb.title.fontsize"    : 12,
 
-    "clb.x.major.nticks"     : 5,
+    "clb.x.major.nticks"     : 2,
     "clb.x.major.length"     : 2.0,
     "clb.x.major.width"      : 1.0,
     

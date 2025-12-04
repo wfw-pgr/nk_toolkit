@@ -10,41 +10,41 @@ def translate__track2impactx( paramsFile   ="dat/parameters.json", \
                               trackFile    ="track/sclinac.dat", \
                               impactxBLFile="dat/beamline_impactx.json", \
                               trackBLFile  ="dat/beamline_track.json", \
-                              phaseFile    ="dat/rfphase.csv", \
-                              Lcav=1.0e-4, factor=1.0 ):
+                              phaseFile    ="dat/rfphase.csv" ):
 
-    ret = extract__trackv38_beamline( inpFile=trackFile, outFile=trackBLFile )
-    ret = translate__impactxElements( paramsFile=paramsFile, inpFile=trackBLFile, \
-                                      phaseFile =phaseFile , outFile=impactxBLFile )
-    ret = adjust__driftlength       ( inpFile=impactxBLFile, outFile=impactxBLFile, Lcav  =Lcav   )
-    ret = adjust__QmagnetStrength   ( inpFile=impactxBLFile, outFile=impactxBLFile, factor=factor )
-    return( ret )
+    ret = extract__trackv38_beamline( trackFile    =trackFile, \
+                                      trackBLFile  =trackBLFile )
+    ret = translate__impactxElements( paramsFile   =paramsFile, \
+                                      trackBLFile  =trackBLFile, \
+                                      impactxBLFile=impactxBLFile,\
+                                      phaseFile    =phaseFile )
+    ret = adjust__driftlength( impactxBLFile=impactxBLFile, paramsFile=paramsFile )
+    ret = adjust__QmagnetStrength( impactxBLFile=impactxBLFile, paramsFile=paramsFile )
+    return()
     
 
 # ========================================================= #
 # ===  extract__trackv38_beamline.py                    === #
 # ========================================================= #
 
-def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
-                                outFile="dat/beamline_track.json" ):
-
-    MeV   = 1.0e+6
-    cm    = 1.0e-2
-    gauss = 1.0e-4
-    MHz   = 1.0e+6
-    amu   = 931.494    # [MeV]
-
-
+def extract__trackv38_beamline( trackFile="track/sclinac.dat", \
+                                trackBLFile="dat/beamline_track.json" ):
+    
     # ------------------------------------------------- #
     # --- [1] read track file                       --- #
     # ------------------------------------------------- #
-    with open( inpFile, "r" ) as f:
+    with open( trackFile, "r" ) as f:
         lines  = f.readlines()
 
     # ------------------------------------------------- #
     # --- [2] convert_quad                          --- #
     # ------------------------------------------------- #
     def convert_to_quad( words, counts ):
+        
+        MeV   = 1.0e+6
+        cm    = 1.0e-2
+        gauss = 1.0e-4
+        
         name  = "qm{}".format( (counts["Nqm"]+1) )
         Bq    = float(words[2]) * gauss
         Ra    = float(words[5]) * cm
@@ -61,9 +61,13 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
     # --- [3] convert_to_drift                      --- #
     # ------------------------------------------------- #
     def convert_to_drift( words, counts ):
+        
+        cm             = 1.0e-2
+        
         name           = "dr{}".format( (counts["Ndr"]+1) )
         ds             = float(words[2]) * cm
         Ra             = float(words[3]) * cm
+        
         ret            = [ { "type":"drift", "name":name, "ds":ds, \
                              "aperture_x":Ra, "aperture_y":Ra } ]
         counts["Ndr"] += 1
@@ -74,12 +78,18 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
     # --- [4] convert_to_rfcavity                   --- #
     # ------------------------------------------------- #
     def convert_to_rfcavity( words, counts ):
+        
+        MHz       = 1.e+6
+        cm        = 1.e-2
+        amu       = 931.494    # [MeV]
+        
         name      = "rf{}".format( (counts["Nrf"]+1) )
         ds        = 0.0   # tempolarily set as 0 to identify other element's position.
         volt      = float(words[2])                         # volt :    [MV]
         phase     = float(words[3])                         #           [deg]
         harmonics =   int(words[4])                         # harmonics
         Ra        = float(words[5]) * cm                    # R-cavity  [cm]
+        
         ret       = [ { "type":"rfcavity", "name":name, "ds":ds, \
                         "volt":volt, "phase":phase, "harmonics":harmonics, \
                         "aperture_x":Ra, "aperture_y":Ra,  } ]
@@ -120,29 +130,33 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
     # --- [6] save as a json file                   --- #
     # ------------------------------------------------- #
     elements = { el["name"]:el for el in seq }
-    if ( outFile is not None ):
-        with open( outFile, "w" ) as f:
-            json5.dump( elements, f, indent=4 )
-            print( "[extract__trackv38_beamline] output :: {}".format( outFile ) )
-    return( elements )
+    sequence = list( elements.keys() )
+    beamline = { "sequence":sequence, "elements":elements }
+    with open( trackBLFile, "w" ) as f:
+        json5.dump( beamline, f, indent=2 )
+        print( "[translate__track2impactx.py] output :: {}".format( trackBLFile ) )
+    return( beamline )
         
+    
 
 # ========================================================= #
 # ===  translate__impactxElements.py                    === #
 # ========================================================= #
 
-def translate__impactxElements( paramsFile="dat/parameters.json", \
-                                inpFile   ="dat/beamline_track.json", \
-                                outFile   ="dat/beamline_impactx.json", \
-                                phaseFile ="dat/rfphase.csv" ):
+def translate__impactxElements( paramsFile   ="dat/parameters.json", \
+                                trackBLFile  ="dat/beamline_track.json", \
+                                impactxBLFile="dat/beamline_impactx.json", \
+                                phaseFile    ="dat/rfphase.csv" ):
 
     # ------------------------------------------------- #
     # --- [1] load files                            --- #
     # ------------------------------------------------- #
     with open( paramsFile, "r" ) as f:
         params   = json5.load( f )
-    with open( inpFile, "r" ) as f:
-        elements = json5.load( f )
+    with open( trackBLFile, "r" ) as f:
+        beamline = json5.load( f )
+    sequence = beamline["sequence"]
+    elements = beamline["elements"]
 
     # ------------------------------------------------- #
     # --- [2] guess phase routine                   --- #
@@ -166,8 +180,10 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         # ------------------------------------------------- #
         Ek0         = params["beam.Ek.MeV/u"] * params["beam.u"]
         Em0         = params["beam.mass.amu"] * amu
-        omega       = params["beam.freq.Hz"]  * params["beam.harmonics"] * 2.0*np.pi
+        omega       = params["beam.freq.Hz"]     * params["beam.harmonics"] * 2.0*np.pi
         df          = pd.DataFrame.from_dict( elements, orient="index" )
+        # df["volt"]  = np.nan
+        # df["phase"] = np.nan
         df          = df.drop( columns=[ "k","aperture_x", "aperture_y", "harmonics" ], \
                                errors="ignore" )
         mask        = df["type"] == "rfcavity"
@@ -194,6 +210,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         # ------------------------------------------------- #
         # --- [2-3] return                              --- #
         # ------------------------------------------------- #
+        # if ( ( phaseFile is not None ) and ( not( params["translate.cavity.phase.fromfile"] ) ) ) :
         if ( phaseFile is not None ):
             df.to_csv( phaseFile )
         return( df )
@@ -244,7 +261,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
                    charge = 1.0,       # [C/e]
                    freq   = 146.0e6 ): # [Hz]
         
-            cv      = 2.99792458e8     # (m/s)
+            cv      = 2.9979e8         # (m/s)
             qa      = abs( charge )    # (C)
         
             # ------------------------------------------------- #
@@ -271,7 +288,20 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         
             # ------------------------------------------------- #
             # --- [2] r-matrix                              --- #
-            # ------------------------------------------------- #            
+            # ------------------------------------------------- #
+            #  -- trace3D notation --  #
+            # rmdiag  = bg_i / bg_f
+            # rm11    =   1.0
+            # rm22    = rmdiag
+            # rm33    =   1.0
+            # rm44    = rmdiag
+            # rm55    =   1.0
+            # rm66    = rmdiag
+            # rm21    = kx / bg_f
+            # rm43    = ky / bg_f
+            # rm65    = kz / bg_f
+            # kick6   = 0.0
+            
             #  -- my notation ( for [T, PT] ) --  #
             rmat_     = np.zeros( (7,7) )
             rmat_[1,1] =   1.0
@@ -289,6 +319,11 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             # ------------------------------------------------- #
             # --- [3] return                                --- #
             # ------------------------------------------------- #
+            # ret     = { "rm11":rm11, "rm21":rm21, "rm22":rm22, \
+                #             "rm33":rm33, "rm43":rm43, "rm44":rm44, \
+                #             "rm55":rm55, "rm65":rm65, "rm66":rm66, \
+                #             "kick6":kick6, \
+                #            }
             return( rmat )
 
         # ------------------------------------------------- #
@@ -321,16 +356,17 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         phase_df.update( phase_df_, overwrite=True )
         phase_df.to_csv( "dat/temp.csv" )
     elements_ = {}
-    for key in elements.keys():
+    for key in sequence:        
         if   ( elements[key]["type"].lower() in [ "rfcavity" ] ):
             if   ( params["translate.cavity.type"] in ["rfcavity"] ):
                 ret            = convert__rfcavity( elements[key], params, phase_df )
+                elements_[key] = { **ret, **params["translate.rfcavity.options" ] }
             elif ( params["translate.cavity.type"] in ["shortrf" ] ):
-                ret            = convert__shortrf ( elements[key], params, phase_df )
-            elements_[key] = { **ret, **params["translate.cavity.options" ] }
+                ret            = convert__shortrf( elements[key], params, phase_df )
+                elements_[key] = { **ret, **params["translate.shortrf.options" ] }
             if   ( params["translate.cavity.rfgap"] ):
-                ret                      = convert__rfgap( elements[key], params, phase_df )
-                elements_[ ret["name"] ] = ret      # ret's name is gapXX -> define another element
+                ret            = convert__rfgap( elements[key], params, phase_df )
+                elements_[ ret["name"] ] = { **ret }
                 
         elif ( elements[key]["type"].lower() in [ "quadrupole", "quadrupole.linear" ] ):
             elements_[key] = { **elements[key], **params["translate.quad.options" ] }
@@ -340,13 +376,13 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
     # ------------------------------------------------- #
     # --- [3] skip components                       --- #
     # ------------------------------------------------- #
-    if ( params["translate.cavity.skip"] ):
+    if ( params["translate.skip.rf"] ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["rfcavity","rfgap","shortrf"] ) }
-    if ( params["translate.quad.skip"] ):
+    if ( params["translate.skip.qm"] ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["quadrupole","quadrupole.linear"] ) }
-    if ( params["translate.drift.skip"] ):
+    if ( params["translate.skip.dr"] ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["drift","drift.linear"] ) }
     
@@ -354,11 +390,12 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
     # ------------------------------------------------- #
     # --- [3] save and return                       --- #
     # ------------------------------------------------- #
-    if ( outFile is not None ):
-        with open( outFile, "w" ) as f:
-            json5.dump( elements_ , f, indent=2 )
-            print( "[translate__track2impactx.py] output :: {}".format( outFile ) )
-    return( elements_ )
+    beamline["elements"] = elements_
+    beamline["sequence"] = list( elements_.keys() )
+    with open( impactxBLFile, "w" ) as f:
+        json5.dump( beamline , f, indent=2 )
+        print( "[translate__track2impactx.py] output :: {}".format( impactxBLFile ) )
+    return( beamline )
 
 
 # ========================================================= #
@@ -367,7 +404,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
 def convert__MaryLie2MADX( elements=None, phase_df=None, retype=True ):
     for key in elements.keys():
         if ( elements[key]["type"] == "quadrupole" ):
-            elements[key]["k"] = elements[key]["k"] / phase_df.loc[ key, "Brho" ]
+            elements[key]["k"]        = elements[key]["k"] / phase_df.loc[ key, "Brho" ]
             if ( retype ):
                 elements[key]["type"] = "quadrupole.linear"
         if ( elements[key]["type"] == "drift" ):
@@ -379,25 +416,27 @@ def convert__MaryLie2MADX( elements=None, phase_df=None, retype=True ):
 # ========================================================= #
 # ===  adjust__driftlength.py                           === #
 # ========================================================= #
-def adjust__driftlength( Lcav=None, elements=None, \
-                         inpFile=None, outFile=None ):
+def adjust__driftlength( paramsFile="dat/parameters.json", \
+                         impactxBLFile = "dat/beamline_impactx.json", Lcav=None ):
 
     # ------------------------------------------------- #
     # --- [1] load data                             --- #
     # ------------------------------------------------- #
-    if ( Lcav     is None ): sys.exit( "[adjust__driftlength] Lcav == ???" )
-    if ( elements is None ):
-        if ( inpFile is not None ):
-            with open( inpFile, "r" ) as f:
-                elements = json5.load( f )
-    sequence = list( elements.keys() )
+    with open( paramsFile, "r" ) as f:
+        params   = json5.load( f )
+    with open( impactxBLFile, "r" ) as f:
+        beamline = json5.load( f )
+    sequence = beamline["sequence"]
+    elements = beamline["elements"]
     nSeq     = len( sequence )
-    Lcav_h   = 0.5 * Lcav
-    
+    if ( Lcav is None ):
+        Lcav   = params["translate.cavity.length"]
+        Lcav_h = Lcav * 0.5
+
     # ------------------------------------------------- #
     # --- [2] re-length                             --- #
     # ------------------------------------------------- #
-    for ik,seq in enumerate(sequence):
+    for ik, seq in enumerate(sequence):
         prev, next = None, None
         if ( ik-1 >= 0    ): prev = sequence[ik-1]
         if ( ik+1 <  nSeq ): next = sequence[ik+1]
@@ -410,48 +449,49 @@ def adjust__driftlength( Lcav=None, elements=None, \
                 if ( elements[next]["type"] in ["drift", "drift.linear"] ):
                     if ( elements[next]["ds"] > Lcav_h ):
                         elements[next]["ds"] -= Lcav_h
+    beamline["elements"] = elements
 
     # ------------------------------------------------- #
     # --- [3] save and return                       --- #
     # ------------------------------------------------- #
-    if ( outFile is not None ):
-        with open( outFile, "w" ) as f:
-            json5.dump( elements, f, indent=4 )
-            print( "[adjust__driftlength] output :: {}".format( outFile ) )
-    return( elements )
+    with open( impactxBLFile, "w" ) as f:
+        json5.dump( beamline , f, indent=2 )
+        print( "[adjust__driftlength] output :: {}".format( impactxBLFile ) )
+    return( beamline )
 
 
 # ========================================================= #
 # ===  adjust__QmagnetStrength                          === #
 # ========================================================= #
-def adjust__QmagnetStrength( factor =1.0 , elements=None, \
-                             inpFile=None, outFile =None ):
+def adjust__QmagnetStrength( paramsFile="dat/parameters.json", \
+                             impactxBLFile="dat/beamline_impactx.json" ):
     
     # ------------------------------------------------- #
     # --- [1] load data                             --- #
     # ------------------------------------------------- #
-    if ( elements is None ):
-        if ( inpFile is None ):
-            sys.exit( "[adjust__QmagnetStrength] no elements... [ERROR]" )
-        else:
-            with open( inpFile, "r" ) as f:
-                elements = json5.load( f )
-                
+    with open( paramsFile, "r" ) as f:
+        params   = json5.load( f )
+    with open( impactxBLFile, "r" ) as f:
+        beamline = json5.load( f )
+    sequence = beamline["sequence"]
+    elements = beamline["elements"]
+    factor   = params["translate.quad.factor"]
+
     # ------------------------------------------------- #
     # --- [2] beam line                             --- #
     # ------------------------------------------------- #
     for key,item in elements.items():
         if ( elements[key]["type"].lower() in ["quadrupole", "quadrupole.linear"] ):
             elements[key]["k"] = elements[key]["k"] * factor
+    beamline["elements"] = elements
 
     # ------------------------------------------------- #
     # --- [3] dump again                            --- #
     # ------------------------------------------------- #
-    if ( outFile is not None ):
-        with open( outFile, "w" ) as f:
-            json5.dump( elements, f, indent=4 )
-            print( "[adjust__driftlength] output :: {}".format( outFile ) )
-    return( elements )
+    with open( impactxBLFile, "w" ) as f:
+        json5.dump( beamline , f, indent=2 )
+        print( "[adjust__driftlength] output :: {}".format( impactxBLFile ) )
+    return( beamline )
     
 
 
