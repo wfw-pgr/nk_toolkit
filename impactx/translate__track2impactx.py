@@ -10,14 +10,23 @@ def translate__track2impactx( paramsFile   ="dat/parameters.json", \
                               trackFile    ="track/sclinac.dat", \
                               impactxBLFile="dat/beamline_impactx.json", \
                               trackBLFile  ="dat/beamline_track.json", \
-                              phaseFile    ="dat/rfphase.csv", \
-                              Lcav=1.0e-4, factor=1.0 ):
+                              phaseFile    ="dat/rfphase.csv" ):
 
     ret = extract__trackv38_beamline( inpFile=trackFile, outFile=trackBLFile )
     ret = translate__impactxElements( paramsFile=paramsFile, inpFile=trackBLFile, \
                                       phaseFile =phaseFile , outFile=impactxBLFile )
-    ret = adjust__driftlength       ( inpFile=impactxBLFile, outFile=impactxBLFile, Lcav  =Lcav   )
-    ret = adjust__QmagnetStrength   ( inpFile=impactxBLFile, outFile=impactxBLFile, factor=factor )
+    
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+        Lcav   = params["translate.cavity.length"]
+        factor = params["translate.quad.factor"]
+    
+    if ( Lcav > 0.0 ):
+        ret = adjust__driftlength    ( inpFile=impactxBLFile, outFile=impactxBLFile, \
+                                       Lcav=Lcav )
+    if ( factor != 1.0 ):
+        ret = adjust__QmagnetStrength( inpFile=impactxBLFile, outFile=impactxBLFile, \
+                                       factor=factor )
     return( ret )
     
 
@@ -33,7 +42,6 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
     gauss = 1.0e-4
     MHz   = 1.0e+6
     amu   = 931.494    # [MeV]
-
 
     # ------------------------------------------------- #
     # --- [1] read track file                       --- #
@@ -164,7 +172,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         # ------------------------------------------------- #
         # --- [2-2] guess initial rfcavity phase        --- #
         # ------------------------------------------------- #
-        Ek0         = params["beam.Ek.MeV/u"] * params["beam.u"]
+        Ek0         = params["beam.Ek.MeV/u"] * params["beam.u.nucleon"]
         Em0         = params["beam.mass.amu"] * amu
         omega       = params["beam.freq.Hz"]  * params["beam.harmonics"] * 2.0*np.pi
         df          = pd.DataFrame.from_dict( elements, orient="index" )
@@ -198,6 +206,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             df.to_csv( phaseFile )
         return( df )
 
+    
     # ------------------------------------------------- #
     # --- [3] convert routine                       --- #
     # ------------------------------------------------- #

@@ -1,4 +1,6 @@
-
+import os, sys, json5, h5py
+import numpy  as np
+import pandas as pd
 
 # ========================================================= #
 # === load__impactHDF5.py                               === #
@@ -64,12 +66,20 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
 # ===  get__particles.py                                === #
 # ========================================================= #
 
-def get__particles( params=None, paramsFile="dat/parameters.json", \
-                    bpmFile=None, refFile=None, \
+def get__particles( params=None,
+                    paramsFile="dat/parameters.json", \
+                    bpmFile="impactx/diags/openPMD/bpm.h5", \
+                    refFile="impactx/diags/ref_particle.0", \
                     steps=None, pids=None ):
 
     amu = 931.494
     cv  = 2.99792458e8
+
+    def norm_angle( deg ):
+        deg  = np.asarray( deg, dtype=float )
+        ret  = ( ( deg + 180.0 ) % 360.0 ) - 180.0
+        if ( np.ndim(ret) == 0 ): ret = float( ret )
+        return( ret )
     
     # ------------------------------------------------- #
     # --- [1] load data                             --- #
@@ -77,10 +87,6 @@ def get__particles( params=None, paramsFile="dat/parameters.json", \
     if ( params is None ):
         with open( paramsFile, "r" ) as f:
             params = json5.load( f )
-    if ( bpmFile is None ):
-        bpmFile = params["file.bpm"]
-    if ( refFile is None ):
-        refFile = params["file.ref"]
     bpm = load__impactHDF5( inpFile=bpmFile, pids=pids, \
                             steps=steps, redefine_step=False, \
                             step_start=0 ).reset_index( drop=True )
@@ -98,17 +104,35 @@ def get__particles( params=None, paramsFile="dat/parameters.json", \
     # ------------------------------------------------- #
     # --- [4] get energy /                          --- #
     # ------------------------------------------------- #
-    rf_freq    = params["beam.freq.Hz"]  * params["beam.harmonics"]
-    Em0        = params["beam.mass.amu"] * amu
-    Ek0        = params["beam.Ek.MeV/u"] * params["beam.u"]
-    Et0        = Em0 + Ek0
-    p0c        = np.sqrt( Et0**2 - Em0**2 )
-    Ek_ref     = ( bpm["ref_gamma"] - 1.0 ) * Em0
-    bpm["dEk"] =          p0c * bpm["pt"].to_numpy()
-    bpm["Ek"]  = Ek_ref + bpm["dEk"]
-    bpm["dt"]  = bpm["tp"]  / cv
-    bpm["phi"] = bpm["dt"]  * rf_freq * 360.0
+    rf_freq     = params["beam.freq.Hz"]  * params["beam.harmonics"]
+    Em0         = params["beam.mass.amu"] * amu
+    Ek0         = params["beam.Ek.MeV/u"] * params["beam.u.nucleon"]
+    Et0         = Em0 + Ek0
+    p0c         = np.sqrt( Et0**2 - Em0**2 )
+    Ek_ref      = ( bpm["ref_gamma"] - 1.0 ) * Em0
+    bpm["dEk"]  = p0c * bpm["pt"]
+    bpm["Ek"]   = Ek_ref + bpm["dEk"]
+    bpm["dt"]   = bpm["tp"]  / cv
+    bpm["dphi"] = norm_angle( (                   bpm["dt"] ) * rf_freq * 360.0 )
+    bpm["phi"]  = norm_angle( ( bpm["ref_t"]/cv + bpm["dt"] ) * rf_freq * 360.0 )
     return( bpm )
+
+
+# ========================================================= #
+# ===  get__beamStats                                   === #
+# ========================================================= #
+
+def get__beamStats( statFile="impactx/diags/reduced_beam_characteristics.0", \
+                    refpFile="impactx/diags/ref_particle.0", ext=None  ):
+    
+    if ( ext is not None ):
+        statFile = os.path.splitext()[0] + ext
+        refpFile = os.path.splitext()[0] + ext
+    
+    refp = pd.read_csv( refpFile, sep=r"\s+" )
+    stat = pd.read_csv( statFile, sep=r"\s+" )
+    ret  = pd.concat( [ refp.set_index("step"), stat.set_index("step") ], axis=1 ).reset_index()
+    return( ret )
 
 
 # ========================================================= #
