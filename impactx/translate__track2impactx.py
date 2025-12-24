@@ -230,7 +230,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         Em0    = params["beam.mass.amu"] * amu
         V      = element["volt"] / Em0
         freq   = params["beam.freq.Hz"] * params["beam.harmonics"]
-        phase  = params["translate.cavity.phase"]
+        # phase  = params["translate.cavity.phase"]
+        phase  = phase_df["phi_c"].loc[ element["name"] ]
         ret    = { "type":"shortrf", "name":element["name"], "V":V, "freq":freq, "phase":phase } 
         return( ret )
 

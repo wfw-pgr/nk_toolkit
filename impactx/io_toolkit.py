@@ -34,6 +34,7 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
                 df["px"]   = f["data"][key]["particles"]["beam"]["momentum"]["x"][:] 
                 df["py"]   = f["data"][key]["particles"]["beam"]["momentum"]["y"][:] 
                 df["pt"]   = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+                df["wt"]   = f["data"][key]["particles"]["beam"]["weighting"][:]
                 kstep      = step + ( step_start - default_step_start )
                 df["step"] = np.full( df["pid"].shape, kstep, dtype=int )
                 stack     += [ pd.DataFrame( df ) ]
@@ -66,56 +67,60 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
 # ===  get__particles.py                                === #
 # ========================================================= #
 
-def get__particles( params=None,
-                    paramsFile="dat/parameters.json", \
-                    bpmFile="impactx/diags/openPMD/bpm.h5", \
-                    refFile="impactx/diags/ref_particle.0", \
-                    steps=None, pids=None ):
-
+def get__particles( recoFile=None, refpFile=None, bpmsFile=None, steps=None, pids=None ):
+    
     amu = 931.494
     cv  = 2.99792458e8
-
+    
     def norm_angle( deg ):
         deg  = np.asarray( deg, dtype=float )
         ret  = ( ( deg + 180.0 ) % 360.0 ) - 180.0
         if ( np.ndim(ret) == 0 ): ret = float( ret )
         return( ret )
+
+    # ------------------------------------------------- #
+    # --- [1] arguments                             --- #
+    # ------------------------------------------------- #
+    if ( recoFile is None ): recoFile="impactx/diags/records.json"
+    if ( refpFile is None ): refpFile="impactx/diags/ref_particle.0"
+    if ( bpmsFile is None ): bpmsFile="impactx/diags/openPMD/bpm.h5"
     
     # ------------------------------------------------- #
-    # --- [1] load data                             --- #
+    # --- [2] load data                             --- #
     # ------------------------------------------------- #
-    if ( params is None ):
-        with open( paramsFile, "r" ) as f:
-            params = json5.load( f )
-    bpm = load__impactHDF5( inpFile=bpmFile, pids=pids, \
-                            steps=steps, redefine_step=False, \
-                            step_start=0 ).reset_index( drop=True )
-    ref = pd.read_csv( refFile, sep=r"\s+" )
+    with open( recoFile, "r" ) as f:
+        records = json5.load( f )
+    bpms = load__impactHDF5( inpFile=bpmsFile, pids=pids, \
+                             steps=steps, redefine_step=False, \
+                             step_start=0 ).reset_index( drop=True )
+    refp = pd.read_csv( refpFile, sep=r"\s+" )
 
     # ------------------------------------------------- #
     # --- [3] concatenate ref / particle data       --- #
     # ------------------------------------------------- #
-    ref_df  = ref.loc[ bpm["step"], : ]
-    slist   = [ "s","beta","gamma", "x","y","z","t", "px","py","pz","pt" ]
-    renames = { s:"ref_"+s for s in slist }
-    ref_df  = ( ref_df[ slist ] ).rename( columns=renames ).reset_index( drop=True )
-    bpm     = pd.concat( [ bpm, ref_df ], axis=1 )
+    refp_df  = refp.loc[ bpms["step"], : ]
+    slist    = [ "s","beta","gamma", "x","y","z","t", "px","py","pz","pt" ]
+    renames  = { s:"ref_"+s for s in slist }
+    refp_df  = ( refp_df[ slist ] ).rename( columns=renames ).reset_index( drop=True )
+    bpms     = pd.concat( [ bpms, refp_df ], axis=1 )
 
     # ------------------------------------------------- #
     # --- [4] get energy /                          --- #
     # ------------------------------------------------- #
-    rf_freq     = params["beam.freq.Hz"]  * params["beam.harmonics"]
-    Em0         = params["beam.mass.amu"] * amu
-    Ek0         = params["beam.Ek.MeV/u"] * params["beam.u.nucleon"]
-    Et0         = Em0 + Ek0
-    p0c         = np.sqrt( Et0**2 - Em0**2 )
-    Ek_ref      = ( bpm["ref_gamma"] - 1.0 ) * Em0
-    bpm["dEk"]  = p0c * bpm["pt"]
-    bpm["Ek"]   = Ek_ref + bpm["dEk"]
-    bpm["dt"]   = bpm["tp"]  / cv
-    bpm["dphi"] = norm_angle( (                   bpm["dt"] ) * rf_freq * 360.0 )
-    bpm["phi"]  = norm_angle( ( bpm["ref_t"]/cv + bpm["dt"] ) * rf_freq * 360.0 )
-    return( bpm )
+    rf_freq        = records["beam.freq.Hz"]  * records["beam.harmonics"]
+    Em0            = records["beam.mass.amu"] * amu
+    Ek0            = records["beam.Ek.MeV/u"] * records["beam.u.nucleon"]
+    Et0            = Em0 + Ek0
+    p0c            = np.sqrt( Et0**2 - Em0**2 )
+    bpms["Ek_ref"] = ( bpms["ref_gamma"] - 1.0 ) * Em0
+    bpms["Et_ref"] = bpms["Ek_ref"] + Em0
+    bpms["p0c"]    = np.sqrt( bpms["Et_ref"]**2 - Em0**2 )
+    bpms["dEk"]    = bpms["p0c"]    * bpms["pt"]
+    bpms["Ek"]     = bpms["Ek_ref"] + bpms["dEk"]
+    bpms["dt"]     = bpms["tp"]  / cv
+    bpms["dphi"]   = norm_angle( (                    bpms["dt"] ) * rf_freq * 360.0 )
+    bpms["phi"]    = norm_angle( ( bpms["ref_t"]/cv + bpms["dt"] ) * rf_freq * 360.0 )
+    return( bpms )
 
 
 # ========================================================= #
@@ -130,7 +135,7 @@ def get__beamStats( statFile="impactx/diags/reduced_beam_characteristics.0", \
         refpFile = os.path.splitext()[0] + ext
     
     refp = pd.read_csv( refpFile, sep=r"\s+" )
-    stat = pd.read_csv( statFile, sep=r"\s+" )
+    stat = pd.read_csv( statFile, sep=r"\s+" ).drop( columns=["s"] )
     ret  = pd.concat( [ refp.set_index("step"), stat.set_index("step") ], axis=1 ).reset_index()
     return( ret )
 

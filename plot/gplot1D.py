@@ -81,7 +81,8 @@ class gplot1D:
     # ===  プロット 追加                                    === #
     # ========================================================= #
     def add__plot( self, xAxis=None, yAxis=None, label=None, color=None, alpha=None, \
-                   linestyle=None, linewidth=None, xlabel=None, ylabel=None, \
+                   linestyle=None, linewidth=None,
+                   xRange=None, yRange=None, xlabel=None, ylabel=None, \
                    marker=None, markersize=None, markerwidth=None, kw={} ):
         
         # ------------------------------------------------- #
@@ -106,7 +107,7 @@ class gplot1D:
         if ( ylabel is not None ): self.config["ax1.y.label"] = ylabel
         self.xAxis, self.yAxis = xAxis, yAxis
         self.update__DataRange( xAxis=xAxis, yAxis=yAxis )
-        self.set__axis()
+        self.set__axis( xRange=xRange, yRange=yRange )
         xAxis_, yAxis_ = np.copy(xAxis), np.copy( yAxis )
         if ( self.config["ax1.x.normalize"] is not None ):
             xAxis_   = xAxis / self.config["ax1.x.normalize"]

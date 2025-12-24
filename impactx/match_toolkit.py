@@ -5,13 +5,13 @@ import nk_toolkit.impactx.io_toolkit as itk
 
 
 # ========================================================= #
-# ===  adjust__rfphase.py                               === #
+# ===  match__rfphase.py                               === #
 # ========================================================= #
-def adjust__rfphase( refpFile="impactx/diags/ref_particle.0", \
+def match__rfphase( refpFile="impactx/diags/ref_particle.0", \
                      partFile="impactx/diags/openPMD/bpm.h5", \
                      recoFile="impactx/diags/records.json"  , \
                      lattFile="impactx/diags/lattice.csv"   , \
-                     ext=None, adjust_reference=True, phi_t=-45.0 ):
+                     ext=None, match_reference=True, phi_t=-45.0 ):
     
     cv = 2.99792458e8
 
@@ -28,7 +28,7 @@ def adjust__rfphase( refpFile="impactx/diags/ref_particle.0", \
         records = json5.load( f )
     with open( lattFile, "r" ) as f:
         lattice = pd.read_csv( f )
-    if ( adjust_reference ):
+    if ( match_reference ):
         bpm   = itk.get__beamStats()
         t_bpm = bpm["t"]
         s_bpm = bpm["s"]
