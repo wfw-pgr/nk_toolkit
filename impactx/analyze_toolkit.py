@@ -609,8 +609,7 @@ def calc__correlations( bpmsFile=None ) -> pd.DataFrame:
                                         axis=1 )
 
 
-            ref_s = float( ( abpm.iloc[0] )["ref_s"] )
-            cov   = calc__covariance( abpm=abpm )
+            cov   = calc__covariance( bpmsFile=bpmsFile )
             sigma = pd.Series( np.sqrt( np.diag( cov ) ).astype( float ), \
                                index=cov.index )
 
@@ -634,7 +633,7 @@ def calc__correlations( bpmsFile=None ) -> pd.DataFrame:
             
             py_pt = _corr( cov, sigma, "py", "pt" )
             
-            row   = { "step" :step, "s":ref_s,
+            row   = { "step" :step,  
                       "xp-yp":xp_yp, "xp-tp":xp_tp, "xp-px":xp_px, "xp-py":xp_py, "xp-pt":xp_pt,
                       "yp-tp":yp_tp, "yp-px":yp_px, "yp-py":yp_py, "yp-pt":yp_pt, 
                       "tp-px":tp_px, "tp-py":tp_py, "tp-pt":tp_pt, 
