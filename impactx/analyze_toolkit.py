@@ -92,9 +92,9 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
     posts["max/sigma_dphi"] = np.maximum( np.abs(posts["dphi_min"]),
                                           np.abs(posts["dphi_max"] ) ) / posts["dphi_rms"]
     df_posts                = pd.DataFrame( posts )
-    if ( correlation ):
-        df_posts = df_posts.merge( corr.drop( columns=["s"], errors="ignore" ),
-                                   on="step", how="left" )
+    # if ( correlation ):
+    #     df_posts = df_posts.merge( corr.drop( columns=["s"], errors="ignore" ),
+    #                                on="step", how="left" )
     
     # ------------------------------------------------- #
     # --- [4] save and return                       --- #
