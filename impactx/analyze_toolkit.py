@@ -149,7 +149,7 @@ def calc__statsFromBPMs( bpmsFile:str, refpFile:str, steps:list ) -> pd.DataFram
     stack   = []
 
     with open( refpFile, "r" ) as f:
-        refp         = pd.read_csv( f, sep=r"\s+" ) )
+        refp         = pd.read_csv( f, sep=r"\s+" )
         refp["step"] = refp["step"].astype(int)
         refp["step"].set_index( "step", drop=False )
     
