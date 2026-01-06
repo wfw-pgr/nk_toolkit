@@ -576,7 +576,7 @@ def calc__covariance( bpmsFile=None ) -> pd.DataFrame:
 # ===  calculate correlations                           === #
 # ========================================================= #
 
-def calc__correlations( bpms: pd.DataFrame ) -> pd.DataFrame:
+def calc__correlations( bpmsFile=None ) -> pd.DataFrame:
 
     def _corr( cov, sigma, v1, v2 ):
         denom = sigma[v1] * sigma[v2]
