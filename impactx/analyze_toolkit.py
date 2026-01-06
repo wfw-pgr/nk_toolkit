@@ -15,7 +15,7 @@ def analyze_toolkit():
 # ===  get__postprocessed                               === #
 # ========================================================= #
 def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=None, \
-                        stat_from_bpms=True, bpmsFile=None, correlation=False ):
+                        stat_from_bpms=True, bpmsFile=None, correlation=True ):
     
     cv     = 2.99792458e8   # [m/s]
     amu    = 931.494        # [MeV]
@@ -51,7 +51,7 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
         stats.loc[ common_idx, cols ] = beam.loc[ common_idx, cols ]
         beam        = stats
         
-    if ( correlation ):
+    # if ( correlation ):
         # if ( bpms is None ):
         #     bpms = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
         # corr = calc__correlations( bpms=bpms )
