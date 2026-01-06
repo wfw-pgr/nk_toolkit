@@ -40,8 +40,9 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
     beam = itk.get__beamStats( statFile=statFile, refpFile=refpFile )
     
     if ( stat_from_bpms ):
-        bpms  = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
-        stats = calc__statsFromBPMs( bpms=bpms )
+        # bpms  = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
+        # stats = calc__statsFromBPMs( bpms=bpms )
+        stats = calc__statsFromBPMs( bpmsFile=bpmsFile, refpFile=refpFile )
         # -- overwrite on beam -- #
         cols        = beam.columns.difference( stats.columns )
         stats[cols] = np.nan
@@ -51,9 +52,10 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
         beam        = stats
         
     if ( correlation ):
-        if ( bpms is None ):
-            bpms = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
-        corr = calc__correlations( bpms=bpms )
+        # if ( bpms is None ):
+        #     bpms = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
+        # corr = calc__correlations( bpms=bpms )
+        corr = calc__correlations( bpmsFile=bpmsFile )
         
     # ------------------------------------------------- #
     # --- [3] calculations                          --- #
@@ -105,7 +107,7 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
 # ===  calculate statistic values from BPMs data        === #
 # ========================================================= #
 
-def calc__statsFromBPMs( bpms: pd.DataFrame ) -> pd.DataFrame:
+def calc__statsFromBPMs( bpmsFile:str, refpFile:str, steps:list ) -> pd.DataFrame:
 
     qe = 1.60217663e-19
     
@@ -145,147 +147,348 @@ def calc__statsFromBPMs( bpms: pd.DataFrame ) -> pd.DataFrame:
                 "dispersion_x",  "dispersion_px", "dispersion_y",  "dispersion_py",
                 "emittance_xn", "emittance_yn", "emittance_tn", "charge_C" ]
     stack   = []
-    for step_index,group in bpms.groupby( "step", sort=True ):
 
-        if ( group.shape[0] == 0 ):
-            stack.append( dict.fromkeys( columns, np.nan ) | { "step": step_index } )
-            continue
+    with open( refpFile, "r" ) as f:
+        refp         = pd.read_csv( f, sep=r"\s+" ) )
+        refp["step"] = refp["step"].astype(int)
+        refp["step"].set_index( "step", drop=False )
+    
+    with h5py.File( bpmsFile, "r" ) as f:
+        isteps = sorted( int(ik) for ik in f["data"].keys() )
+        if ( steps is not None ):
+            isteps = [ s for s in isteps if s in set( steps ) ]
+            
+        for step in isteps:
+            key = str( step )
+            if ( not( key in f["data"] ) ):
+                stack.append( dict.fromkeys( columns, np.nan ) | { "step": step } )
+                continue
         
-        # ------------------------------------------------- #
-        # --- [2-1] prepare variables                   --- #
-        # ------------------------------------------------- #
-        xp, yp, tp = group["xp"].to_numpy(), group["yp"].to_numpy(), group["tp"].to_numpy()
-        px, py, pt = group["px"].to_numpy(), group["py"].to_numpy(), group["pt"].to_numpy()
-        weights    = group["wt"].to_numpy()
-        # reference particle ( assumed constant per BPM )
-        a_ref_info = group.iloc[0]
-        ref_s      = a_ref_info["ref_s"]
-        ref_beta   = a_ref_info["ref_beta"]
-        ref_gamma  = a_ref_info["ref_gamma"]
+            # ------------------------------------------------- #
+            # --- [2-1] prepare variables                   --- #
+            # ------------------------------------------------- #
+            xp        = f["data"][key]["particles"]["beam"]["position"]["x"][:]
+            yp        = f["data"][key]["particles"]["beam"]["position"]["y"][:]
+            tp        = f["data"][key]["particles"]["beam"]["position"]["t"][:]
+            px        = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
+            py        = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
+            pt        = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+            weights   = f["data"][key]["particles"]["beam"]["weighting"][:]
+            # reference particle ( assumed constant per BPM )
+            ref_s     = refp.at[ step, "s"     ]
+            ref_beta  = refp.at[ step, "beta"  ]
+            ref_gamma = refp.at[ step, "gamma" ]
 
-        # ------------------------------------------------- #
-        # --- [2-2] mean, min, max                      --- #
-        # ------------------------------------------------- #
-        mean_xp        = _weighted_mean( xp, weights )
-        mean_yp        = _weighted_mean( yp, weights )
-        mean_tp        = _weighted_mean( tp, weights )
-        mean_px        = _weighted_mean( px, weights )
-        mean_py        = _weighted_mean( py, weights )
-        mean_pt        = _weighted_mean( pt, weights )
-
-        min_xp, max_xp = xp.min(), xp.max()
-        min_yp, max_yp = yp.min(), yp.max()
-        min_tp, max_tp = tp.min(), tp.max()
-        min_px, max_px = px.min(), px.max()
-        min_py, max_py = py.min(), py.max()
-        min_pt, max_pt = pt.min(), pt.max()
-
-        # ------------------------------------------------- #
-        # --- [2-3] 2nd moment / covariance             --- #
-        # ------------------------------------------------- #
-        xp_ms = _weighted_variance( xp, weights, mean_xp )
-        yp_ms = _weighted_variance( yp, weights, mean_yp )
-        tp_ms = _weighted_variance( tp, weights, mean_tp )
-        px_ms = _weighted_variance( px, weights, mean_px )
-        py_ms = _weighted_variance( py, weights, mean_py )
-        pt_ms = _weighted_variance( pt, weights, mean_pt )
-
-        xp_px = _weighted_covariance( xp, px, weights, mean_xp, mean_px )
-        yp_py = _weighted_covariance( yp, py, weights, mean_yp, mean_py )
-        tp_pt = _weighted_covariance( tp, pt, weights, mean_tp, mean_pt )
-        xp_pt = _weighted_covariance( xp, pt, weights, mean_xp, mean_pt )
-        px_pt = _weighted_covariance( px, pt, weights, mean_px, mean_pt )
-        yp_pt = _weighted_covariance( yp, pt, weights, mean_yp, mean_pt )
-        py_pt = _weighted_covariance( py, pt, weights, mean_py, mean_pt )
-
-        # ------------------------------------------------- #
-        # --- [2-4] sigma ( RMS )                       --- #
-        # ------------------------------------------------- #
-        sigma_xp = np.sqrt( xp_ms )
-        sigma_yp = np.sqrt( yp_ms )
-        sigma_tp = np.sqrt( tp_ms )
-        sigma_px = np.sqrt( px_ms )
-        sigma_py = np.sqrt( py_ms )
-        sigma_pt = np.sqrt( pt_ms )
-
-        # ------------------------------------------------- #
-        # --- [2-5] emittance                           --- #
-        # ------------------------------------------------- #
-        emittance_x = np.sqrt( xp_ms * px_ms - xp_px**2 )
-        emittance_y = np.sqrt( yp_ms * py_ms - yp_py**2 )
-        emittance_t = np.sqrt( tp_ms * pt_ms - tp_pt**2 )
-
-        # ------------------------------------------------- #
-        # --- [2-6] dispersion                          --- #
-        # ------------------------------------------------- #
-        if ( pt_ms > 0.0 ):
-            dispersion_x  = - xp_pt / pt_ms
-            dispersion_px = - px_pt / pt_ms
-            dispersion_y  = - yp_pt / pt_ms
-            dispersion_py = - py_pt / pt_ms
-        else:
-            dispersion_x  = dispersion_px = np.nan
-            dispersion_y  = dispersion_py = np.nan
-
-        # ------------------------------------------------- #
-        # --- [2-7] dispersion corrected                --- #
-        # ------------------------------------------------- #
-        xp_msd       = xp_ms - pt_ms * dispersion_x**2
-        px_msd       = px_ms - pt_ms * dispersion_px**2
-        xp_px_d      = xp_px - pt_ms * dispersion_x * dispersion_px
-        yp_msd       = yp_ms - pt_ms * dispersion_y**2
-        py_msd       = py_ms - pt_ms * dispersion_py**2
-        yp_py_d      = yp_py - pt_ms * dispersion_y * dispersion_py
-        emittance_xd = np.sqrt( xp_msd * px_msd - xp_px_d**2 )
-        emittance_yd = np.sqrt( yp_msd * py_msd - yp_py_d**2 )
-
-        # ------------------------------------------------- #
-        # --- [2-8] beta alpha                          --- #
-        # ------------------------------------------------- #
-        beta_x  =   xp_msd  / emittance_xd if emittance_xd > 0 else np.nan
-        alpha_x = - xp_px_d / emittance_xd if emittance_xd > 0 else np.nan
-        beta_y  =    yp_msd / emittance_yd if emittance_yd > 0 else np.nan
-        alpha_y = - yp_py_d / emittance_yd if emittance_yd > 0 else np.nan
-        beta_t  =     tp_ms / emittance_t  if emittance_t  > 0 else np.nan
-        alpha_t =   - tp_pt / emittance_t  if emittance_t  > 0 else np.nan
-
-        # ------------------------------------------------- #
-        # --- [2-9] normalized emittance                --- #
-        # ------------------------------------------------- #
-        emittance_xn = emittance_x * ref_beta * ref_gamma
-        emittance_yn = emittance_y * ref_beta * ref_gamma
-        emittance_tn = emittance_t * ref_beta * ref_gamma
-
-        # ------------------------------------------------- #
-        # --- [2-10] charge_C                           --- #
-        # ------------------------------------------------- #
-        charge_C     = qe * np.sum( weights )
-
-        # ------------------------------------------------- #
-        # --- [2-10] store and return                   --- #
-        # ------------------------------------------------- #
-        stack.append( {
-            "step"     : step_index, "s"     : ref_s,
-            "mean_x"   : mean_xp,  "min_x"   : min_xp,   "max_x"   : max_xp,
-            "mean_y"   : mean_yp,  "min_y"   : min_yp,   "max_y"   : max_yp,
-            "mean_t"   : mean_tp,  "min_t"   : min_tp,   "max_t"   : max_tp,
-            "sigma_x"  : sigma_xp, "sigma_y" : sigma_yp, "sigma_t" : sigma_tp,
-            "mean_px"  : mean_px,  "min_px"  : min_px,   "max_px"  : max_px,
-            "mean_py"  : mean_py,  "min_py"  : min_py,   "max_py"  : max_py,
-            "mean_pt"  : mean_pt,  "min_pt"  : min_pt,   "max_pt"  : max_pt,
-            "sigma_px" : sigma_px, "sigma_py": sigma_py, "sigma_pt": sigma_pt,
+            # ------------------------------------------------- #
+            # --- [2-2] mean, min, max                      --- #
+            # ------------------------------------------------- #
+            mean_xp        = _weighted_mean( xp, weights )
+            mean_yp        = _weighted_mean( yp, weights )
+            mean_tp        = _weighted_mean( tp, weights )
+            mean_px        = _weighted_mean( px, weights )
+            mean_py        = _weighted_mean( py, weights )
+            mean_pt        = _weighted_mean( pt, weights )
             
-            "emittance_x": emittance_x, "emittance_y": emittance_y, "emittance_t": emittance_t,
-            "alpha_x"    : alpha_x,     "alpha_y"    : alpha_y,     "alpha_t"    : alpha_t,
-            "beta_x"     : beta_x,      "beta_y"     : beta_y,      "beta_t"     : beta_t,
+            min_xp, max_xp = xp.min(), xp.max()
+            min_yp, max_yp = yp.min(), yp.max()
+            min_tp, max_tp = tp.min(), tp.max()
+            min_px, max_px = px.min(), px.max()
+            min_py, max_py = py.min(), py.max()
+            min_pt, max_pt = pt.min(), pt.max()
+
+            # ------------------------------------------------- #
+            # --- [2-3] 2nd moment / covariance             --- #
+            # ------------------------------------------------- #
+            xp_ms = _weighted_variance( xp, weights, mean_xp )
+            yp_ms = _weighted_variance( yp, weights, mean_yp )
+            tp_ms = _weighted_variance( tp, weights, mean_tp )
+            px_ms = _weighted_variance( px, weights, mean_px )
+            py_ms = _weighted_variance( py, weights, mean_py )
+            pt_ms = _weighted_variance( pt, weights, mean_pt )
+
+            xp_px = _weighted_covariance( xp, px, weights, mean_xp, mean_px )
+            yp_py = _weighted_covariance( yp, py, weights, mean_yp, mean_py )
+            tp_pt = _weighted_covariance( tp, pt, weights, mean_tp, mean_pt )
+            xp_pt = _weighted_covariance( xp, pt, weights, mean_xp, mean_pt )
+            px_pt = _weighted_covariance( px, pt, weights, mean_px, mean_pt )
+            yp_pt = _weighted_covariance( yp, pt, weights, mean_yp, mean_pt )
+            py_pt = _weighted_covariance( py, pt, weights, mean_py, mean_pt )
             
-            "dispersion_x" : dispersion_x, "dispersion_px" : dispersion_px,
-            "dispersion_y" : dispersion_y, "dispersion_py" : dispersion_py,
-            "emittance_xn" : emittance_xn, "emittance_yn"  : emittance_yn ,
-            "emittance_tn" : emittance_tn, "charge_C"      : charge_C, 
-        } )
+            # ------------------------------------------------- #
+            # --- [2-4] sigma ( RMS )                       --- #
+            # ------------------------------------------------- #
+            sigma_xp = np.sqrt( xp_ms )
+            sigma_yp = np.sqrt( yp_ms )
+            sigma_tp = np.sqrt( tp_ms )
+            sigma_px = np.sqrt( px_ms )
+            sigma_py = np.sqrt( py_ms )
+            sigma_pt = np.sqrt( pt_ms )
+            
+            # ------------------------------------------------- #
+            # --- [2-5] emittance                           --- #
+            # ------------------------------------------------- #
+            emittance_x = np.sqrt( xp_ms * px_ms - xp_px**2 )
+            emittance_y = np.sqrt( yp_ms * py_ms - yp_py**2 )
+            emittance_t = np.sqrt( tp_ms * pt_ms - tp_pt**2 )
+            
+            # ------------------------------------------------- #
+            # --- [2-6] dispersion                          --- #
+            # ------------------------------------------------- #
+            if ( pt_ms > 0.0 ):
+                dispersion_x  = - xp_pt / pt_ms
+                dispersion_px = - px_pt / pt_ms
+                dispersion_y  = - yp_pt / pt_ms
+                dispersion_py = - py_pt / pt_ms
+            else:
+                dispersion_x  = dispersion_px = np.nan
+                dispersion_y  = dispersion_py = np.nan
+                
+            # ------------------------------------------------- #
+            # --- [2-7] dispersion corrected                --- #
+            # ------------------------------------------------- #
+            xp_msd       = xp_ms - pt_ms * dispersion_x**2
+            px_msd       = px_ms - pt_ms * dispersion_px**2
+            xp_px_d      = xp_px - pt_ms * dispersion_x * dispersion_px
+            yp_msd       = yp_ms - pt_ms * dispersion_y**2
+            py_msd       = py_ms - pt_ms * dispersion_py**2
+            yp_py_d      = yp_py - pt_ms * dispersion_y * dispersion_py
+            emittance_xd = np.sqrt( xp_msd * px_msd - xp_px_d**2 )
+            emittance_yd = np.sqrt( yp_msd * py_msd - yp_py_d**2 )
+            
+            # ------------------------------------------------- #
+            # --- [2-8] beta alpha                          --- #
+            # ------------------------------------------------- #
+            beta_x  =   xp_msd  / emittance_xd if emittance_xd > 0 else np.nan
+            alpha_x = - xp_px_d / emittance_xd if emittance_xd > 0 else np.nan
+            beta_y  =    yp_msd / emittance_yd if emittance_yd > 0 else np.nan
+            alpha_y = - yp_py_d / emittance_yd if emittance_yd > 0 else np.nan
+            beta_t  =     tp_ms / emittance_t  if emittance_t  > 0 else np.nan
+            alpha_t =   - tp_pt / emittance_t  if emittance_t  > 0 else np.nan
+            
+            # ------------------------------------------------- #
+            # --- [2-9] normalized emittance                --- #
+            # ------------------------------------------------- #
+            emittance_xn = emittance_x * ref_beta * ref_gamma
+            emittance_yn = emittance_y * ref_beta * ref_gamma
+            emittance_tn = emittance_t * ref_beta * ref_gamma
+            
+            # ------------------------------------------------- #
+            # --- [2-10] charge_C                           --- #
+            # ------------------------------------------------- #
+            charge_C     = qe * np.sum( weights )
+            
+            # ------------------------------------------------- #
+            # --- [2-10] store and return                   --- #
+            # ------------------------------------------------- #
+            stack.append( {
+                "step"     : step   ,  "s"       : ref_s,
+                "mean_x"   : mean_xp,  "min_x"   : min_xp,   "max_x"   : max_xp,
+                "mean_y"   : mean_yp,  "min_y"   : min_yp,   "max_y"   : max_yp,
+                "mean_t"   : mean_tp,  "min_t"   : min_tp,   "max_t"   : max_tp,
+                "sigma_x"  : sigma_xp, "sigma_y" : sigma_yp, "sigma_t" : sigma_tp,
+                "mean_px"  : mean_px,  "min_px"  : min_px,   "max_px"  : max_px,
+                "mean_py"  : mean_py,  "min_py"  : min_py,   "max_py"  : max_py,
+                "mean_pt"  : mean_pt,  "min_pt"  : min_pt,   "max_pt"  : max_pt,
+                "sigma_px" : sigma_px, "sigma_py": sigma_py, "sigma_pt": sigma_pt,
+                
+                "emittance_x": emittance_x, "emittance_y": emittance_y, "emittance_t": emittance_t,
+                "alpha_x"    : alpha_x,     "alpha_y"    : alpha_y,     "alpha_t"    : alpha_t,
+                "beta_x"     : beta_x,      "beta_y"     : beta_y,      "beta_t"     : beta_t,
+                
+                "dispersion_x" : dispersion_x, "dispersion_px" : dispersion_px,
+                "dispersion_y" : dispersion_y, "dispersion_py" : dispersion_py,
+                "emittance_xn" : emittance_xn, "emittance_yn"  : emittance_yn ,
+                "emittance_tn" : emittance_tn, "charge_C"      : charge_C, 
+            } )
     ret = pd.DataFrame( stack )
     return( ret )
+    
+
+# # ========================================================= #
+# # ===  calculate statistic values from BPMs data        === #
+# # ========================================================= #
+
+# def calc__statsFromBPMs( bpms: pd.DataFrame,  bpmsFile:  ) -> pd.DataFrame:
+
+#     qe = 1.60217663e-19
+    
+#     # ------------------------------------------------- #
+#     # --- [1] functions                             --- #
+#     # ------------------------------------------------- #
+#     def _weighted_mean( val, weights ):
+#         weight_sum = np.sum(weights)
+#         if weight_sum == 0.0:
+#             return np.nan
+#         return( float( np.sum( val*weights ) / weight_sum ) )
+
+    
+#     def _weighted_variance( val, weights, mean ):
+#         weight_sum = np.sum(weights)
+#         if weight_sum == 0.0:
+#             return np.nan
+#         return( float( np.sum( weights*( val-mean )**2 ) / weight_sum ) )
+
+    
+#     def _weighted_covariance( valX, valY, weights, meanX, meanY ):
+#         weight_sum = np.sum(weights)
+#         if weight_sum == 0.0:
+#             return np.nan
+#         return( float( np.sum( weights * ( valX-meanX )*( valY-meanY ) ) / weight_sum ) )
+
+
+#     # ------------------------------------------------- #
+#     # --- [2] main loop                             --- #
+#     # ------------------------------------------------- #
+#     columns = [ "step", "s",
+#                 "mean_x","min_x","max_x", "mean_y","min_y","max_y", "mean_t","min_t","max_t",
+#                 "sigma_x", "sigma_y", "sigma_t", "mean_px", "min_px", "max_px",
+#                 "mean_py", "min_py", "max_py", "mean_pt", "min_pt", "max_pt",
+#                 "sigma_px", "sigma_py", "sigma_pt", "emittance_x", "emittance_y", "emittance_t",
+#                 "alpha_x", "alpha_y", "alpha_t", "beta_x",  "beta_y",  "beta_t", 
+#                 "dispersion_x",  "dispersion_px", "dispersion_y",  "dispersion_py",
+#                 "emittance_xn", "emittance_yn", "emittance_tn", "charge_C" ]
+#     stack   = []
+#     for step_index,group in bpms.groupby( "step", sort=True ):
+
+#         if ( group.shape[0] == 0 ):
+#             stack.append( dict.fromkeys( columns, np.nan ) | { "step": step_index } )
+#             continue
+        
+#         # ------------------------------------------------- #
+#         # --- [2-1] prepare variables                   --- #
+#         # ------------------------------------------------- #
+#         xp, yp, tp = group["xp"].to_numpy(), group["yp"].to_numpy(), group["tp"].to_numpy()
+#         px, py, pt = group["px"].to_numpy(), group["py"].to_numpy(), group["pt"].to_numpy()
+#         weights    = group["wt"].to_numpy()
+#         # reference particle ( assumed constant per BPM )
+#         a_ref_info = group.iloc[0]
+#         ref_s      = a_ref_info["ref_s"]
+#         ref_beta   = a_ref_info["ref_beta"]
+#         ref_gamma  = a_ref_info["ref_gamma"]
+
+#         # ------------------------------------------------- #
+#         # --- [2-2] mean, min, max                      --- #
+#         # ------------------------------------------------- #
+#         mean_xp        = _weighted_mean( xp, weights )
+#         mean_yp        = _weighted_mean( yp, weights )
+#         mean_tp        = _weighted_mean( tp, weights )
+#         mean_px        = _weighted_mean( px, weights )
+#         mean_py        = _weighted_mean( py, weights )
+#         mean_pt        = _weighted_mean( pt, weights )
+
+#         min_xp, max_xp = xp.min(), xp.max()
+#         min_yp, max_yp = yp.min(), yp.max()
+#         min_tp, max_tp = tp.min(), tp.max()
+#         min_px, max_px = px.min(), px.max()
+#         min_py, max_py = py.min(), py.max()
+#         min_pt, max_pt = pt.min(), pt.max()
+
+#         # ------------------------------------------------- #
+#         # --- [2-3] 2nd moment / covariance             --- #
+#         # ------------------------------------------------- #
+#         xp_ms = _weighted_variance( xp, weights, mean_xp )
+#         yp_ms = _weighted_variance( yp, weights, mean_yp )
+#         tp_ms = _weighted_variance( tp, weights, mean_tp )
+#         px_ms = _weighted_variance( px, weights, mean_px )
+#         py_ms = _weighted_variance( py, weights, mean_py )
+#         pt_ms = _weighted_variance( pt, weights, mean_pt )
+
+#         xp_px = _weighted_covariance( xp, px, weights, mean_xp, mean_px )
+#         yp_py = _weighted_covariance( yp, py, weights, mean_yp, mean_py )
+#         tp_pt = _weighted_covariance( tp, pt, weights, mean_tp, mean_pt )
+#         xp_pt = _weighted_covariance( xp, pt, weights, mean_xp, mean_pt )
+#         px_pt = _weighted_covariance( px, pt, weights, mean_px, mean_pt )
+#         yp_pt = _weighted_covariance( yp, pt, weights, mean_yp, mean_pt )
+#         py_pt = _weighted_covariance( py, pt, weights, mean_py, mean_pt )
+
+#         # ------------------------------------------------- #
+#         # --- [2-4] sigma ( RMS )                       --- #
+#         # ------------------------------------------------- #
+#         sigma_xp = np.sqrt( xp_ms )
+#         sigma_yp = np.sqrt( yp_ms )
+#         sigma_tp = np.sqrt( tp_ms )
+#         sigma_px = np.sqrt( px_ms )
+#         sigma_py = np.sqrt( py_ms )
+#         sigma_pt = np.sqrt( pt_ms )
+
+#         # ------------------------------------------------- #
+#         # --- [2-5] emittance                           --- #
+#         # ------------------------------------------------- #
+#         emittance_x = np.sqrt( xp_ms * px_ms - xp_px**2 )
+#         emittance_y = np.sqrt( yp_ms * py_ms - yp_py**2 )
+#         emittance_t = np.sqrt( tp_ms * pt_ms - tp_pt**2 )
+
+#         # ------------------------------------------------- #
+#         # --- [2-6] dispersion                          --- #
+#         # ------------------------------------------------- #
+#         if ( pt_ms > 0.0 ):
+#             dispersion_x  = - xp_pt / pt_ms
+#             dispersion_px = - px_pt / pt_ms
+#             dispersion_y  = - yp_pt / pt_ms
+#             dispersion_py = - py_pt / pt_ms
+#         else:
+#             dispersion_x  = dispersion_px = np.nan
+#             dispersion_y  = dispersion_py = np.nan
+
+#         # ------------------------------------------------- #
+#         # --- [2-7] dispersion corrected                --- #
+#         # ------------------------------------------------- #
+#         xp_msd       = xp_ms - pt_ms * dispersion_x**2
+#         px_msd       = px_ms - pt_ms * dispersion_px**2
+#         xp_px_d      = xp_px - pt_ms * dispersion_x * dispersion_px
+#         yp_msd       = yp_ms - pt_ms * dispersion_y**2
+#         py_msd       = py_ms - pt_ms * dispersion_py**2
+#         yp_py_d      = yp_py - pt_ms * dispersion_y * dispersion_py
+#         emittance_xd = np.sqrt( xp_msd * px_msd - xp_px_d**2 )
+#         emittance_yd = np.sqrt( yp_msd * py_msd - yp_py_d**2 )
+
+#         # ------------------------------------------------- #
+#         # --- [2-8] beta alpha                          --- #
+#         # ------------------------------------------------- #
+#         beta_x  =   xp_msd  / emittance_xd if emittance_xd > 0 else np.nan
+#         alpha_x = - xp_px_d / emittance_xd if emittance_xd > 0 else np.nan
+#         beta_y  =    yp_msd / emittance_yd if emittance_yd > 0 else np.nan
+#         alpha_y = - yp_py_d / emittance_yd if emittance_yd > 0 else np.nan
+#         beta_t  =     tp_ms / emittance_t  if emittance_t  > 0 else np.nan
+#         alpha_t =   - tp_pt / emittance_t  if emittance_t  > 0 else np.nan
+
+#         # ------------------------------------------------- #
+#         # --- [2-9] normalized emittance                --- #
+#         # ------------------------------------------------- #
+#         emittance_xn = emittance_x * ref_beta * ref_gamma
+#         emittance_yn = emittance_y * ref_beta * ref_gamma
+#         emittance_tn = emittance_t * ref_beta * ref_gamma
+
+#         # ------------------------------------------------- #
+#         # --- [2-10] charge_C                           --- #
+#         # ------------------------------------------------- #
+#         charge_C     = qe * np.sum( weights )
+
+#         # ------------------------------------------------- #
+#         # --- [2-10] store and return                   --- #
+#         # ------------------------------------------------- #
+#         stack.append( {
+#             "step"     : step_index, "s"     : ref_s,
+#             "mean_x"   : mean_xp,  "min_x"   : min_xp,   "max_x"   : max_xp,
+#             "mean_y"   : mean_yp,  "min_y"   : min_yp,   "max_y"   : max_yp,
+#             "mean_t"   : mean_tp,  "min_t"   : min_tp,   "max_t"   : max_tp,
+#             "sigma_x"  : sigma_xp, "sigma_y" : sigma_yp, "sigma_t" : sigma_tp,
+#             "mean_px"  : mean_px,  "min_px"  : min_px,   "max_px"  : max_px,
+#             "mean_py"  : mean_py,  "min_py"  : min_py,   "max_py"  : max_py,
+#             "mean_pt"  : mean_pt,  "min_pt"  : min_pt,   "max_pt"  : max_pt,
+#             "sigma_px" : sigma_px, "sigma_py": sigma_py, "sigma_pt": sigma_pt,
+            
+#             "emittance_x": emittance_x, "emittance_y": emittance_y, "emittance_t": emittance_t,
+#             "alpha_x"    : alpha_x,     "alpha_y"    : alpha_y,     "alpha_t"    : alpha_t,
+#             "beta_x"     : beta_x,      "beta_y"     : beta_y,      "beta_t"     : beta_t,
+            
+#             "dispersion_x" : dispersion_x, "dispersion_px" : dispersion_px,
+#             "dispersion_y" : dispersion_y, "dispersion_py" : dispersion_py,
+#             "emittance_xn" : emittance_xn, "emittance_yn"  : emittance_yn ,
+#             "emittance_tn" : emittance_tn, "charge_C"      : charge_C, 
+#         } )
+#     ret = pd.DataFrame( stack )
+#     return( ret )
 
 
 # ========================================================= #
