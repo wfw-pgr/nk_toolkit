@@ -154,7 +154,7 @@ def calc__statsFromBPMs( bpmsFile=None, refpFile=None, steps=None ) -> pd.DataFr
     with open( refpFile, "r" ) as f:
         refp         = pd.read_csv( f, sep=r"\s+" )
         refp["step"] = refp["step"].astype(int)
-        refp["step"].set_index( "step", drop=False )
+        refp         = refp.set_index( "step", drop=False )
     
     with h5py.File( bpmsFile, "r" ) as f:
         isteps = sorted( int(ik) for ik in f["data"].keys() )
