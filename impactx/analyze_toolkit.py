@@ -43,7 +43,6 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
         # bpms  = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
         # stats = calc__statsFromBPMs( bpms=bpms )
         stats = calc__statsFromBPMs( bpmsFile=bpmsFile, refpFile=refpFile )
-        print( stats )
         # -- overwrite on beam -- #
         cols        = beam.columns.difference( stats.columns )
         stats[cols] = np.nan
@@ -53,9 +52,9 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
         beam        = stats
         
     if ( correlation ):
-        if ( bpms is None ):
-            bpms = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
-        corr = calc__correlations( bpms=bpms )
+        # if ( bpms is None ):
+        #     bpms = itk.get__particles( refpFile=refpFile, bpmsFile=bpmsFile, recoFile=recoFile )
+        # corr = calc__correlations( bpms=bpms )
         corr = calc__correlations( bpmsFile=bpmsFile )
         
     # ------------------------------------------------- #
