@@ -107,9 +107,12 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
 # ===  calculate statistic values from BPMs data        === #
 # ========================================================= #
 
-def calc__statsFromBPMs( bpmsFile:str, refpFile:str, steps:list ) -> pd.DataFrame:
-
+def calc__statsFromBPMs( bpmsFile=None, refpFile=None, steps=None ) -> pd.DataFrame:
+    
     qe = 1.60217663e-19
+
+    if ( refpFile is None ): refpFile="impactx/diags/ref_particle.0"
+    if ( bpmsFile is None ): bpmsFile="impactx/diags/openPMD/bpm.h5"
     
     # ------------------------------------------------- #
     # --- [1] functions                             --- #
