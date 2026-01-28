@@ -191,3 +191,68 @@ def convert__hdf2vtk( hdf5File=None, outFile=None, \
         print( "[convert__hdf2vtk.py] outFile :: {} ".format( houtFile ) )
     return()
         
+
+
+# ========================================================= #
+# === load__bpms.py                                     === #
+# ========================================================= #
+
+def load__bpms( bpms=None, step=None, \
+                start=0, stop=None, chunksize=1_000_000, dtype=np.float32 ):
+    """
+    [How to call]
+    with h5py.File("bpms.h5", "r") as bpms:
+       particles = load_bpms( bpms=bpms, step=step )
+    """
+    
+    # ------------------------------------------------- #
+    # --- [1] load HDF5 file                        --- #
+    # ------------------------------------------------- #
+    if ( not( isinstance( bpms, h5py.File ) ) ):
+        raise( TypeError( f"bpms must be str or h5py.File, got { type(bpms).__name__}" ) )
+
+    # ------------------------------------------------- #
+    # --- [2] if steps argument is given            --- #
+    # ------------------------------------------------- #
+    isteps = sorted( [ int( istep ) for istep in bpms["data"].keys() ] )
+    if ( step is None ):
+        step = int( isteps[0] )
+        
+    # ------------------------------------------------- #
+    # --- [3] load data                             --- #
+    # ------------------------------------------------- #
+    base = bpms["data"][str(step)]["particles"]["beam"]
+    d_xp = base["position"]["x"]
+    d_yp = base["position"]["y"]
+    d_tp = base["position"]["t"]
+    d_px = base["momentum"]["x"]
+    d_py = base["momentum"]["y"]
+    d_pt = base["momentum"]["t"]
+    d_wt = base["weighting"]
+        
+    npt  = int( d_xp.shape[0] )
+    if ( stop is None ) or ( stop > npt ):
+        stop = npt
+    if ( start < 0 ) or ( start > stop ):
+        raise( ValueError(f"invalid range: start={start}, stop={stop}, npt={npt}") )
+
+    for ik_s in range( start, stop, chunksize ):
+        ik_e = min( ik_s+chunksize, stop )
+            
+        xp = d_xp[ik_s:ik_e]
+        yp = d_yp[ik_s:ik_e]
+        tp = d_tp[ik_s:ik_e]
+        px = d_px[ik_s:ik_e]
+        py = d_py[ik_s:ik_e]
+        pt = d_pt[ik_s:ik_e]
+        wt = d_wt[ik_s:ik_e]
+            
+        if ( dtype is not None ):
+            xp = xp.astype( dtype, copy=False )
+            yp = yp.astype( dtype, copy=False )
+            tp = tp.astype( dtype, copy=False )
+            px = px.astype( dtype, copy=False )
+            py = py.astype( dtype, copy=False )
+            pt = pt.astype( dtype, copy=False )
+            wt = wt.astype( dtype, copy=False )
+        yield( { "xp":xp, "yp":yp, "tp":tp, "px":px, "py":py, "pt":pt, "wt":wt } )

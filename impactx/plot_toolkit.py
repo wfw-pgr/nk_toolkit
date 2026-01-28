@@ -1,11 +1,11 @@
-import os, sys, json5
+import os, sys, json5, h5py
 import numpy  as np
 import pandas as pd
 import matplotlib.pyplot  as plt
 import matplotlib.patches as patches
 import nk_toolkit.plot.load__config   as lcf
 import nk_toolkit.plot.gplot1D        as gp1
-
+import nk_toolkit.impactx.io_toolkit  as itk
 
 # ========================================================= #
 # ===  plot__lattice                                    === #
@@ -455,19 +455,22 @@ def plot__poincare( bpms=None, step=None ):
     
     if ( bpms is None ): sys.exit( "[plot_poincare] bpms == ???" )
     if ( step is None ): step = sorted( list( set(bpms["step"]) ) )[0]
+    if ( type(bpms) is str ):
+        bpms = h5py.File( bpms, "r" )
 
     # ------------------------------------------------- #
     # --- [1] prepare variables                     --- #
     # ------------------------------------------------- #
-    bpms_        = bpms.loc[ bpms["step"] == step ].copy()
-    bpms_["xp"]  = bpms_["xp"] / mm
-    bpms_["yp"]  = bpms_["yp"] / mm
-    bpms_["tp"]  = bpms_["tp"] / mm
-    bpms_["px"]  = bpms_["px"] / mrad
-    bpms_["py"]  = bpms_["py"] / mrad
-    bpms_["pt"]  = bpms_["pt"] / mrad
-    bpms_["dt"]  = bpms_["dt"] / nsec  # [ns]
-    bpms_["dEk"] = bpms_["dEk"]        # [MeV]
+    if ( type(bpms) is pd.DataFrame ):
+        bpms_        = bpms.loc[ bpms["step"] == step ].copy()
+        bpms_["xp"]  = bpms_["xp"] / mm
+        bpms_["yp"]  = bpms_["yp"] / mm
+        bpms_["tp"]  = bpms_["tp"] / mm
+        bpms_["px"]  = bpms_["px"] / mrad
+        bpms_["py"]  = bpms_["py"] / mrad
+        bpms_["pt"]  = bpms_["pt"] / mrad
+        bpms_["dt"]  = bpms_["dt"] / nsec  # [ns]
+        bpms_["dEk"] = bpms_["dEk"]        # [MeV]
 
     axpMax = np.max( [ np.abs( bpms_["xp"].min() ), np.abs( bpms_["xp"].max() ) ] )
     aypMax = np.max( [ np.abs( bpms_["yp"].min() ), np.abs( bpms_["yp"].max() ) ] )
@@ -648,3 +651,89 @@ def plot__stats( stat=None, plot_conf=None ):
             fig.add__plot( **content )
         fig.set__legend()
         fig.save__figure()
+
+
+
+# # ========================================================= #
+# # ===  plot__poincare2                                  === #
+# # ========================================================= #
+
+# def plot__poincare2( bpmsFile="impactx/diags/openPMD/bpm.h5", step=0 ):
+
+#     mm, mrad  = 1.0e-3, 1.0e-3
+#     cv, nsec  = 2.99792458e8, 1.0e-9
+
+#     # ------------------------------------------------- #
+#     # --- [1] plot config                           --- #
+#     # ------------------------------------------------- #
+#     config   = lcf.load__config()
+#     def_conf = {
+#         "figure.size"        : [4.5,4.5],
+#         "figure.position"    : [ 0.18, 0.18, 0.92, 0.92 ],
+#         "ax1.x.minor.nticks" : 1, 
+#         "plot.linestyle"     : "none", 
+#         "plot.marker"        : "o",
+#         "plot.markersize"    : 0.2,
+#         "legend.fontsize"    : 9.0, 
+#     }
+#     def_conf = { **config, **def_conf }
+
+#     config_ = {
+#         "xp-px" : {
+#             "figure.pngFile"     : "png/poincare__xp-px_step{:06}.png".format( step ), 
+#             "ax1.x.range"        : { "auto":False, "min": -axpMax, "max":axpMax, "num":11 },
+#             "ax1.y.range"        : { "auto":False, "min": -apxMax, "max":apxMax, "num":11 },
+#             "ax1.x.label"        : "x (mm)",
+#             "ax1.y.label"        : "x' (mrad)",
+#         },
+#         "yp-py" : {
+#             "figure.pngFile"     : "png/poincare__yp-py_step{:06}.png".format( step ), 
+#             "ax1.x.range"        : { "auto":False, "min": -aypMax, "max":+aypMax, "num":11 },
+#             "ax1.y.range"        : { "auto":False, "min": -apyMax, "max":+apyMax, "num":11 },
+#             "ax1.x.label"        : "y (mm)",
+#             "ax1.y.label"        : "y' (mrad)",
+#         },
+#         "tp-pt" : {
+#             "figure.pngFile"     : "png/poincare__tp-pt_step{:06}.png".format( step ), 
+#             "ax1.x.range"        : { "auto":False, "min": -atpMax, "max":+atpMax, "num":11 },
+#             "ax1.y.range"        : { "auto":False, "min": -aptMax, "max":+aptMax, "num":11 },
+#             "ax1.x.label"        : "t (mm)",
+#             "ax1.y.label"        : "t' (mrad)",
+#         },
+#     }
+    
+#     # ------------------------------------------------- #
+#     # --- [2] plot poinncare                        --- #
+#     # ------------------------------------------------- #
+#     with h5py.File( bpmsFile, "r" ) as bpms:
+#         for chunk in itk.load__bpms( bpms=bpms, step=step ):
+#             chunk["xp"] = chunk["xp"] / mm
+#             chunk["yp"] = chunk["yp"] / mm
+#             chunk["tp"] = chunk["tp"] / mm
+#             chunk["px"] = chunk["px"] / mrad
+#             chunk["py"] = chunk["py"] / mrad
+#             chunk["pt"] = chunk["pt"] / mrad
+#             axpMax = np.max( [ np.abs( np.min( chunk["xp"] ) ), np.abs( np.max( chunk["xp"] ) ) ] )
+#             aypMax = np.max( [ np.abs( np.min( chunk["yp"] ) ), np.abs( np.max( chunk["yp"] ) ) ] )
+#             atpMax = np.max( [ np.abs( np.min( chunk["tp"] ) ), np.abs( np.max( chunk["tp"] ) ) ] )
+#             apxMax = np.max( [ np.abs( np.min( chunk["px"] ) ), np.abs( np.max( chunk["px"] ) ) ] )
+#             apyMax = np.max( [ np.abs( np.min( chunk["py"] ) ), np.abs( np.max( chunk["py"] ) ) ] )
+#             aptMax = np.max( [ np.abs( np.min( chunk["pt"] ) ), np.abs( np.max( chunk["pt"] ) ) ] )
+
+#         for key,contents in plots.items():
+#             if ( plot_conf is not None ):
+#                 config = { **config, **plot_conf[key]["config"] }
+#         fig = gp1.gplot1D( config=config, pngFile="png/{}.png".format( key ) )
+#         for content in contents:
+#             fig.add__plot( **content )
+#         fig.set__legend()
+#         fig.save__figure()
+
+#         for key 
+#         config = { **def_conf, **config_[key] }
+#         fig = gp1.gplot1D( config=config )
+#         for content in contents:
+#             fig.add__scatter( **content )
+#         fig.set__axis()
+#         fig.save__figure()
+

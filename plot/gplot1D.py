@@ -796,9 +796,14 @@ class gplot1D:
         # ------------------------------------------------- #
         # --- 軸設定                                    --- #
         # ------------------------------------------------- #
-        self.xAxis   = xAxis
-        self.yAxis   = yAxis
-        self.update__DataRange( xAxis=xAxis, yAxis=yAxis )
+        xAxis_, yAxis_ = np.copy( xAxis ), np.copy( yAxis ) 
+        if ( self.config["ax1.x.normalize"] is not None ):
+            xAxis_   = xAxis_ / self.config["ax1.x.normalize"]
+        if ( self.config["ax1.y.normalize"] is not None ):
+            yAxis_   = yAxis_ / self.config["ax1.y.normalize"]
+        self.xAxis     = xAxis_
+        self.yAxis     = yAxis_
+        self.update__DataRange( xAxis=xAxis_, yAxis=yAxis_ )
         self.set__axis()
         if ( cmap is None ):
             cmap = "jet"
@@ -808,14 +813,14 @@ class gplot1D:
                 cmap = mcl.ListedColormap( cmap )
         if ( cAxis is None ) and ( density is True ):  #  -- density color -- 
             stat, xedge, yedge, binNum = sp.stats.binned_statistic_2d(
-                xAxis, yAxis, None, statistic='count', bins=bins, expand_binnumbers=True )
+                xAxis_, yAxis_, None, statistic='count', bins=bins, expand_binnumbers=True )
             flat_index = ( binNum[0]-1, binNum[1]-1 )
             cAxis      = stat[ flat_index ]
             
         # ------------------------------------------------- #
         # --- プロット 追加                             --- #
         # ------------------------------------------------- #
-        self.ax1.scatter( xAxis, yAxis , c=cAxis, cmap=cmap, label=label, \
+        self.ax1.scatter( xAxis_, yAxis_, c=cAxis, cmap=cmap, label=label, \
                           marker=marker, s=markersize, alpha =alpha   )
 
     # ========================================================= #
