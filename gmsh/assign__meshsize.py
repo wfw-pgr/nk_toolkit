@@ -40,9 +40,13 @@ def assign__meshsize( jsonFile="dat/mesh.json", uniform=None ):
     # ------------------------------------------------- #
     fieldlist = []
     for key,content in settings.items():
-        dt         = content["dimtags"]
-        ms         = content["meshsize"]
-        ret        = assign__meshsize_on_each_dimtags( dimtags=dt, meshsize=ms )
+        dim        = ( ["points","line","surface","volume"] ).index( content["type"] )
+        name       = settings[key].get( "matName", key )
+        ret        = gmsh.model.addPhysicalGroup( dim, content["entities"], \
+                                                  tag=int(content["matNum"]), name=name)
+        dimtags_   = [ (dim,ent) for ent in content["entities"] ]
+        ret        = assign__meshsize_on_each_dimtags( dimtags =dimtags_, \
+                                                       meshsize=content["meshsize"] )
         fieldlist += [ ret ]
 
     # ------------------------------------------------- #
