@@ -1,0 +1,18 @@
+{
+
+    "cube01": {
+        "dimtags"  : [ [3,1] ],
+        "meshsize" : 0.3, 
+    }, 
+
+    "cube02": {
+        "dimtags"  : [ [3,2] ],
+        "meshsize" : 0.02, 
+    }, 
+
+    "cube03": {
+        "dimtags"  : [ [3,3] ],
+        "meshsize" : 0.5, 
+    }, 
+
+}
