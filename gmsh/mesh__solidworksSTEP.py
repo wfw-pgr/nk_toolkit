@@ -6,7 +6,8 @@ import nk_toolkit.gmsh.assign__meshsize as ams
 # ===  mesh__solidworksSTEP.py                          === #
 # ========================================================= #
 
-def mesh__solidworksSTEP( stpFile=None, configFile="mesh.json" ):
+def mesh__solidworksSTEP( stpFile="model.stp", configFile="mesh.json", \
+                          mshFile=None, bdfFile=None, phits_mesh=False ):
 
     # ------------------------------------------------- #
     # --- [1] initialize                            --- #
@@ -21,11 +22,10 @@ def mesh__solidworksSTEP( stpFile=None, configFile="mesh.json" ):
     # ------------------------------------------------- #
     # --- [2] import models                         --- #
     # ------------------------------------------------- #
-    if ( stpFile is None ):
+    if ( not( os.path.exists( stpFile ) ) ):
         raise FileNotFoundError( "Cannot find file :: {}".format( stpFile ) )
-    else:
-        if ( not( os.path.exists( stpFile ) ) ):
-            raise FileNotFoundError( "Cannot find file :: {}".format( stpFile ) )
+    if ( mshFile is None ):
+        mshFile = ( os.path.splitext( stpFile ) )[0] + ".msh"
 
     dimtags = gmsh.model.occ.importShapes( stpFile )
     gmsh.model.occ.synchronize()
@@ -60,9 +60,17 @@ def mesh__solidworksSTEP( stpFile=None, configFile="mesh.json" ):
     gmsh.model.occ.synchronize()
 
     gmsh.model.mesh.generate(3)
-    gmsh.write( "test/model.msh" )
+    gmsh.write( mshFile )
     gmsh.finalize()
 
+    # ------------------------------------------------- #
+    # --- [5] gmsh -> phits (.bdf)                  --- #
+    # ------------------------------------------------- #
+    if ( phits_mesh ):
+        import nk_toolkit.gmsh.convert__gmsh2phits as g2p
+        g2p.convert__gmsh2phits( mshFile=mshFile, bdfFile=bdfFile, \
+                                 config=config )
+        
 
 # ========================================================= #
 # ===   実行部                                          === #
@@ -72,4 +80,5 @@ if ( __name__=="__main__" ):
 
     stpFile    = "test/全溶接コンバータ_全体アセンブリ.STEP"
     configFile = "mesh_forSTEP.json"
-    mesh__solidworksSTEP( stpFile=stpFile, configFile=configFile )
+    phits_mesh = True
+    mesh__solidworksSTEP( stpFile=stpFile, configFile=configFile, phits_mesh=phits_mesh )
