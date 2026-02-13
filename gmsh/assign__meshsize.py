@@ -5,12 +5,9 @@ import numpy as np
 # ===  assing mesh size                                 === #
 # ========================================================= #
 
-def assign__meshsize( jsonFile="dat/mesh.json", uniform=None ):
-
-    dim_   , ent_    = 0, 1
-    ptsDim , lineDim = 0, 1
-    surfDim, voluDim = 2, 3
-
+def assign__meshsize( config =None, configFile="mesh.json", \
+                      uniform=None, default_geotype="volume" ):
+    
     # ------------------------------------------------- #
     # --- [1] uninform mesh settings                --- #
     # ------------------------------------------------- #
@@ -29,42 +26,77 @@ def assign__meshsize( jsonFile="dat/mesh.json", uniform=None ):
             raise( TypeError( "uniform is not real." ) )
         return( uniform )
 
+    
     # ------------------------------------------------- #
     # --- [2] mesh settings                         --- #
     # ------------------------------------------------- #
-    with open( jsonFile, "r" ) as f:
-        settings = json5.load( f )
+    if ( config is None ):
+        if ( os.path.exists( configFile ) ):
+            with open( configFile, "r" ) as f:
+                config = json5.load( f )
+        else:
+            raise FileNotFoundError( "Cannot Find File :: {}".format( configFile ) )
+
+
+    # ------------------------------------------------- #
+    # --- [3] check unknown geometries              --- #
+    # ------------------------------------------------- #
+    default_dim = ( ["points","line","surface","volume"] ).index( default_geotype )
+    found_ents  = sorted( gmsh.model.occ.getEntities( dim=default_dim ) )
+    given_ents  = ( np.concatenate( [ val["entities"] for key,val in config.items() ] ) ).tolist()
+    given_ents  = sorted( [ ( default_dim,ent ) for ent in given_ents ] )
+    missing     = set( found_ents ) - set( given_ents )
+    extra       = set( given_ents ) - set( found_ents )
+    print()
+    print( "  -- found_ents :: {}".format( found_ents ) )
+    print( "  -- given_ents :: {}".format( given_ents ) )
+    print( "  -- missing    :: {}".format( missing    ) )
+    print( "  -- extra      :: {}".format( extra      ) )
+    print()
+    if ( len( missing ) > 0 ):
+        raise ValueError( "Entity info. are missing...  :: {}".format( missing ) )
+    if ( len( extra   ) > 0 ):
+        raise ValueError( "Entity info. are too many... :: {}".format( extra   ) )
     
     # ------------------------------------------------- #
-    # --- [3] assign mesh size                      --- #
+    # --- [4] assign mesh size                      --- #
     # ------------------------------------------------- #
-    fieldlist = []
-    for key,content in settings.items():
-        dim        = ( ["points","line","surface","volume"] ).index( content["type"] )
-        name       = settings[key].get( "matName", key )
+    matNames    = list( dict.fromkeys([ val.get("matNum",key) for key,val in config.items() ]) )
+    matNumTable = { names:(matNum+1) for matNum,names in enumerate(matNames) }
+    meshsizes   = [ tab["meshsize"] for key,tab in config.items() ]
+    fieldlist   = []
+    for key,content in config.items():
+        if ( not( "type" in content ) ):
+            content["type"] = "volume"
+        geotype    = content.get( "type"   , default_geotype )
+        name       = content.get( "matName", key         )
+        dim        = ( ["points","line","surface","volume"] ).index( geotype )
         ret        = gmsh.model.addPhysicalGroup( dim, content["entities"], \
-                                                  tag=int(content["matNum"]), name=name)
+                                                  tag=int(matNumTable[name]), name=name )
         dimtags_   = [ (dim,ent) for ent in content["entities"] ]
         ret        = assign__meshsize_on_each_dimtags( dimtags =dimtags_, \
                                                        meshsize=content["meshsize"] )
         fieldlist += [ ret ]
 
+        
     # ------------------------------------------------- #
-    # --- [4] define total field                    --- #
+    # --- [5] define total field                    --- #
     # ------------------------------------------------- #
     totalfield = gmsh.model.mesh.field.add( "Min" )
     gmsh.model.mesh.field.setNumbers( totalfield, "FieldsList", fieldlist )
     gmsh.model.mesh.field.setAsBackgroundMesh( totalfield )
 
-    gmsh.option.setNumber( "Mesh.CharacteristicLengthMin", 0.005 )
-    gmsh.option.setNumber( "Mesh.CharacteristicLengthMax", 1.0 )
+    gmsh.option.setNumber( "Mesh.CharacteristicLengthMin", min( meshsizes ) )
+    gmsh.option.setNumber( "Mesh.CharacteristicLengthMax", max( meshsizes ) )
 
+    
     # ------------------------------------------------- #
-    # --- [5] return                                --- #
+    # --- [6] return                                --- #
     # ------------------------------------------------- #
     ret = [ fieldlist, totalfield ]
     return( ret )
-    
+
+
 
 # ========================================================= #
 # ===  assigne meshsize onto each dimtags               === #
@@ -130,21 +162,22 @@ if ( __name__=="__main__" ):
     gmsh.option.setNumber( "General.Terminal", 1 )
     gmsh.model.add( "model" )
 
-    gmsh.model.occ.addBox( -0.5, -0.5, -0.5, \
-                           +1.0, +1.0, +1.0 )
-    gmsh.model.occ.addBox( -0.0, -0.0, -0.0, \
-                           +1.0, +1.0, +1.0 )
-    
+    box1 = gmsh.model.occ.addBox( -0.5, -0.5, -0.5, \
+                                  +1.0, +1.0, +1.0 )
+    box2 = gmsh.model.occ.addBox( -0.0, -0.0, -0.0, \
+                                  +1.0, +1.0, +1.0 )
     gmsh.model.occ.synchronize()
     gmsh.model.occ.removeAllDuplicates()
     gmsh.model.occ.synchronize()
 
     dimtags = { "cube01":[(3,1)], "cube02":[(3,2)], "cube03":[(3,3)] }
-
-    jsonFile = "mesh.json"
-    assign__meshsize( jsonFile=jsonFile )
+    for key,dimtag in dimtags.items():
+        gmsh.model.setEntityName( dimtag[0][0], dimtag[0][1], key )
+        
+    configFile = "mesh.json"
+    assign__meshsize( configFile=configFile )
     gmsh.model.occ.synchronize()
 
     gmsh.model.mesh.generate(3)
-    gmsh.write( "model.msh" )
+    gmsh.write( "test/model.msh" )
     gmsh.finalize()

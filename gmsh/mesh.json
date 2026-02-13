@@ -1,27 +1,13 @@
 {
 
     "cube01": {
-        "type"     : "volume",
-        "matNum"   : 1,
-        "matName"  : "cube01", 
-        "entities" : [ 1 ],
-        "meshsize" : 0.3, 
-    }, 
-
-    "cube02": {
-        "type"     : "volume",
-        "matNum"   : 2, 
-        "matName"  : "cube02", 
-        "entities" : [ 2 ],
-        "meshsize" : 0.02, 
+        "entities" : [ 1, 2 ],
+        "meshsize" : 0.50, 
     }, 
 
     "cube03": {
-        "type"     : "volume",
-        "matNum"   : 3,
-        "matName"  : "cube03", 
-        "entities" : [ 3 ],
-        "meshsize" : 0.5, 
+        "entities" : [ 3, ],
+        "meshsize" : 0.10, 
     }, 
 
 }
