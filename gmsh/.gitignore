@@ -3,3 +3,4 @@
 *.stp
 *.msh
 *.bdf
+__pycache__/*
