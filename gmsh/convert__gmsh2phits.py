@@ -57,6 +57,9 @@ def convert__gmsh2phits( mshFile="model.msh", bdfFile=None, \
     cell_data      = { key:cell_data_dict[key][elementType] for key in cell_data_dict.keys() }
     field_data     = rmesh.field_data
     physNums       = np.array( cell_data["gmsh:physical"] )
+    index          = np.argsort( physNums, kind="stable" )
+    physNums       = physNums[ index ]
+    cells          = cells   [ index ]
     physNums_names = { str( item[0] ):key for key,item in field_data.items() }
     physNums_set   = list( set( [ item[0] for item in field_data.values() ] ) )
     if ( index_plus_1 ):
