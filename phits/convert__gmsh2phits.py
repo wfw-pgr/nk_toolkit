@@ -24,8 +24,8 @@ import numpy as np
 # ===  convert__gmsh2phits.py                           === #
 # ========================================================= #
 
-def convert__gmsh2phits( mshFile="model.msh", bdfFile=None, \
-                         config=None, configFile="mesh.conf", index_plus_1=True ):
+def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
+                         config=None, configFile="dat/mesh.json", index_plus_1=True ):
 
     x_, y_, z_ = 0, 1, 2
     
@@ -34,8 +34,6 @@ def convert__gmsh2phits( mshFile="model.msh", bdfFile=None, \
     # ------------------------------------------------- #
     if not( os.path.exists( mshFile ) ):
         raise FileNotFoundError( "[convert__gmsh2phits.py] Cannot Find {}".format( mshFile ) )
-    if ( bdfFile is None ):
-        bdfFile = mshFile.replace( ".msh", ".bdf" )
     if ( config is None ):
         if ( configFile is None ):
             raise FileNotFoundError( "[convert__gmsh2phits.py] config=?, configFile=? [ERROR]" )
