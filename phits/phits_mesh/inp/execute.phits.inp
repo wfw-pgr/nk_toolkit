@@ -1,0 +1,355 @@
+$$
+$$ ================================================================ $$
+$$ ===  PHITS input file   ( main_phits.inp )                   === $$
+$$ ================================================================ $$
+$$
+
+$$ ---   [NOTE]    --------------------------------------------------------------  $$
+$$ *                                                                            *  $$
+$$ * ( space >= 6 ): 継続行 となることに注意!! (空白行が多いとエラーとなり得る) *  $$
+$$ *                                                                            *  $$
+$$ ------------------------------------------------------------------------------  $$
+
+$$ ---   [Parallelization]    ---------------------------------------------------  $$
+$$ -- use $MPI=... / $OMP=...  -- $$
+$OMP=4
+$$ ------------------------------------------------------------------------------  $$
+
+[Title]
+input file for radiation shieldings.
+
+[Parameters]
+  icntl     = 0           $$ ( 0:transport, 6:check-source, 8:check-Geometry )
+  istdev    = 2          $$ ( 0:optimal  , 1:batch-stddev, 2:history-stddev ) ( +:New, -:Continue )
+  file(1)   = /mnt/c/phits/build_phits328A/phits/ $$
+  file(6)   = out/phits.out    $$ File Name of output
+  file(7)   = /mnt/c/phits/build_phits328A/phits/data/xsdir.jnd     $$ directory path of xsdir
+  maxcas    = 2500.0        $$ #.of particles
+  maxbch    = 40          $$ #.of batches
+  emin(12)  = 0.1                               $$ cut-off energy of electron to be transported. (MeV)
+                                                $$   ( if negs=1 ) Default :: 0.1 = 100keV
+                                                $$   ( if negs=0 ) Default :: 1e9 :: No e- transport
+                                                $$ if emin(12) is set, the value is prioritized.
+  emin(13)  = 0.1                               $$ cut-off energy of electron to be transported.
+  negs      = 1                                 $$ transport of photon (+1/-1), electron(+1), off(0)
+  ipnint    = 1                                 $$ p-n interaction ( 0:Off, 1:On, 2:w/ NRF(Full) )
+  iprofr    = 0                                 $$ error - handling ( exceeding desk device )
+  itimrand  = 1                                 $$ randomize by date-time ( random seed varies, run-by-run )
+
+  itetauto  = 1                                 $$ for auto numbering of material in Nastran Mesh
+
+
+$$ ================================================================= $$
+$$ ===  source                                                   === $$
+$$ ================================================================= $$
+
+[Source]
+
+
+    $$ ----------------------------------------------------------------- $$
+    $$ ---         Gaussian beam ( Gaussian distribution )           --- $$
+    $$ ----------------------------------------------------------------- $$
+    s-type    =   13                    $$ ( 13:gaussian-xy )
+    totfact   = 624219725000000.0
+    proj      = electron
+    dir       =  1.0
+    r1        = 0.6
+    z0        = -20.0
+    z1        = -21.0
+    e0        = 40.0
+
+
+
+$$ ================================================================= $$
+$$ ===                  Geometry                                 === $$
+$$ ================================================================= $$
+
+$$ ---------------------------------------- $$
+$$ ---         surface                  --- $$
+$$ ---------------------------------------- $$
+[Surface]
+$$  [surfNum] [rpp] [xMin]         [xMax]         [yMin]         [yMax]         [zMin]         [zMax]       -- $
+    10    rpp   -16.0  16.0  -8.0  8.0  -1.0  1.0
+    20    rpp   -17.0  17.0  -9.0  9.0  -2.0  2.0
+    
+$$  [surfNum] [rpp] [xMin]  [xMax]  [yMin]  [yMax]  [zMin]  [zMax]-- $
+    30    rpp   -30.0  30.0  -30.0  30.0  -30.0  30.0
+
+
+$$ ---------------------------------------- $$
+$$ ---           cell                   --- $$
+$$ ---------------------------------------- $$
+[Cell]
+$$  Universe : Space to expand Mesh model. ( Temporal expansion in 101, name as U=1 )
+$$  [cellNum] [matNum] [density][surface]  [Universe]  [Lattice]   [tFile] [ScaleFactor]
+    101  5009  -0.0012049 -20 U=1  LAT=3  nfile=msh/model
+$$  [cellNum] [matNum] [density][surface]  [FILL]
+    1    5009  -0.0012049 -10 FILL=1      $$ -- FILL : actual model  FILL < Universe
+    2    5009  -0.0012049 -20 +10         $$ -- buffer for beam flight
+    3    5009  -0.0012049 -30 +20         $$ -- buffer for beam flight
+    4    -1                        +30
+
+
+
+$$ ================================================================= $$
+$$ ===                materials_phits.inp (PHITS)                === $$
+$$ ================================================================= $$
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                     Material Section                      --- $$
+$$ ----------------------------------------------------------------- $$
+
+[Material]
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                  matNum[5001] :: SUS316                   --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: Stainless Steel
+mat[5001]
+    Fe         -6.69000e-01
+    C          -4.00000e-04
+    Si         -1.50000e-04
+    Mn         -1.00000e-02
+    P          -2.25000e-04
+    Ni         -1.20000e-01
+    Cr         -1.70000e-01
+    Mo         -2.50000e-02
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                    matNum[5002] :: Ta                     --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: pure Tantal
+mat[5002]
+    Ta          1.00000e+00
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                  matNum[5003] :: SUS316                   --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: Stainless Steel
+mat[5003]
+    Fe         -6.69000e-01
+    C          -4.00000e-04
+    Si         -1.50000e-04
+    Mn         -1.00000e-02
+    P          -2.25000e-04
+    Ni         -1.20000e-01
+    Cr         -1.70000e-01
+    Mo         -2.50000e-02
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                  matNum[5004] :: SUS316                   --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: Stainless Steel
+mat[5004]
+    Fe         -6.69000e-01
+    C          -4.00000e-04
+    Si         -1.50000e-04
+    Mn         -1.00000e-02
+    P          -2.25000e-04
+    Ni         -1.20000e-01
+    Cr         -1.70000e-01
+    Mo         -2.50000e-02
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                  matNum[5005] :: SUS316                   --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: Stainless Steel
+mat[5005]
+    Fe         -6.69000e-01
+    C          -4.00000e-04
+    Si         -1.50000e-04
+    Mn         -1.00000e-02
+    P          -2.25000e-04
+    Ni         -1.20000e-01
+    Cr         -1.70000e-01
+    Mo         -2.50000e-02
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                  matNum[5006] :: SUS316                   --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: Stainless Steel
+mat[5006]
+    Fe         -6.69000e-01
+    C          -4.00000e-04
+    Si         -1.50000e-04
+    Mn         -1.00000e-02
+    P          -2.25000e-04
+    Ni         -1.20000e-01
+    Cr         -1.70000e-01
+    Mo         -2.50000e-02
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                  matNum[5007] :: SUS316                   --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: Stainless Steel
+mat[5007]
+    Fe         -6.69000e-01
+    C          -4.00000e-04
+    Si         -1.50000e-04
+    Mn         -1.00000e-02
+    P          -2.25000e-04
+    Ni         -1.20000e-01
+    Cr         -1.70000e-01
+    Mo         -2.50000e-02
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                    matNum[5008] :: H2O                    --- $$
+$$ ----------------------------------------------------------------- $$
+
+mat[5008]
+    H           2.00000e+00
+    O           1.00000e+00
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---                    matNum[5009] :: Air                    --- $$
+$$ ----------------------------------------------------------------- $$
+
+$$ comment :: JAERI-Tech-96-001 <-- JAERI-M6928
+mat[5009]
+    H          -1.00000e-03
+    C          -1.26000e-02
+    N          -7.55000e+01
+    O          -2.32000e+01
+
+
+
+$$ ----------------------------------------------------------------- $$
+$$ ---               matNameColor section (PHITS)                --- $$
+$$ ----------------------------------------------------------------- $$
+
+[MatNameColor]
+    mat  name               size       color               
+    5001 SUS316             2.0        red                 
+    5002 Ta                 2.0        purple              
+    5003 SUS316             2.0        red                 
+    5004 SUS316             2.0        red                 
+    5005 SUS316             2.0        red                 
+    5006 SUS316             2.0        red                 
+    5007 SUS316             2.0        red                 
+    5008 H2O                2.0        cyanblue            
+    5009 Air                2.0        cyan                
+
+
+
+$$ ---------------------------------------------------------- $$
+$$ --- tally for fluence on tetra                         --- $$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  tet          $$ mesh    :: [ xyz, r-z, reg, tet ]
+    reg =  101          $$ region number ::
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e3
+   part =  photon
+   unit =    2           $$ unit is [1/cm^2/MeV/source]
+   axis =  tet
+   file =  out/fluence_tet.dat
+ foamout=    2
+
+$$ ---------------------------------------------------------- $$
+$$ --- tally for fluence x-z (2d)                         --- $$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  xyz          $$ mesh    :: [ xyz, r-z, reg, tet ]
+ x-type =    2          $$ x-type  :: [ 1: (nx,data[nx+1]), 2:(nx,xmin,xmax), 3:logarithmic ]
+     nx =   100
+   xmin =  -16
+   xmax =  +16
+ y-type =    2
+     ny =    1
+   ymin =  -8
+   ymax =  +8
+ z-type =    2
+     nz =   100
+   zmin =  -2
+   zmax =  +2
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e3
+   axis =   xz
+   part =  all
+   file =  out/fluence_xz.dat
+  title =  fluence in xz plane
+  gshow =    1
+ epsout =    1
+
+
+
+
+$$ ---------------------------------------------------------- $$
+$$ --- tally for heat deposit on tetra                    --- $$
+$$ ---------------------------------------------------------- $$
+[T-Deposit]
+    file = out/heatload.out
+    mesh = tet
+    reg  = 101    $$ region of tetra is defined.
+    unit = 5      $$ [J/m3/soruce] ( output=dose only )
+                  $$ ( J/m2 in manual7.5, but J/m3 in PHITs-Fluent )
+    axis = tet
+  output = dose
+ foamout = 2      $$ out:: .csv ( i_tet, x0,y0,z0, vol, value, stddev )
+
+
+
+
+$$ ---------------------------------------------------------- $$
+$$ --- tally for geometry check ( target region )          ---$$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  xyz          $$ mesh    :: [ xyz, r-z, reg, tet ]
+ x-type =    2          $$ x-type  :: [ 1: (nx,data[nx+1]), 2:(nx,xmin,xmax), 3:logarithmic ]
+     nx =   800
+   xmin =  -30.0
+   xmax =  30.0
+ y-type =    2
+     ny =    1
+   ymin =  -30.0
+   ymax =  30.0
+ z-type =    2
+     nz =  1200
+   zmin =  -30.0
+   zmax =  30.0
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e3
+   axis =   xz
+   file =  out/check_geometry.dat
+  title =  geometry of target region
+  gshow =    1
+ epsout =    1
+
+
+
+[End]
+
+
+$$ ---   [NOTE]    --------------------------------------------------------------  $$
+$$ nucdata   =  1                       $$ nuetron's nuclear data library => 0:Off, 1:On
+$$ negs      =  1                       $$ transports of electron, photon, position ( default:-1 )
+                                        $$  -1: PHITS's original library ( photon )
+                                        $$   0: No Transport
+                                        $$  +1: EGS5 Library             ( photon, electron )
+$$ emcpf     = 20.0                     $$ upper limit of the detailed photon model
+$$ emin(12)  = 0.1     $ ==  1(keV)     $$ upr-limit of transport :: electron (MeV)
+$$ emin(13)  = 0.1     $ ==  1(keV)     $$ upr-limit of transport :: positron (MeV)
+$$ dmax(12)  = 1000.0                   $$ use of nuclear data ( emin(12) < energy < dmax(12) )
+$$ ------------------------------------------------------------------------------  $$

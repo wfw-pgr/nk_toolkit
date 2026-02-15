@@ -1,0 +1,49 @@
+--------------------------------------------------------------
+ solidworks の STEPファイルからPHITs入力のメッシュを生成
+--------------------------------------------------------------
+
+[INPUT]
+
+	* msh/model.stp
+	  ( solidworks から出力、各部品名でメッシュサイズ等を規定 -> mesh.json へ )
+
+	* dat/mesh.json              e.g.-> [*1]
+	* dat/materials.json
+	* dat/parameters.json
+
+	* inp/main_phits.inp ( +他 )
+
+
+[OUTPUT]
+
+	* msh/model.bdf
+	* inp/materials.phits.j2
+	* inp/execute.phits.inp
+
+
+[HOWTO]
+
+	$ invoke mesh   --phits-mesh --stpFile msh/model.stp
+	$ invoke build  --phits-mesh
+
+
+
+------------------------------------------------
+[*1]
+
+{   
+    "parts_A": {                        -> STEP中の記載 ( solidworksで一番下（個別）の部品名． アセンブリA > アセンブリB > parts_A なら parts_A部分  )
+        "meshsize" : 2.0,
+	"material" : "H2O", 
+    }, 
+
+    "parts_B": {
+        "meshsize" : 2.0, 
+	"material" : "SUS316",          -> H2O は materials.json に 記載
+	"density"  : -7.85,             ( もしくは、直接、密度記載 )
+    },
+
+    ....
+    
+}
+------------------------------------------------

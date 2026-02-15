@@ -1,0 +1,30 @@
+
+$$ ================================================================= $$
+$$ ===                  Geometry                                 === $$
+$$ ================================================================= $$
+
+$$ ---------------------------------------- $$
+$$ ---         surface                  --- $$
+$$ ---------------------------------------- $$
+[Surface]
+$$  [surfNum] [rpp] [xMin]         [xMax]         [yMin]         [yMax]         [zMin]         [zMax]       -- $
+    10    rpp   {{params["bb.fill.xMin"]}}  {{params["bb.fill.xMax"]}}  {{params["bb.fill.yMin"]}}  {{params["bb.fill.yMax"]}}  {{params["bb.fill.zMin"]}}  {{params["bb.fill.zMax"]}}
+    20    rpp   {{params["bb.univ.xMin"]}}  {{params["bb.univ.xMax"]}}  {{params["bb.univ.yMin"]}}  {{params["bb.univ.yMax"]}}  {{params["bb.univ.zMin"]}}  {{params["bb.univ.zMax"]}}
+    
+$$  [surfNum] [rpp] [xMin]  [xMax]  [yMin]  [yMax]  [zMin]  [zMax]-- $
+    30    rpp   {{params["bb.phits.xMin"]}}  {{params["bb.phits.xMax"]}}  {{params["bb.phits.yMin"]}}  {{params["bb.phits.yMax"]}}  {{params["bb.phits.zMin"]}}  {{params["bb.phits.zMax"]}}
+
+
+$$ ---------------------------------------- $$
+$$ ---           cell                   --- $$
+$$ ---------------------------------------- $$
+[Cell]
+$$  Universe : Space to expand Mesh model. ( Temporal expansion in 101, name as U=1 )
+$$  [cellNum] [matNum] [density][surface]  [Universe]  [Lattice]   [tFile] [ScaleFactor]
+    101  {{params["Air.matNum"]}}  {{params["Air.density"]}} -20 U=1  LAT=3  nfile={{params["geometry.meshFile"]}}
+$$  [cellNum] [matNum] [density][surface]  [FILL]
+    1    {{params["Air.matNum"]}}  {{params["Air.density"]}} -10 FILL=1      $$ -- FILL : actual model  FILL < Universe
+    2    {{params["Air.matNum"]}}  {{params["Air.density"]}} -20 +10         $$ -- buffer for beam flight
+    3    {{params["Air.matNum"]}}  {{params["Air.density"]}} -30 +20         $$ -- buffer for beam flight
+    4    -1                        +30
+

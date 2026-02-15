@@ -1,0 +1,6 @@
+*.STEP
+*.step
+*.stp
+*.msh
+*.bdf
+__pycache__/*

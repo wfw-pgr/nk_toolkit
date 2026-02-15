@@ -1,0 +1,109 @@
+{
+    
+    // ---------------------------------------------- //
+    // ---  Simulation Control Settings          ---- //
+    // ---------------------------------------------- //
+    //
+    "sim.icntl"          :     0,    // ( 0:transport, 6:check-source, 8:check-Geometry )
+    "sim.istdev"         :     2,    // ( 0:optimal  , 1:batch-stddev, 2:history-stddev ) ( +:New, -:Continue )
+    "sim.parallel.type"  : "OMP",    // "MPI" / "OMP"
+    "sim.parallel.nProc" :     4,
+    "sim.nParticle"      : 1.0e5,    // preferably  nProc * xxx
+    "sim.nBatch"         : "@sim.parallel.nProc*10",
+    "sim.nCascade"       : "@sim.nParticle/@sim.nBatch",
+    "sim.phits_output"   : "out/phits.out",
+
+    // --- level7 & galleria --- //    ( 133.144.160.74 & 133.144.160.131 )
+    "sim.phits_directory": "/common1/hpclocal/PHITS/phits321/phits/",
+    "sim.phits_xsdir"    : "/home/users/70727338/Lib80x/xsdir.jnd",
+    
+    "sim.phits_directory": "/mnt/c/phits/build_phits328A/phits/",
+    "sim.phits_xsdir"    : "/mnt/c/phits/build_phits328A/phits/data/xsdir.jnd",
+    
+    // ---     rdhpc1        --- //    ( 10.225.216.10   )
+    // "sim.phits_directory": "/common1/hpclocal/PHITS/phits321/phits/",
+    // "sim.phits_xsdir"    : "/home/users/70727338/Lib80x/xsdir.jnd",
+    
+    // ---------------------------------------------- //
+    // ---  Constants  Settings                  ---- //
+    // ---------------------------------------------- //    
+    "mm"                 : 0.1,
+    "m2cm"               : 100.0,
+    "pi"                 : 3.14159265358,
+    "ln2"                : 0.69314718056,
+    "NAvogadro"          : 6.02e23,
+
+    // ---------------------------------------------- //
+    // ---  convertor Settings                   ---- //
+    // ---------------------------------------------- //
+    "converter.matNum"   : "@Ta.matNum",
+    "converter.density"  : "@Ta.density",
+    
+    // ---------------------------------------------- //
+    // ---  source part  :: beam settings        ---- //
+    // ---------------------------------------------- //
+    "beam.type"          : "gaussian",                  // [ "gaussian", "pencil", "emittance" ]
+    "beam.energy"        :     40.0,
+    "beam.current"       : 100.0e-6,
+    "beam.FWHM"          : "  6.00 * @mm",
+    "beam.zStart"        : "-200.0 * @mm",
+    "beam.length"        : "  10.0 * @mm",
+
+    "beam.totfact"       : "@beam.current / 1.602e-19", // -- unit :: [ particles / s ] -- //
+    "beam.HWHM"          : "0.5 * @beam.FWHM",
+    "beam.zEnd"          : "@beam.zStart - @beam.length",
+
+    // ---------------------------------------------- //
+    // ---  geometry part ::                     ---- //
+    // ---------------------------------------------- //
+
+    "geometry.meshFile" : "msh/model",
+    
+    // ---------------- //
+    //   unit :: mm  -- //
+    // ---------------- //
+    "bb.buff"           :  10.0,
+    "bb.mesh.mm.xMin"   : -160.0,  // actual (xMin,xMax) of CAD or Mesh.
+    "bb.mesh.mm.xMax"   : +160.0,
+    "bb.mesh.mm.yMin"   : -80.0,
+    "bb.mesh.mm.yMax"   : +80.0,
+    "bb.mesh.mm.zMin"   : -10.0,
+    "bb.mesh.mm.zMax"   : +10.0,
+
+    "bb.fill.xMin"      : "@bb.mesh.mm.xMin * @mm",   // 
+    "bb.fill.xMax"      : "@bb.mesh.mm.xMax * @mm",
+    "bb.fill.yMin"      : "@bb.mesh.mm.yMin * @mm",
+    "bb.fill.yMax"      : "@bb.mesh.mm.yMax * @mm",
+    "bb.fill.zMin"      : "@bb.mesh.mm.zMin * @mm",
+    "bb.fill.zMax"      : "@bb.mesh.mm.zMax * @mm",
+    // univ > fill
+    "bb.univ.xMin"      : "( @bb.mesh.mm.xMin - @bb.buff ) * @mm",
+    "bb.univ.xMax"      : "( @bb.mesh.mm.xMax + @bb.buff ) * @mm",
+    "bb.univ.yMin"      : "( @bb.mesh.mm.yMin - @bb.buff ) * @mm",
+    "bb.univ.yMax"      : "( @bb.mesh.mm.yMax + @bb.buff ) * @mm",
+    "bb.univ.zMin"      : "( @bb.mesh.mm.zMin - @bb.buff ) * @mm",
+    "bb.univ.zMax"      : "( @bb.mesh.mm.zMax + @bb.buff ) * @mm",
+
+    "bb.phits.mm.xMin"  : -300.0,
+    "bb.phits.mm.xMax"  : +300.0,
+    "bb.phits.mm.yMin"  : -300.0,
+    "bb.phits.mm.yMax"  : +300.0,
+    "bb.phits.mm.zMin"  : -300.0,
+    "bb.phits.mm.zMax"  : +300.0,
+
+    "bb.phits.xMin"     : "@bb.phits.mm.xMin * @mm",
+    "bb.phits.xMax"     : "@bb.phits.mm.xMax * @mm",
+    "bb.phits.yMin"     : "@bb.phits.mm.yMin * @mm",
+    "bb.phits.yMax"     : "@bb.phits.mm.yMax * @mm",
+    "bb.phits.zMin"     : "@bb.phits.mm.zMin * @mm",
+    "bb.phits.zMax"     : "@bb.phits.mm.zMax * @mm",
+
+
+    // ---------------------------------------------- //
+    // ---  tally part  :: tally settings        ---- //
+    // ---------------------------------------------- //
+    "tally.fluence.sw"        : true,
+    "tally.deposit.sw"        : true,
+    "tally.check-geometry.sw" : true,    
+    
+}
