@@ -17,10 +17,13 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
     # --- [1] initialize                            --- #
     # ------------------------------------------------- #
     gmsh.initialize()
-    gmsh.option.setNumber( "General.Terminal"         , 1 )
-    gmsh.option.setNumber( "Mesh.Algorithm"           , 5 )
-    gmsh.option.setNumber( "Mesh.Algorithm3D"         , 4 )
-    gmsh.option.setNumber( "Geometry.OCCImportLabels" , 1 )
+    gmsh.option.setNumber( "General.Terminal"         , 1  )
+    gmsh.option.setNumber( "Mesh.Algorithm"           , 6  )
+    gmsh.option.setNumber( "Mesh.Algorithm3D"         , 10 )
+    gmsh.option.setNumber( "Geometry.OCCImportLabels" , 1  )
+    gmsh.option.setNumber( "Mesh.Optimize"            , 1  )
+    gmsh.option.setNumber( "Mesh.OptimizeNetgen"      , 1  )
+    gmsh.option.setNumber( "Mesh.Smoothing"           , 3  )
     gmsh.model.add( "model" )
 
     # ------------------------------------------------- #

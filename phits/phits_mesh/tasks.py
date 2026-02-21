@@ -115,11 +115,11 @@ def build( ctx, \
 @invoke.task(
     help={
         "phits_cmd" : "phits command, depending on the environment. ( --phits-cmd='phits.sh' )",
-        "exeFile"   : "phits execution file, built by above command ( inp/execute_phits.inp )",
+        "exeFile"   : "phits execution file, built by above command ( inp/execute.phits.inp )",
     }
 
 )
-def run( ctx, phits_cmd="phits.sh", exeFile="inp/execute_phits.inp" ):
+def run( ctx, phits_cmd="phits.sh", exeFile="inp/execute.phits.inp" ):
     
     # ------------------------------------------------- #
     # --- [1] run command                           --- #
@@ -167,7 +167,7 @@ def all( ctx, \
          inpFile="inp/main_phits.inp", materialFile="inp/materials.json", \
          stpFile="msh/model.stp", phits_mesh=False, \
          configFile="dat/mesh.json", mshFile=None, bdfFile="msh/model.bdf", \
-         exeFile="inp/execute_phits.inp", phits_cmd="phits.sh" ):
+         exeFile="inp/execute.phits.inp", phits_cmd="phits.sh" ):
     if ( phits_mesh ):
         mesh( ctx, stpFile=stpFile, \
               configFile=configFile, mshFile=mshFile, bdfFile=bdfFile, phits_mesh=phits_mesh )
@@ -175,39 +175,3 @@ def all( ctx, \
     run  ( ctx, phits_cmd=phits_cmd, exeFile=exeFile )
     post ( ctx )
     return()
-
-
-
-
-
-
-# def build( ctx, \
-#            inpFile="inp/main_phits.inp", \
-#            materialFile="dat/materials.json", \
-#            materialPhitsInputFile="inp/materials_phits.inp", \
-#            exeFile="inp/execute_phits.inp", phits_mesh=False ):
-    
-#     # ------------------------------------------------- #
-#     # --- [1] file existence check                  --- #
-#     # ------------------------------------------------- #
-#     if ( os.path.exists( inpFile ) is False ):
-#         raise FileNotFoundError( "[tasks.py] inpFile = ?? :: {}".format( inpFile ) )
-#     if ( os.path.exists( materialFile ) is False ):
-#         raise FileNotFoundError( "[tasks.py] materialFile = ?? :: {}".format( materialFile ) )
-    
-#     # ------------------------------------------------- #
-#     # --- [2] precompile PHITS input files          --- #
-#     # ------------------------------------------------- #
-#     sct.show__section( "Conversion :: _phits.inp >> .inp File", length=71 )
-#     if ( phits_mesh ):
-#         configFile = "dat/mesh.json"
-#         with open( configFile, "r" ) as f:
-#             config = json5.load( f )
-#         matKeys     = [ item["material"] for item in config.values() ]
-#         material_dn = mfj.materials__fromJSON( matFile=materialFile, outFile=materialPhitsInputFile, \
-#                                                keys=matKeys, tetra_auto_mat=True )
-#     else:
-#         material_dn = mfj.materials__fromJSON( matFile=materialFile )
-#     precomp     = ppf.precompile__parameterFile( inpFile=inpFile, outFile=exeFile, \
-#                                                  table=material_dn, silent=True, \
-#                                                  comment_mark="$",  variable_mark="@" )
