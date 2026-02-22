@@ -14,7 +14,17 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
                           materialPhitsFile="inp/materials.phits.j2" ):
 
     # ------------------------------------------------- #
-    # --- [1] initialize                            --- #
+    # --- [1] mesh config                           --- #
+    # ------------------------------------------------- #
+    with open( configFile, "r" ) as f:
+        config    = json5.load( f )
+        if ( "options" in config ):
+            options = config.pop( "options" )
+        else:
+            options = {}
+    
+    # ------------------------------------------------- #
+    # --- [2] initialize                            --- #
     # ------------------------------------------------- #
     gmsh.initialize()
     gmsh.option.setNumber( "General.Terminal"         , 1  )
@@ -24,10 +34,12 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
     gmsh.option.setNumber( "Mesh.Optimize"            , 1  )
     gmsh.option.setNumber( "Mesh.OptimizeNetgen"      , 1  )
     gmsh.option.setNumber( "Mesh.Smoothing"           , 3  )
+    for key in options.keys():
+        gmsh.option.setNumber( key, options[key] )
     gmsh.model.add( "model" )
-
+            
     # ------------------------------------------------- #
-    # --- [2] import models                         --- #
+    # --- [3] import models                         --- #
     # ------------------------------------------------- #
     if ( not( os.path.exists( stpFile ) ) ):
         raise FileNotFoundError( "Cannot find file :: {}".format( stpFile ) )
@@ -48,20 +60,13 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
         print( "   * {0} :: {1}".format( key, dimtags ) )
     print( "==============================================" )
     print()
-    
-    # ------------------------------------------------- #
-    # --- [3] mesh config                           --- #
-    # ------------------------------------------------- #
-    with open( configFile, "r" ) as f:
-        config    = json5.load( f )
-        
+
     for key,item in config.items():
         if ( key in names ):
             item["entities"] = entities[key]
         else:
             print( "[mesh__solidworksSTEP.py] cannot find  {}".format( key ) )
-            
-            
+                
     # ------------------------------------------------- #
     # --- [4] meshing                               --- #
     # ------------------------------------------------- #

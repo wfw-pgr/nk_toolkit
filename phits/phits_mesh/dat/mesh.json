@@ -1,4 +1,12 @@
 {
+
+    "options" : {
+        "Mesh.Algorithm"      : 5,
+        "Mesh.Algorithm3D"    : 10,
+        "Mesh.Optimize"       : true, 
+        "Mesh.OptimizeNetgen" : true, 
+        "Mesh.Smoothing"      : 1,
+    }, 
    
     "全溶接コンバータ_筐体": {
         "meshsize" : 2.0,
