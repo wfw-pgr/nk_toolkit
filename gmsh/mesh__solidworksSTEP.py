@@ -48,7 +48,9 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
 
     dimtags = gmsh.model.occ.importShapes( stpFile )
     gmsh.model.occ.synchronize()
-
+    gmsh.model.occ.removeAllDuplicates()
+    gmsh.model.occ.synchronize()
+    
     names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
     numDict = { name:[] for name in names }
     for name,dimtag in zip( names, dimtags ):
