@@ -77,6 +77,8 @@ def build( ctx, \
     if ( phits_mesh ):
         with open( meshFile, "r" ) as f:
             meshconfig = json5.load( f )
+            if ( "options" in meshconfig ):
+                options = meshconfig.pop( "options" )
         matKeys     = [ item["material"] for item in meshconfig.values() ]
         material_dn = mfj.materials__fromJSON( matFile=materialFile, \
                                                outFile=materialPhitsFile, \

@@ -40,6 +40,8 @@ def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
         else:
             with open( configFile, "r" ) as f:
                 config = json5.load( f )
+            if ( "options" in config ):
+                options = config.pop( "options" )
                 
     # ------------------------------------------------- #
     # --- [2] load mesh elements & nodes            --- #
