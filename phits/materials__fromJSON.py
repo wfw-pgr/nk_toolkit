@@ -4,7 +4,7 @@ import os, sys, json5
 # ===  materials__fromJSON.py                           === #
 # ========================================================= #
 
-def materials__fromJSON( matFile="dat/materials.json", \
+def materials__fromJSON( matFile="dat/materials.json", bdfFile="msh/model.bdf", \
                          outFile="inp/materials.phits.j2", keys=[], \
                          tetra_auto_mat=False, \
                          ibegin_normal=1, ibegin_tetra=5001 ):
@@ -24,7 +24,7 @@ def materials__fromJSON( matFile="dat/materials.json", \
         settings = matDB.pop( "settings" )
     except KeyError:
         settings = None
-    
+
     if ( settings is not None ):
         if ( "materialList" in settings ):
             adds  = list( set( settings["materialList"] ) - set( keys ) )

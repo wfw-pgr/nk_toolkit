@@ -9,7 +9,7 @@ import nk_toolkit.phits.materials__fromJSON as mfj
 # ========================================================= #
 
 def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
-                          mshFile=None, bdfFile="msh/model.bdf", phits_mesh=False, \
+                          mshFile="msh/model.msh", bdfFile="msh/model.bdf", phits_mesh=False, \
                           matFile="dat/materials.json", \
                           materialPhitsFile="inp/materials.phits.j2", scale_unit="mm" ):
 

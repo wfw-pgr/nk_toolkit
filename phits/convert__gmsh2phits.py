@@ -57,9 +57,11 @@ def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
     cell_data      = { key:cell_data_dict[key][elementType] for key in cell_data_dict.keys() }
     field_data     = rmesh.field_data
     physNums       = np.array( cell_data["gmsh:physical"] )
-    index          = np.argsort( physNums, kind="stable" )
-    physNums       = physNums[ index ]
-    cells          = cells   [ index ]
+    unq, idx       = np.unique( physNums, return_index=True )
+    physNums_order = unq[ np.argsort( idx ) ]
+    # index          = np.argsort( physNums, kind="stable" )
+    # physNums       = physNums[ index ]
+    # cells          = cells   [ index ]
     physNums_names = { str( item[0] ):key for key,item in field_data.items() }
     physNums_set   = list( set( [ item[0] for item in field_data.values() ] ) )
     if ( index_plus_1 ):
@@ -107,10 +109,10 @@ def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
     # --- [6] add PSOLID Card                       --- #
     # ------------------------------------------------- #
     f.write( "$\n" + "$ PSOLID cards ( Material info ) " + "\n" + "$\n" )
-    nPSOLID         = len( physNums_set )
+    nPSOLID         = len( physNums_order )
     PSOLID_cards    = np.array( np.repeat( "PSOLID  ", nPSOLID ), dtype=object )
-    PSOLID_PIDs     = np.array( physNums_set )
-    PSOLID_MIDs     = np.array( physNums_set )
+    PSOLID_PIDs     = np.array( physNums_order )
+    PSOLID_MIDs     = np.array( physNums_order )
     PSOLID_coordIDs = np.zeros( (nPSOLID,) )
     PSOLID_fmt      = "".join( ["%8s","%8d","%8d","%8d" ] )
     PSOLID_Data     = np.concatenate( [ PSOLID_cards[:,None], PSOLID_PIDs[:,None], \

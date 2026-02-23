@@ -24,7 +24,7 @@ import nk_toolkit.phits.materials__fromJSON  as mfj
     }
 )
 def mesh( context, stpFile="msh/model.stp", \
-          configFile="dat/mesh.json", mshFile=None, matFile="dat/materials.json", \
+          configFile="dat/mesh.json", mshFile="msh/model.msh", matFile="dat/materials.json", \
           bdfFile="msh/model.bdf", materialPhitsFile="inp/materials.phits.j2", phits_mesh=False ):
     """
     run mesh__solidworksSTEP( stpFile=.., mshFile=.., bdfFile=.., configFile=.., phits_mesh=.., )
@@ -53,7 +53,8 @@ def mesh( context, stpFile="msh/model.stp", \
 def build( ctx, \
            targetFile  ="inp/main.phits.j2" , paramsFile ="dat/parameters.json", \
            materialFile="dat/materials.json", materialPhitsFile="inp/materials.phits.j2", \
-           meshFile    = "dat/mesh.json"    , phits_mesh=False, \
+           meshFile    ="dat/mesh.json"     , phits_mesh=False, \
+           bdfFile     ="msh/model.bdf", \
            executeFile ="inp/execute.phits.inp", \
           ) -> None:
 
@@ -80,7 +81,7 @@ def build( ctx, \
             if ( "options" in meshconfig ):
                 options = meshconfig.pop( "options" )
         matKeys     = [ item["material"] for item in meshconfig.values() ]
-        material_dn = mfj.materials__fromJSON( matFile=materialFile, \
+        material_dn = mfj.materials__fromJSON( matFile=materialFile, bdfFile=bdfFile, \
                                                outFile=materialPhitsFile, \
                                                keys=matKeys, tetra_auto_mat=True )
     else:
@@ -176,7 +177,7 @@ def post( ctx ):
 def all( ctx, \
          inpFile="inp/main_phits.inp", materialFile="inp/materials.json", \
          stpFile="msh/model.stp", phits_mesh=False, \
-         configFile="dat/mesh.json", mshFile=None, bdfFile="msh/model.bdf", \
+         configFile="dat/mesh.json", mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
          exeFile="inp/execute.phits.inp", phits_cmd="phits.sh" ):
     if ( phits_mesh ):
         mesh( ctx, stpFile=stpFile, \
