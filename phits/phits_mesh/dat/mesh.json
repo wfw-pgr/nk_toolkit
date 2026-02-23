@@ -1,7 +1,7 @@
 {
 
     "options" : {
-        "Mesh.Algorithm"      : 5,
+        "Mesh.Algorithm"      : 6,
         "Mesh.Algorithm3D"    : 10,
         "Mesh.Optimize"       : true, 
         "Mesh.OptimizeNetgen" : true, 
@@ -9,42 +9,42 @@
     }, 
    
     "全溶接コンバータ_筐体": {
-        "meshsize" : 2.0,
+        "meshsize" : 5.0e-3,
         "material" : "SUS316", 
     }, 
 
     "全溶接コンバータ_タンタルプレート": {
-        "meshsize" : 2.0, 
+        "meshsize" : 1.0e-3, 
         "material" : "Ta", 
     },
     
     "全溶接コンバータ_プレーㇳホルダー_ハーフ内": {
-        "meshsize" : 2.0,
+        "meshsize" : 5.0e-3,
         "material" : "SUS316",
     },
     
     "全溶接コンバータ_プレートホルダー_ハーフ外": {
-        "meshsize" : 2.0, 
+        "meshsize" : 5.0e-3, 
         "material" : "SUS316",
     },
     
     "全溶接コンバータ_SUSビーム窓枠": {
-        "meshsize" : 2.0, 
+        "meshsize" : 2.0e-3, 
         "material" : "SUS316",
     },
     
     "全溶接コンバータ_SUSビーム窓": {
-        "meshsize" : 2.0, 
+        "meshsize" : 1.0e-3, 
         "material" : "SUS316",
     },
 
     "全溶接コンバータ_側面配管接続": {
-        "meshsize" : 2.0, 
+        "meshsize" : 5.0e-3, 
         "material" : "SUS316",
     },
    
     "Part2^全溶接コンバータ_全体アセンブリ": {
-        "meshsize" : 2.0, 
+        "meshsize" : 1.5e-3, 
         "material" : "H2O",
     },
 

@@ -3,4 +3,6 @@
 *.stp
 *.msh
 *.bdf
+*.vtu
+*.csv
 __pycache__/*

@@ -34,6 +34,10 @@ def assign__meshsize( config =None, configFile="mesh.json", \
         if ( os.path.exists( configFile ) ):
             with open( configFile, "r" ) as f:
                 config = json5.load( f )
+                if ( "options" in config ):
+                    options = config.pop( "options" )
+                else:
+                    options = {}
         else:
             raise FileNotFoundError( "Cannot Find File :: {}".format( configFile ) )
 
