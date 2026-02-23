@@ -1,5 +1,7 @@
 import invoke
 import os, sys, subprocess, time, json5
+import meshio
+import numpy as np
 import datetime                              as dt
 import nkUtilities.show__section             as sct
 import nkUtilities.precompile__parameterFile as ppf
@@ -80,8 +82,13 @@ def build( ctx, \
             meshconfig = json5.load( f )
             if ( "options" in meshconfig ):
                 options = meshconfig.pop( "options" )
-        matKeys     = [ item["material"] for item in meshconfig.values() ]
-        material_dn = mfj.materials__fromJSON( matFile=materialFile, bdfFile=bdfFile, \
+        matKeys        = [ item["material"] for item in meshconfig.values() ]
+        if ( bdfFile is not None ):
+            rmesh          = meshio.read( bdfFile )
+            unq,idx        = np.unique( rmesh.cell_data["nastran:ref"], return_index=True )
+            physNums_order = unq[ np.argsort( idx ) ]
+            matKeys        = [ matKeys[ ik-1 ] for ik in physNums_order ]
+        material_dn = mfj.materials__fromJSON( matFile=materialFile, \
                                                outFile=materialPhitsFile, \
                                                keys=matKeys, tetra_auto_mat=True )
     else:

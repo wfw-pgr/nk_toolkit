@@ -126,6 +126,15 @@
 	    Ta: 1.0,
 	},
     },
+    Pt: {
+	Name: "Pt",
+	Density: -21.45,
+	Color: "purple",
+	Comment: "pure platinuml",
+	Composition: {
+	    Pt: 1.0,
+	},
+    },
     Ra: {
 	Name: "Ra",
 	Density: -5.5,

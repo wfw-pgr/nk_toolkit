@@ -111,8 +111,8 @@ def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
     f.write( "$\n" + "$ PSOLID cards ( Material info ) " + "\n" + "$\n" )
     nPSOLID         = len( physNums_order )
     PSOLID_cards    = np.array( np.repeat( "PSOLID  ", nPSOLID ), dtype=object )
-    PSOLID_PIDs     = np.array( physNums_order )
-    PSOLID_MIDs     = np.array( physNums_order )
+    PSOLID_PIDs     = np.array ( physNums_order    )
+    PSOLID_MIDs     = np.arange( 1, nPSOLID+1 )
     PSOLID_coordIDs = np.zeros( (nPSOLID,) )
     PSOLID_fmt      = "".join( ["%8s","%8d","%8d","%8d" ] )
     PSOLID_Data     = np.concatenate( [ PSOLID_cards[:,None], PSOLID_PIDs[:,None], \
@@ -130,7 +130,7 @@ def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
     MAT1_returns    = np.array( np.repeat( "\n"      , nMAT1 ), dtype=object )
     MAT1_zeroData1  = np.zeros( (nMAT1,3) )
     MAT1_zeroData2  = np.zeros( (nMAT1,3) )
-    keys            = [ physNums_names[str(val)] for val in MAT1_MIDs ]
+    keys            = [ physNums_names[str(val)] for val in physNums_order ]
     MAT1_density    = np.array( [ config[key]["density"] for key in keys ] )
     MAT1_Data       = np.concatenate( [ MAT1_cards[:,None], MAT1_MIDs[:,None], \
                                         MAT1_zeroData1, MAT1_returns[:,None], \

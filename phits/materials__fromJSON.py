@@ -4,7 +4,7 @@ import os, sys, json5
 # ===  materials__fromJSON.py                           === #
 # ========================================================= #
 
-def materials__fromJSON( matFile="dat/materials.json", bdfFile="msh/model.bdf", \
+def materials__fromJSON( matFile="dat/materials.json", \
                          outFile="inp/materials.phits.j2", keys=[], \
                          tetra_auto_mat=False, \
                          ibegin_normal=1, ibegin_tetra=5001 ):
