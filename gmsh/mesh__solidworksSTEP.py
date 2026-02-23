@@ -124,6 +124,11 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
                 
         g2p.convert__gmsh2phits( mshFile=mshFile, bdfFile=bdfFile, \
                                  config=config )
+        import meshio
+        rmesh          = meshio.read( bdfFile )
+        unq,idx        = np.unique( rmesh.cell_data["nastran:ref"], return_index=True )
+        physNums_order = unq[ np.argsort( idx ) ]
+        matKeys        = [ matKeys[ ik-1 ] for ik in physNums_order ]
         mfj.materials__fromJSON( matFile=matFile, outFile=materialPhitsFile, \
                                  keys=matKeys, tetra_auto_mat=True )
 

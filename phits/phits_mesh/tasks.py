@@ -170,7 +170,7 @@ def post( ctx ):
     # --- [2] map csv on vtu                        --- #
     # ------------------------------------------------- #
     import nk_toolkit.phits.tetra_toolkit as ttk
-    mshFile       = "msh/model.msh"
+    mshFile       = "msh/model.bdf"
     cellDataFiles = [ "out/heatload.csv" ]
     ret           = ttk.map__csvOnMesh( mshFile=mshFile, cellDataFiles=cellDataFiles )
     return()
