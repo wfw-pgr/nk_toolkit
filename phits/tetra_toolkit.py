@@ -1,5 +1,7 @@
 import os, sys
-import numpy as np
+import meshio
+import numpy  as np
+import pandas as pd
 
 
 # ========================================================= #
@@ -73,6 +75,72 @@ def integrate__onVolume( mshFile=None, outFile=None, cellDataFiles=[] ):
     outFile   = "dat/volume_integral.dat"
     names     = ["physNum","volInt", "volTot", "volAvg"]
     spf.save__pointFile( outFile=outFile, Data=Data, names=names )
+
+
+
+# ========================================================= #
+# ===  redistribute__cell2point_forFemtet               === #
+# ========================================================= #
+
+def redistribute__cell2point_forFemtet( mshFile="msh/model.msh", csvFile="out/heatload.csv",
+                                        outFile="dat/output.csv", \
+                                        target_physNum=1, key="Dose[J/m^3/source]", shape="tetra" ):
+
+    mm = 1.0e-3
+    
+    # ------------------------------------------------- #
+    # --- [1] routines to use                       --- #
+    # ------------------------------------------------- #
+    def calculate__tetVolumes( points, tets ):
+        # points: (N,3), tets: (M,4) int
+        p0  = points[tets[:,0]]
+        p1  = points[tets[:,1]]
+        p2  = points[tets[:,2]]
+        p3  = points[tets[:,3]]
+        vol = np.abs( np.einsum("ij,ij->i", np.cross(p1-p0, p2-p0), (p3-p0) ) )/6.0
+        return( vol )
+
+    # ------------------------------------------------- #
+    # --- [2] bdf file read                         --- #
+    # ------------------------------------------------- #
+    mesh = meshio.read( mshFile )
+    
+    if ( key in mesh.cell_data_dict ):
+        rdata  = mesh.cell_data_dict[key]
+    else:
+        rdata  = pd.read_csv( csvFile )[key].to_numpy( dtype=float )
+        
+    # ------------------------------------------------- #
+    # --- [3] 指定する物体IDのcell_dataを取得       --- #
+    # ------------------------------------------------- #
+    physNums = mesh.cell_data_dict["gmsh:physical"][shape]
+    mask     = ( physNums==target_physNum )
+    tets_tgt = ( mesh.cells_dict[shape] )[mask]
+    w_cell   = rdata[mask].astype(float)
+    
+    # ------------------------------------------------- #
+    # --- [4] redistribute                          --- #
+    # ------------------------------------------------- #
+    vol      = calculate__tetVolumes( mesh.points, tets_tgt )  # (n_tets_tgt,)
+    node_sum = np.zeros( len( mesh.points ), dtype=float )
+    node_wgt = np.zeros( len( mesh.points ), dtype=float )
+    
+    for ax in range(4):
+        idx = tets_tgt[:, ax]
+        np.add.at( node_sum, idx, w_cell*vol )
+        np.add.at( node_wgt, idx, vol )
+        
+    used_nodes = np.unique( tets_tgt.reshape(-1) )
+    w_node     = node_sum[used_nodes] / np.maximum( node_wgt[used_nodes], 1e-300 )
+
+    # ------------------------------------------------- #
+    # --- [6] save as csv & return                  --- #
+    # ------------------------------------------------- #
+    xyzp = mesh.points[ used_nodes ] / mm
+    Data = np.c_[ xyzp, w_node ]
+    np.savetxt( outFile, Data, delimiter=",", \
+                header="xp(mm),yp(mm),zp(mm),{}".format( key ), fmt="%15.8e" )
+    return( Data )
     
 
 # ========================================================= #

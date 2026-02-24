@@ -11,6 +11,7 @@ import nk_toolkit.phits.materials__fromJSON  as mfj
 import os, sys, json5, jinja2, pathlib, invoke
 import nkUtilities.show__section as sct
 import nk_toolkit.phits.materials__fromJSON  as mfj
+import nk_toolkit.phits.tetra_toolkit as ttk
 
 
 # ========================================================= #
@@ -169,10 +170,24 @@ def post( ctx ):
     # ------------------------------------------------- #
     # --- [2] map csv on vtu                        --- #
     # ------------------------------------------------- #
-    import nk_toolkit.phits.tetra_toolkit as ttk
-    mshFile       = "msh/model.bdf"
+    mshFile       = "msh/model.msh"
     cellDataFiles = [ "out/heatload.csv" ]
     ret           = ttk.map__csvOnMesh( mshFile=mshFile, cellDataFiles=cellDataFiles )
+
+    # ------------------------------------------------- #
+    # --- [3] redistribute cell data on points      --- #
+    # ------------------------------------------------- #
+    key     = "Dose[J/m^3/source]"
+    shape   = "tetra"
+    mshFile = "msh/model.msh"
+    csvFile = "out/heatload.csv"
+    hNums   = [ ik for ik in range( 1,8+1 ) ]
+    for hNum in hNums:
+        outFile = "dat/heatload_phys-{}.csv".format( hNum )
+        ttk.redistribute__cell2point_forFemtet( mshFile=mshFile, csvFile=csvFile, \
+                                                key=key, shape=shape, \
+                                                outFile=outFile, target_physNum=hNum )
+        print( "output :: {}".format( outFile ) )
     return()
     
 
