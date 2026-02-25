@@ -114,8 +114,10 @@ def get__particles( recoFile=None, refpFile=None, bpmsFile=None, steps=None, pid
     p0c            = np.sqrt( Et0**2 - Em0**2 )
     bpms["Ek_ref"] = ( bpms["ref_gamma"] - 1.0 ) * Em0
     bpms["Et_ref"] = bpms["Ek_ref"] + Em0
-    bpms["p0c"]    = np.sqrt( bpms["Et_ref"]**2 - Em0**2 )
-    bpms["dEk"]    = bpms["p0c"]    * bpms["pt"]
+    bpms["p0c"]    = bpms["ref_beta"] * bpms["ref_gamma"] * Em0 
+    # bpms["p0c"]    = np.sqrt( bpms["Et_ref"]**2 - Em0**2 )
+    bpms["dEk"]    = ( -1.0 ) * bpms["p0c"] * bpms["pt"]
+    # bpms["dEk"]    = p0c * bpms["pt"]
     bpms["Ek"]     = bpms["Ek_ref"] + bpms["dEk"]
     bpms["dt"]     = bpms["tp"]  / cv
     bpms["dphi"]   = norm_angle( (                    bpms["dt"] ) * rf_freq * 360.0 )

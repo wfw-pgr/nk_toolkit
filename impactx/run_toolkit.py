@@ -201,7 +201,7 @@ def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
 # ========================================================= #
 
 def save__latticeStructure( elements=None, beamlineFile=None, \
-                            outFile="diags/lattice.csv" ):
+                            outFile="diags/lattice.csv", labelFile="diags/lattice_label.csv" ):
 
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
@@ -229,5 +229,13 @@ def save__latticeStructure( elements=None, beamlineFile=None, \
     with open( outFile, "w" ) as f:
         lattice.to_csv( f, float_format="%.8e" )
 
-    
-    
+    # ------------------------------------------------- #
+    # --- [4] save labels                           --- #
+    # ------------------------------------------------- #
+    result  = ["bpm"]
+    for name in lattice["name"].tolist():
+        result += [ name, "bpm" ]
+    df            = pd.DataFrame( { "name":result } )
+    df.index      = range(1, len(df)+1 )
+    df.index.name = "id"
+    df.to_csv( labelFile, index=True )

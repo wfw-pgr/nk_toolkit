@@ -83,7 +83,7 @@ def integrate__onVolume( mshFile=None, outFile=None, cellDataFiles=[] ):
 # ========================================================= #
 
 def redistribute__cell2point_forFemtet( mshFile="msh/model.msh", csvFile="out/heatload.csv",
-                                        outFile="dat/output.csv", \
+                                        outFile="dat/output.csv", factor=1.0, \
                                         target_physNum=1, key="Dose[J/m^3/source]", shape="tetra" ):
 
     mm = 1.0e-3
@@ -109,6 +109,7 @@ def redistribute__cell2point_forFemtet( mshFile="msh/model.msh", csvFile="out/he
         rdata  = mesh.cell_data_dict[key]
     else:
         rdata  = pd.read_csv( csvFile )[key].to_numpy( dtype=float )
+    rdata = factor * rdata
         
     # ------------------------------------------------- #
     # --- [3] 指定する物体IDのcell_dataを取得       --- #
