@@ -155,7 +155,7 @@ def run( ctx, phits_cmd="phits.sh", exeFile="inp/execute.phits.inp" ):
 # ===  post-process of the calculation                  === #
 # ========================================================= #
 @invoke.task
-def post( ctx ):
+def post( ctx, factor=1.0 ):
     
     # ------------------------------------------------- #
     # --- [1] post execution commands               --- #
@@ -185,7 +185,7 @@ def post( ctx ):
     for hNum in hNums:
         outFile = "dat/heatload_phys-{}.csv".format( hNum )
         ttk.redistribute__cell2point_forFemtet( mshFile=mshFile, csvFile=csvFile, \
-                                                key=key, shape=shape, \
+                                                key=key, shape=shape, factor=factor, \
                                                 outFile=outFile, target_physNum=hNum )
         print( "output :: {}".format( outFile ) )
     return()

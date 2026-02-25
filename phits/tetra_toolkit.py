@@ -22,7 +22,8 @@ def map__csvOnMesh( mshFile=None, outFile=None, cellDataFiles=[] ):
     # --- [2] cellDataFiles                         --- #
     # ------------------------------------------------- #
     import nkMeshRoutines.convert__withMeshIO as cwm
-    cwm.convert__withMeshIO( mshFile=mshFile, outFile=outFile, cellDataFiles=cellDataFiles, replaceData=False )
+    cwm.convert__withMeshIO( mshFile=mshFile, outFile=outFile, \
+                             cellDataFiles=cellDataFiles, replaceData=False )
 
     # ------------------------------------------------- #
     # --- [3] add material property                 --- #
@@ -139,8 +140,7 @@ def redistribute__cell2point_forFemtet( mshFile="msh/model.msh", csvFile="out/he
     # ------------------------------------------------- #
     xyzp = mesh.points[ used_nodes ] / mm
     Data = np.c_[ xyzp, w_node ]
-    np.savetxt( outFile, Data, delimiter=",", \
-                header="xp(mm),yp(mm),zp(mm),{}".format( key ), fmt="%15.8e" )
+    np.savetxt( outFile, Data, delimiter=",", fmt="%15.8e" )
     return( Data )
     
 
