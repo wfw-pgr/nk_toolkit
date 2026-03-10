@@ -112,12 +112,14 @@ def get__particles( recoFile=None, refpFile=None, bpmsFile=None, steps=None, pid
     Ek0            = records["beam.Ek.MeV/u"] * records["beam.u.nucleon"]
     Et0            = Em0 + Ek0
     p0c            = np.sqrt( Et0**2 - Em0**2 )
+    print( Et0, Em0, Ek0, p0c )
+    sys.exit()
     bpms["Ek_ref"] = ( bpms["ref_gamma"] - 1.0 ) * Em0
     bpms["Et_ref"] = bpms["Ek_ref"] + Em0
     bpms["p0c"]    = bpms["ref_beta"] * bpms["ref_gamma"] * Em0 
     # bpms["p0c"]    = np.sqrt( bpms["Et_ref"]**2 - Em0**2 )
-    bpms["dEk"]    = ( -1.0 ) * bpms["p0c"] * bpms["pt"]
-    # bpms["dEk"]    = p0c * bpms["pt"]
+    # bpms["dEk"]    = ( -1.0 ) * bpms["p0c"] * bpms["pt"] 
+    bpms["dEk"]    = p0c * bpms["pt"]
     bpms["Ek"]     = bpms["Ek_ref"] + bpms["dEk"]
     bpms["dt"]     = bpms["tp"]  / cv
     bpms["dphi"]   = norm_angle( (                    bpms["dt"] ) * rf_freq * 360.0 )

@@ -1,10 +1,10 @@
 {
 
     "options" : {
-        "Mesh.Algorithm"      : 6,
-        "Mesh.Algorithm3D"    : 10,
-        "Mesh.Optimize"       : true, 
-        "Mesh.OptimizeNetgen" : true, 
+        "Mesh.Algorithm"      : 1,
+        "Mesh.Algorithm3D"    : 1,
+        "Mesh.Optimize"       : false, 
+        "Mesh.OptimizeNetgen" : false, 
         "Mesh.Smoothing"      : 1,
     }, 
    

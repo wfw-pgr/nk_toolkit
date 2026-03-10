@@ -415,7 +415,7 @@ class gplot1D:
     # =================================================== #
     # === データレンジ更新 for 複数プロット自動範囲用 === #
     # =================================================== #
-    def update__DataRange( self, xAxis=None, yAxis=None, ax2=False ):
+    def update__DataRange( self, xAxis=None, yAxis=None, ax2=False, drop_nan=True ):
         
         # ------------------------------------------------- #
         # --- 引数チェック                              --- #
@@ -426,9 +426,13 @@ class gplot1D:
         # ------------------------------------------------- #
         # --- NaN 除去                                  --- #
         # ------------------------------------------------- #
-        mask   = np.isfinite( xAxis ) & np.isfinite( yAxis )
-        xAxis_ = xAxis[mask].astype( np.float64 )
-        yAxis_ = yAxis[mask].astype( np.float64 )
+        if ( drop_nan ):
+            mask   = np.isfinite( xAxis ) & np.isfinite( yAxis )
+            xAxis_ = xAxis[mask].astype( np.float64 )
+            yAxis_ = yAxis[mask].astype( np.float64 )
+        else:
+            xAxis_ = xAxis.astype( np.float64 )
+            yAxis_ = yAxis.astype( np.float64 )
 
         if ( xAxis_.size == 0 ) or ( yAxis_.size == 0 ):
             print("[WARNING] [@update__DataRange] All data is NaN. Skipping range update.")
