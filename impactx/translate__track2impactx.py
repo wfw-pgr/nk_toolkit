@@ -176,9 +176,11 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         Em0         = params["beam.mass.amu"] * amu
         omega       = params["beam.freq.Hz"]  * params["beam.harmonics"] * 2.0*np.pi
         df          = pd.DataFrame.from_dict( elements, orient="index" )
+        df          = df.reindex( columns=df.columns.union(["volt", "phase", "ds"]), fill_value=0.0 )
         df          = df.drop( columns=[ "k","aperture_x", "aperture_y", "harmonics" ], \
                                errors="ignore" )
         mask        = df["type"] == "rfcavity"
+        df[["volt","phase","ds"]] = df[["volt","phase","ds"]].fillna(0.0)
         df.loc[mask,"ds"] = params["translate.cavity.length"]
         egain       = ( df["volt"] * np.cos( df["phase"] /180.0*np.pi ) ).fillna(0)
         Ek_in       = np.concatenate( ([0.0], np.cumsum(egain)[:-1]) ) + Ek0
