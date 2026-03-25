@@ -105,7 +105,8 @@ def plot__histgrams( hists, norm=True ):
 
 if __name__ == "__main__":
     
-    mshFile       = "msh/model_MeshAdapt.msh"
+    mshFile       = "msh/model_hq.msh"
+    # mshFile       = "msh/model_MeshAdapt.msh"
     gammas, hists = calculate__gammaOfTetra( mshFile=mshFile )
     
     

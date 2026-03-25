@@ -214,27 +214,50 @@ def save__latticeStructure( elements=None, beamlineFile=None, \
                 elements = json5.load( f )
 
     # ------------------------------------------------- #
-    # --- [2] prepare lattice table                 --- #
+    # --- [2] expand elements by nslice             --- #
     # ------------------------------------------------- #
-    lattice = pd.DataFrame.from_dict( elements, orient="index" )
-    lattice = ( lattice[ [ "name", "type", "ds" ] ] ).fillna(0).reset_index( drop=True )
-    ds      = lattice.loc[ :,"ds" ].to_numpy()
-    lattice["s_in"]  = np.cumsum( np.insert( ds, 0, 0.0 ) )[:-1]
-    lattice["s_out"] = np.cumsum( ds )
-    lattice["s_mid"] = 0.5 * ( lattice["s_in"] + lattice["s_out"] )
+    expanded = []
+    for _, elem in elements.items():
+        name   =        elem.get( "name", ""      )
+        etype  =        elem.get( "type", ""      )
+        ds     = float( elem.get( "ds"    , 0.0 ) )
+        nslice =   int( elem.get( "nslice", 1   ) )
+
+        if nslice < 1:
+            nslice = 1
+        ds_slice = ds / nslice
+        for i in range( nslice ):
+            expanded.append( {
+                "name"   : name     ,
+                "type"   : etype    ,
+                "ds"     : ds_slice ,
+                "slice"  :  i+1     ,
+                "nslice" : nslice   ,
+            } )
+    lattice = pd.DataFrame(expanded)
+                
+    # ------------------------------------------------- #
+    # --- [3] cumulative s                          --- #
+    # ------------------------------------------------- #
+    ds = lattice["ds"].to_numpy()
+    lattice["s_in"]  = np.cumsum(np.insert(ds, 0, 0.0))[:-1]
+    lattice["s_out"] = np.cumsum(ds)
+    lattice["s_mid"] = 0.5 * (lattice["s_in"] + lattice["s_out"])
 
     # ------------------------------------------------- #
-    # --- [3] save in a file                        --- #
+    # --- [4] save in a file                        --- #
     # ------------------------------------------------- #
     with open( outFile, "w" ) as f:
         lattice.to_csv( f, float_format="%.8e" )
 
     # ------------------------------------------------- #
-    # --- [4] save labels                           --- #
+    # --- [5] save labels                           --- #
     # ------------------------------------------------- #
-    result  = ["bpm"]
-    for name in lattice["name"].tolist():
-        result += [ name, "bpm" ]
+    result = ["bpm"]
+    for row in expanded:
+        result.append( row["name"] )
+        if ( row["slice"] == row["nslice"] ):
+            result.append("bpm")
     df            = pd.DataFrame( { "name":result } )
     df.index      = range(1, len(df)+1 )
     df.index.name = "id"
