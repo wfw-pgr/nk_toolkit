@@ -100,7 +100,7 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=No
     # --- [4] save and return                       --- #
     # ------------------------------------------------- #
     df_posts.to_csv( postFile, index=False )
-    return()
+    return( df_posts )
 
 
 # ========================================================= #

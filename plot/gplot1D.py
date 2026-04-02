@@ -106,15 +106,15 @@ class gplot1D:
         if ( xlabel is not None ): self.config["ax1.x.label"] = xlabel
         if ( ylabel is not None ): self.config["ax1.y.label"] = ylabel
         self.xAxis, self.yAxis = xAxis, yAxis
-        self.update__DataRange( xAxis=xAxis, yAxis=yAxis )
-        self.set__axis( xRange=xRange, yRange=yRange )
-        xAxis_, yAxis_ = np.copy(xAxis), np.copy( yAxis )
+        xAxis_, yAxis_ = np.copy( xAxis ), np.copy( yAxis )
         if ( self.config["ax1.x.normalize"] is not None ):
             xAxis_   = xAxis / self.config["ax1.x.normalize"]
         if ( self.config["ax1.y.normalize"] is not None ):
             yAxis_   = yAxis / self.config["ax1.y.normalize"]
         if ( self.config["plot.colorStack"] is not None ):
             color    = ( self.config["plot.colorStack"] ).pop(0)
+        self.update__DataRange( xAxis=xAxis_, yAxis=yAxis_ )
+        self.set__axis( xRange=xRange, yRange=yRange )
             
         # ------------------------------------------------- #
         # --- プロット 追加                             --- #

@@ -9,7 +9,7 @@ import pandas as pd
 # ========================================================= #
 
 def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx.json",
-                            add_bpm=True , logFile="beamline_log.json" ):
+                            add_bpm=True , nUse=None, logFile="beamline_log.json" ):
 
     # ------------------------------------------------- #
     # --- [1] load json file                        --- #
@@ -20,6 +20,9 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
     if ( elements is None ):
         print( "[impactx_toolkit.py] elements == ??? " )
         sys.exit()
+    if ( nUse is not None ):
+        keys     = list( elements.keys() )
+        elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse ) }
         
     # ------------------------------------------------- #
     # --- [2] set beam components                   --- #
@@ -180,7 +183,7 @@ def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
                  "beam.u.nucleon"   , "beam.mass.amu"  , "beam.Ek.MeV/u"  , \
                  "beam.freq.Hz"     , "beam.freq.rf.Hz", "beam.harmonics" , \
                  "beam.twiss.alpha" , "beam.twiss.beta", "beam.emittance.geom", \
-                 "beam.Em0.MeV"     , "beam.Ek0.MeV"   , \
+                 "beam.Em0.MeV"     , "beam.Ek0.MeV"   , "sim.nUse.elements", \
                 ]
     params["beam.Em0.MeV"]    = params["beam.mass.amu"] * amu
     params["beam.Ek0.MeV"]    = params["beam.Ek.MeV/u"] * params["beam.u.nucleon"]
@@ -200,7 +203,7 @@ def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
 # ===  save__latticeStructure                           === #
 # ========================================================= #
 
-def save__latticeStructure( elements=None, beamlineFile=None, \
+def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, \
                             outFile="diags/lattice.csv", labelFile="diags/lattice_label.csv" ):
 
     # ------------------------------------------------- #
@@ -212,7 +215,10 @@ def save__latticeStructure( elements=None, beamlineFile=None, \
         else:
             with open( beamlineFile, "r" ) as f:
                 elements = json5.load( f )
-
+    if ( nUse is not None ):
+        keys     = list( elements.keys() )
+        elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse ) }
+        
     # ------------------------------------------------- #
     # --- [2] expand elements by nslice             --- #
     # ------------------------------------------------- #
