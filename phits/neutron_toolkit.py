@@ -11,18 +11,19 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
     s_section = """[source]
     totfact={totfact}"""
     s_format  = """
-  <source>={weight}
-    s-type=26
-    suf={surface}
-    cut={cut}
-    proj=neutron
-    dir=data
-    a-type=11
-    na=2
-    {al} 1.0
-    {ah} 1.0
-    e-type=22
-{values}
+   <source>={weight}
+   s-type=26
+   suf={surface}
+   cut={cut}
+   proj=neutron
+   dir=data
+   a-type=11
+   na=2
+   {al} 1.0
+   {ah} 1.0
+   e-type=22
+   ne={ne}
+   {values}
 """
 
     # .dat sample
@@ -94,6 +95,7 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
                                                      round__digit( row["eh"]    ),
                                                      round__digit( row['eProb'], digit=8 ) ) )
         values = "\n".join( eLines )
+        ne     = len( eLines )
 
         sourceBlocks.append(
             s_format.format(
@@ -102,6 +104,7 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
                 cut     = cut, 
                 al      = round__digit( ag["al"] ), 
                 ah      = round__digit( ag["ah"] ),
+                ne      = ne, 
                 values  = values,
             )
         )
