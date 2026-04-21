@@ -8,7 +8,8 @@ import math
 # ========================================================= #
 def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat", surface="71", cut="72" ):
 
-    s_section = "[source]"
+    s_section = """[source]
+    totfact={totfact}"""
     s_format  = """
   <source>={weight}
     s-type=26
@@ -76,14 +77,14 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
                 "data"  : grp.copy(),
             }
         )
-    totalYield = sum( [ ag["yield"] for ag in angleGroups ] )
+    totfact = sum( [ ag["yield"] for ag in angleGroups ] )
 
     # ------------------------------------------------- #
     # --- [4] make each <source>                    --- #
     # ------------------------------------------------- #
     sourceBlocks = []
     for ag in angleGroups:
-        weight = 0.0 if totalYield <= 0.0 else ag["yield"] / totalYield
+        weight = 0.0 if totfact <= 0.0 else ag["yield"] / totfact
         
         eLines = []
         for _, row in ag["data"].iterrows():
@@ -108,7 +109,7 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
     # ------------------------------------------------- #
     # --- [5] return                                 -- #
     # ------------------------------------------------- #
-    text = s_section + "\n" + "".join( sourceBlocks )
+    text = s_section.format( totfact=totfact ) + "\n" + "".join( sourceBlocks )
     return( text )
 
 
