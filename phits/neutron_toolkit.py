@@ -23,7 +23,7 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
    {ah} 1.0
    e-type=22
    ne={ne}
-   {values}
+{values}
 """
 
     # .dat sample
