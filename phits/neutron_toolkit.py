@@ -18,9 +18,9 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
    proj=neutron
    dir=data
    a-type=11
-   na=2
+   na=1
    {al} 1.0
-   {ah} 1.0
+   {ah}
    e-type=22
    ne={ne}
 {values}
@@ -91,9 +91,9 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
         for _, row in ag["data"].iterrows():
             if ( row["eProb"] <= 0.0 ):
                 continue
-            eLines.append( "    {0} {1} {2}".format( round__digit( row["el"]    ),
-                                                     round__digit( row["eh"]    ),
-                                                     round__digit( row['eProb'], digit=8 ) ) )
+            eLines.append( "   {0} {1} {2}".format( round__digit( row["el"]    ),
+                                                    round__digit( row["eh"]    ),
+                                                    round__digit( row['eProb'], digit=8 ) ) )
         values = "\n".join( eLines )
         ne     = len( eLines )
 
@@ -122,7 +122,7 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
 
 if ( __name__=="__main__" ):
     ret     = generate__beamDrivenNeutronSource()
-    outFile = "dat/source_phits.inp"
+    outFile = "dat/source_n_phits.inp"
     
     with open( outFile, "w" ) as f:
         f.write( ret )
