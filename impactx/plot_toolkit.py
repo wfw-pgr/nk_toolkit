@@ -196,6 +196,8 @@ def plot__refparticle( df=None, plot_conf=None ):
             plot_ax  = { "xAxis":df[plot["xAxis"]], "yAxis":df[plot["yAxis"]] }
             plot_opt = { key:val for key,val in plot.items() if key not in [ "xAxis","yAxis" ] }
             fig.add__plot( **plot_ax, **plot_opt, **contents["option"] )
+        if ( len( contents["plots"] ) >= 2 ):
+            fig.set__legend()
         fig.set__axis()
         fig.save__figure()
         
@@ -373,6 +375,8 @@ def plot__statistics( df=None, plot_conf=None ):
             plot_ax  = { "xAxis":df[plot["xAxis"]], "yAxis":df[plot["yAxis"]] }
             plot_opt = { key:val for key,val in plot.items() if key not in [ "xAxis","yAxis" ] }
             fig.add__plot( **plot_ax, **plot_opt, **contents["option"] )
+        if ( len( contents["plots"] ) >= 2 ):
+            fig.set__legend()
         fig.set__axis()
         fig.save__figure()
 

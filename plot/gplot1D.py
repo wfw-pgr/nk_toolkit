@@ -171,14 +171,14 @@ class gplot1D:
         # ------------------------------------------------- #
         #  -- オートレンジ (x)                          --  #
         if ( ( self.config["ax1.x.range"]["auto"] ) and ( self.DataRange is not None ) ):
-            ret = self.auto__griding( vMin =self.DataRange[0], vMax=self.DataRange[1], \
-                                      nGrid=self.config["ax1.x.range"]["num"] )
+            ret = self.compute__axis_MinMax( vMin =self.DataRange[0], vMax=self.DataRange[1], \
+                                             nGrid=self.config["ax1.x.range"]["num"], margin=0.0 )
             self.config["ax1.x.range"]["min"] = ret[0]
             self.config["ax1.x.range"]["max"] = ret[1]
         #  -- オートレンジ (y)                          --  #
         if ( ( self.config["ax1.y.range"]["auto"] ) and ( self.DataRange is not None ) ):
-            ret = self.auto__griding( vMin=self.DataRange[2], vMax=self.DataRange[3], \
-                                      nGrid=self.config["ax1.y.range"]["num"] )
+            ret = self.compute__axis_MinMax( vMin=self.DataRange[2], vMax=self.DataRange[3], \
+                                             nGrid=self.config["ax1.y.range"]["num"], margin=0.05 )
             self.config["ax1.y.range"]["min"] = ret[0]
             self.config["ax1.y.range"]["max"] = ret[1]
             
@@ -220,8 +220,9 @@ class gplot1D:
         # ------------------------------------------------- #
         #  -- オートレンジ (y)                          --  #
         if ( ( self.config["ax2.y.range"]["auto"] ) and ( self.DataRange_ax2 is not None ) ):
-            ret = self.auto__griding( vMin=self.DataRange_ax2[2], vMax=self.DataRange_ax2[3], \
-                                      nGrid=self.config["ax2.y.range"]["num"] )
+            ret = self.compute__axis_MinMax( vMin=self.DataRange_ax2[2], \
+                                             vMax=self.DataRange_ax2[3], \
+                                             nGrid=self.config["ax2.y.range"]["num"], margin=0.05 )
             self.config["ax2.y.range"]["min"] = ret[0]
             self.config["ax2.y.range"]["max"] = ret[1]
             
@@ -293,37 +294,56 @@ class gplot1D:
     # ========================================================= #
     # ===  軸の値 自動算出ルーチン                          === #
     # ========================================================= #
-    def auto__griding( self, vMin=None, vMax=None, nGrid=5 ):
-
-        eps = 1.e-8
-
+    def compute__axis_MinMax( self, vMin=None, vMax=None, nGrid=5, \
+                              eps_EqualValue=1.e-3, eps_FloatingRound=1.e-12, margin=0.05 ):
+        """ automatically compute axis's Min/Max value. auto ticking.
+        Args:
+            vMin (float) : minimum value of data.
+            vMax (float) : maximum value of data.
+        Return:
+            [tick_below, tick_above, step ] ( list of float ) : min. & max. of the axis and step.
+        """
+        
         # ------------------------------------------------- #
-        # --- check Arguments                           --- #
+        # --- [1] check Arguments                       --- #
         # ------------------------------------------------- #
+        if ( vMax is None or vMin is None ):
+            raise TypeError ( f"[compute__axis_MinMax] ( vMin,vMax ) == ( {vMin},{vMax} ) ? " )
         if ( vMax  <  vMin ):
-            sys.exit( "[auto__griding] ( vMin,vMax ) == ( {0},{1} ) ??? ".format( vMin, vMax ) )
+            raise ValueError( f"[compute__axis_MinMax] ( vMin,vMax ) == ( {vMin},{vMax} ) ? " )
         if ( nGrid <= 0 ):
-            sys.exit( "[auto__griding] nGrid == {0} ??? ".format( nGrid ) )
+            raise ValueError( f"[compute__axis_MinMax] nGrid == {nGrid} <= 0 ? " )
         if ( vMin == vMax  ):
-            return( [ vMin-eps, vMax+eps] )
-            
+            if ( vMin == 0.0 ):
+                eps = 1.0 * eps_EqualValue
+            else:
+                eps = abs( vMin ) * eps_EqualValue
+            return( [ vMin-eps, vMax+eps, 2 ] )
+
         # ------------------------------------------------- #
-        # --- auto grid making                          --- #
+        # --- [2] auto computation of axis's Min-Max    --- #
         # ------------------------------------------------- #
-        minimum_tick = ( vMax - vMin ) / float( nGrid )
-        magnitude    = 10**( math.floor( math.log( minimum_tick, 10 ) ) )
+        vMin_        = vMin  - margin * ( vMax  - vMin )
+        vMax_        = vMax  + margin * ( vMax  - vMin )
+        minimum_tick = ( vMax_ - vMin_ ) / float( nGrid )
+        magnitude    = 10**( math.floor( math.log10( minimum_tick ) ) )
         significand  = minimum_tick / magnitude
-        if   ( significand > 5    ):
-            grid_size = 10 * magnitude
-        elif ( significand > 2    ):
-            grid_size =  5 * magnitude
-        elif ( significand > 1    ):
-            grid_size =  2 * magnitude
+        if   ( significand <= 1.0 ):
+            step =  1.0 * magnitude
+        elif ( significand <= 2.0 ):
+            step =  2.0 * magnitude
+        elif ( significand <= 2.5 ):
+            step =  2.5 * magnitude
+        elif ( significand <= 5.0 ):
+            step =  5.0 * magnitude
         else:
-            grid_size =  1 * magnitude
-        tick_below   = grid_size * math.floor( vMin / grid_size ) 
-        tick_above   = grid_size * math.ceil ( vMax / grid_size )
-        return( [ tick_below, tick_above, nGrid ] )
+            step = 10.0 * magnitude
+        eps        = eps_FloatingRound * max( 1.0, abs(vMin_), abs(vMax_) )
+        tick_below = step * math.floor( ( vMin_ + eps ) / step )    # avoid 2.9999996  etc. 
+        tick_above = step * math.ceil ( ( vMax_ - eps ) / step )    # avoid 3.0000001  etc.
+        return( [ tick_below, tick_above, step ] )
+
+    
         
     # ========================================================= #
     # ===  軸目盛 設定 ルーチン                             === #
@@ -358,26 +378,48 @@ class gplot1D:
         #  -- 軸目盛 調整結果 反映                      --  #
         self.ax1.set_xticks( self.xticks )
         self.ax1.set_yticks( self.yticks )
+        
         # ------------------------------------------------- #
         # --- 軸目盛 スタイル                           --- #
         # ------------------------------------------------- #
-        #  -- 対数表示 ( x,y )                          --  #
+        #  -- log x -- # 
         if ( self.config["ax1.x.log"] ):
             self.ax1.set_xscale("log")
-            self.ax1.xaxis.set_major_locator( tic.LogLocator( base=10.0, numticks=10 ) )
-            # self.ax1.xaxis.set_minor_locator( tic.LogLocator( base=10.0, numticks=10 ) )
+            self.ax1.xaxis.set_major_locator(tic.LogLocator(base=10.0, numticks=10))
             self.ax1.xaxis.set_minor_locator(
-                tic.LogLocator( base=10.0, subs=np.arange(1.0, 10.0)*0.1, numticks=10 ) )
-            if ( self.config["ax1.x.major.auto"] ):
-                pass
-            else:
+                tic.LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10)
+            )
+            self.ax1.xaxis.set_major_formatter(tic.LogFormatterMathtext(base=10.0))
+            if not( self.config["ax1.x.major.auto"] ):
                 self.ax1.set_xticks( self.config["ax1.x.major.ticks"] )
-        if ( self.config["ax1.y.log"] ):
-            self.ax1.set_yscale("log")
-            if ( self.config["ax1.y.major.auto"] ):
-                pass
+        else:
+            if ( self.config["ax1.x.major.auto"] ):
+                xMin, xMax  = self.ax1.get_xlim()
+                self.xticks = np.linspace( xMin, xMax, self.config["ax1.x.range"]["num"], \
+                                           dtype=xtick_dtype)
             else:
-                self.ax1.set_yticks( self.config["ax1.y.major.ticks"] )
+                self.xticks = np.array(self.config["ax1.x.major.ticks"], dtype=xtick_dtype)
+                self.ax1.set_xticks(self.xticks)
+                self.ax1.xaxis.set_minor_locator(tic.AutoMinorLocator(self.config["ax1.x.minor.nticks"]))
+        #  -- log y -- # 
+        if self.config["ax1.y.log"]:
+            self.ax1.set_yscale("log")
+            self.ax1.yaxis.set_major_locator(tic.LogLocator(base=10.0, numticks=10))
+            self.ax1.yaxis.set_minor_locator(
+                tic.LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1, numticks=10)
+            )
+            self.ax1.yaxis.set_major_formatter(tic.LogFormatterMathtext(base=10.0))
+            if not( self.config["ax1.y.major.auto"] ):
+                self.ax1.set_yticks(self.config["ax1.y.major.ticks"])
+        else:
+            if ( self.config["ax1.y.major.auto"] ):
+                yMin, yMax = self.ax1.get_ylim()
+                self.yticks = np.linspace( yMin, yMax, self.config["ax1.y.range"]["num"], \
+                                           dtype=ytick_dtype)
+            else:
+                self.yticks = np.array(self.config["ax1.y.major.ticks"], dtype=ytick_dtype)
+                self.ax1.set_yticks(self.yticks)
+                self.ax1.yaxis.set_minor_locator( tic.AutoMinorLocator( self.config["ax1.y.minor.nticks"]))
         #  -- 軸スタイル (x)                            --  #
         self.ax1.tick_params( axis  ="x", labelsize=self.config["ax1.x.major.fontsize"], \
                               length=self.config["ax1.x.major.length"], \
@@ -394,14 +436,14 @@ class gplot1D:
                               labelsize=self.config["ax1.y.minor.fontsize"], \
                               length=self.config["ax1.y.minor.length"], \
                               width =self.config["ax1.y.minor.width"])
+        
         # ------------------------------------------------- #
         # --- 10^X notation                             --- #
         # ------------------------------------------------- #
-        if ( self.config["ax1.y.power.sw"] ):
+        if ( self.config["ax1.y.power.sw"] and ( not self.config["ax1.y.log"]) ):
             formatter = tic.ScalarFormatter( useMathText=True )
             formatter.set_powerlimits( tuple(self.config["ax1.y.power.range"]) )
             self.ax1.yaxis.set_major_formatter( formatter )
-            
         
         # ------------------------------------------------- #
         # --- 軸目盛  オフ                              --- #

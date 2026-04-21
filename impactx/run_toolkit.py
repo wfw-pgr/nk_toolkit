@@ -3,6 +3,7 @@ import impactx
 import h5py
 import numpy  as np
 import pandas as pd
+import amrex.space3d as amr
 
 # ========================================================= #
 # ===  set__beamlineComponents                          === #
@@ -85,11 +86,11 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
 # ========================================================= #
 
 def set__manualReferenceParticle( particle_container=None,  # particle_container of impactx
-                                  ref_xyt=[0.,0.,0.], ref_pxyt=[0.,0.,0.], 
-                                  n_part=2,                 # #.of particles : min. => 2
-                                 ):
-    x_, y_, t_ = 0, 1, 2
-    MeV        = 1.e6
+                                  particles=[ [0.,0.,0., 0.,0.,0. ],
+                                              [0.,0.,0., 0.,0.,0. ], ] ):
+    xp_, yp_, tp_ = 0, 1, 2
+    px_, py_, pt_ = 3, 4, 5
+    MeV           = 1.e6
     
     # ------------------------------------------------- #
     # --- [1] set particle distribution             --- #
@@ -102,13 +103,13 @@ def set__manualReferenceParticle( particle_container=None,  # particle_container
     dpt_podv = amr.PODVector_real_std()
     w_podv   = amr.PODVector_real_std()
     
-    for ik in range( n_part ):
-        dx_podv.push_back ( ref_xyt[x_]  )
-        dy_podv.push_back ( ref_xyt[y_]  )
-        dt_podv.push_back ( ref_xyt[t_]  )
-        dpx_podv.push_back( ref_pxyt[x_] )
-        dpy_podv.push_back( ref_pxyt[y_] )
-        dpt_podv.push_back( ref_pxyt[t_] )
+    for ik, aparticle in enumerate( particles ):
+        dx_podv.push_back ( aparticle[xp_]  )
+        dy_podv.push_back ( aparticle[yp_]  )
+        dt_podv.push_back ( aparticle[tp_]  )
+        dpx_podv.push_back( aparticle[px_] )
+        dpy_podv.push_back( aparticle[py_] )
+        dpt_podv.push_back( aparticle[pt_] )
         w_podv.push_back  (   1.0        )
 
     refp   = particle_container.ref_particle()
