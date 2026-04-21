@@ -6,13 +6,14 @@ import math
 # ========================================================= #
 # ===  generate__beamDrivenNeutronSource.py             === #
 # ========================================================= #
-def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat", surface=50 ):
+def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat", surface="71", cut="72" ):
 
     s_section = "[source]"
     s_format  = """
   <source>={weight}
     s-type=26
     suf={surface}
+    cut={cut}
     proj=neutron
     dir=data
     a-type=11
@@ -96,7 +97,8 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
         sourceBlocks.append(
             s_format.format(
                 weight  = round__digit( weight, digit=8 ), 
-                surface = surface, 
+                surface = surface,
+                cut     = cut, 
                 al      = round__digit( ag["al"] ), 
                 ah      = round__digit( ag["ah"] ),
                 values  = values,
