@@ -163,12 +163,14 @@ def nsource( ctx ):
     inpFile     = "dat/neutrons.dat"
     outFile     = "inp/source_n_phits.inp"
     source_type = "gaussian"
+    eps         = 1.e-5
     x0,y0       = 0.0, 0.0
-    z0          = 0.31
+    z0          = 0.31 - eps  # should not on the cell boundary ( surface ).
+    FWHM        = 0.60
     surface     = "74"
     cut         = "-75"
     ret         = ntk.generate__beamDrivenNeutronSource( inpFile=inpFile, source_type=source_type, \
-                                                         x0=x0, y0=y0, z0=z0, surface=surface, cut=cut )
+                                                         x0=x0, y0=y0, z0=z0, FWHM=FWHM, surface=surface, cut=cut )
     with open( outFile, "w" ) as f:
         f.write( ret )
         print( f"[tasks.py] outFile :: {outFile} " )
