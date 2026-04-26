@@ -1,6 +1,43 @@
+import invoke
 import numpy as np
 import pandas as pd
 import math
+
+format_26 = \
+"""
+   <source>={weight}
+   s-type=26
+   suf={surface}
+   cut={cut}
+   proj=neutron
+   dir=data
+   a-type=11
+   na=1
+   {al} 1.0
+   {ah}
+   e-type=22
+   ne={ne}
+{values}
+"""
+
+format_13 = \
+"""
+   <source>={weight}
+   s-type=13
+   proj=neutron
+   x0={x0}
+   y0={y0}
+   r1={r1}
+   z0={z0}
+   dir=data
+   a-type=11
+   na=1
+   {al} 1.0
+   {ah}
+   e-type=22
+   ne={ne}
+{values}
+"""
 
 
 # ========================================================= #
@@ -11,41 +48,10 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
 
     s_section = """[source]
     totfact={totfact}"""
-    if ( source_type in [ "surface", 26 ] ):
-        s_format  = """
-        <source>={weight}
-        s-type=26
-        suf={surface}
-        cut={cut}
-        proj=neutron
-        dir=data
-        a-type=11
-        na=1
-        {al} 1.0
-        {ah}
-        e-type=22
-        ne={ne}
-        {values}
-        """
-        
-    elif ( source_type in ["gaussian", 13] ):
-        s_format = """
-        <source>={weight}
-        s-type=13
-        proj=neutron
-        x0={x0}
-        y0={y0}
-        r1={r1}
-        z0={z0}
-        dir=data
-        a-type=11
-        na=1
-        {al} 1.0
-        {ah}
-        e-type=22
-        ne={ne}
-        {values}
-        """
+    if   ( source_type in [ "surface", 26 ] ):
+        s_format  = format_26
+    elif ( source_type in ["gaussian", 13 ] ):
+        s_format  = format_13
     else:
         raise ValueError( "[ERROR] source_type :: not in [ 'gaussian', 'surface' ]" )
 
