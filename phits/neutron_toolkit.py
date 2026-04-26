@@ -154,11 +154,15 @@ def nsource( ctx ):
     copy this function to task.py & execute   [ $ invoke nsource ]
     """
     import nk_toolkit.phits.neutron_toolkit as ntk
-    inpFile = "dat/neutrons.dat"
-    outFile = "inp/source_n_phits.inp"
-    surface = "74"
-    cut     = "-75"
-    ret     = ntk.generate__beamDrivenNeutronSource( inpFile=inpFile, surface=surface, cut=cut )
+    inpFile     = "dat/neutrons.dat"
+    outFile     = "inp/source_n_phits.inp"
+    source_type = "gaussian"
+    x0,y0       = 0.0, 0.0
+    z0          = 0.31
+    surface     = "74"
+    cut         = "-75"
+    ret         = ntk.generate__beamDrivenNeutronSource( inpFile=inpFile, source_type=source_type, \
+                                                         x0=x0, y0=y0, z0=z0, surface=surface, cut=cut )
     with open( outFile, "w" ) as f:
         f.write( ret )
         print( f"[tasks.py] outFile :: {outFile} " )
