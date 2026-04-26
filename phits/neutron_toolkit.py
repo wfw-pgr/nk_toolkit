@@ -6,25 +6,48 @@ import math
 # ========================================================= #
 # ===  generate__beamDrivenNeutronSource.py             === #
 # ========================================================= #
-def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat", surface="71", cut="72" ):
+def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat", source_type="gaussian", \
+                                       surface="74", cut="75", x0=0.0, y0=0.0, z0=0.0, FWHM=1.0 ):
 
     s_section = """[source]
     totfact={totfact}"""
-    s_format  = """
-   <source>={weight}
-   s-type=26
-   suf={surface}
-   cut={cut}
-   proj=neutron
-   dir=data
-   a-type=11
-   na=1
-   {al} 1.0
-   {ah}
-   e-type=22
-   ne={ne}
-{values}
-"""
+    if ( source_type in [ "surface", 26 ] ):
+        s_format  = """
+        <source>={weight}
+        s-type=26
+        suf={surface}
+        cut={cut}
+        proj=neutron
+        dir=data
+        a-type=11
+        na=1
+        {al} 1.0
+        {ah}
+        e-type=22
+        ne={ne}
+        {values}
+        """
+        
+    elif ( source_type in ["gaussian", 13] ):
+        s_format = """
+        <source>={weight}
+        s-type=13
+        proj=neutron
+        x0={x0}
+        y0={y0}
+        r1={r1}
+        z0={z0}
+        dir=data
+        a-type=11
+        na=1
+        {al} 1.0
+        {ah}
+        e-type=22
+        ne={ne}
+        {values}
+        """
+    else:
+        raise ValueError( "[ERROR] source_type :: not in [ 'gaussian', 'surface' ]" )
 
     # .dat sample
 
@@ -102,6 +125,10 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
                 weight  = round__digit( weight, digit=8 ), 
                 surface = surface,
                 cut     = cut, 
+                x0      = x0,
+                y0      = y0,
+                z0      = z0,
+                r1      = FWHM, 
                 al      = round__digit( ag["al"] ), 
                 ah      = round__digit( ag["ah"] ),
                 ne      = ne, 
@@ -114,6 +141,27 @@ def generate__beamDrivenNeutronSource( inpFile="dat/angle_energy_vs_neutrons.dat
     # ------------------------------------------------- #
     text = s_section.format( totfact=totfact ) + "\n" + "".join( sourceBlocks )
     return( text )
+
+
+
+# ========================================================= #
+# ===  for taks.py :: drive command                     === #
+# ========================================================= #
+@invoke.task
+def nsource( ctx ):
+    """
+    nsource command to make 'inp/source_n_phits.inp'
+    copy this function to task.py & execute   [ $ invoke nsource ]
+    """
+    import nk_toolkit.phits.neutron_toolkit as ntk
+    inpFile = "dat/neutrons.dat"
+    outFile = "inp/source_n_phits.inp"
+    surface = "74"
+    cut     = "-75"
+    ret     = ntk.generate__beamDrivenNeutronSource( inpFile=inpFile, surface=surface, cut=cut )
+    with open( outFile, "w" ) as f:
+        f.write( ret )
+        print( f"[tasks.py] outFile :: {outFile} " )
 
 
 # ========================================================= #
