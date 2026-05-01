@@ -1,0 +1,141 @@
+{
+    
+    // ------------------------------------------------- //
+    // --- [1] General settings                      --- //
+    // ------------------------------------------------- //
+    "result.file"             : "dat/result.csv",
+    "summary.file"            : "dat/summary.json",
+    "summary.period"          : 365.0,                   // for calc. yearly production ( interpolation )
+    
+    "series"                  :[ "beamON.01", "separation.01", "preparation.01" ],
+    "series.iterate"          :  60,
+    "series.time.unit"        : "d",            // [ "y", "d", "h", "m", "s" ]
+    "series.preprocess"       :  [],            // perform these  before  series.
+    
+    "A0.init"                 : 0.0,            // (Bq)
+    "B0.init"                 : 0.0,      
+    "tHalf.A"                 : [ 14.9, "d" ],  // [ value, unit ]
+    "tHalf.B"                 : [  9.9, "d" ],
+
+    "mode.cumulative"         : true,
+    "mode.decayed"            : true, 
+    
+    "refill.regular"          : false,          // regularly refilling ( 1 refill / 2 series, etc. )
+    "refill.regular.interval" : 1, 
+    "refill.regular.factor"   : 1.0,
+
+    "refill.threshold"        : 0.900,          // [ 0 - 1.0 ] or null // check remaining before refill
+    
+    // ------------------------------------------------- //
+    // --- [2] Yield rate                            --- //
+    // ------------------------------------------------- //
+    "Y.efficiency.type"       : "Yn_product_bq",
+    "Y.efficiency.value"      :  9.67193517e-09,
+    
+    // ---------------------------------------------------------------- //
+    //  [ "Yieldrate" (atoms/s), "Y_product", "Y_decayed" (Bq/s),
+    //    "Yn_product_wt", "Yn_decayed_wt" (Bq/mg/uA/s),
+    //    "Yn_product_bq", "Yn_decayed_Bq" (Bq/Bq/uA/s) ]
+    // ---------------------------------------------------------------- //
+    
+    "Y.normalize"             : true,
+    "Y.normalize.mg"          : null,         // (mg)
+    "Y.normalize.Bq"          : 11.1e9,       // (Bq)
+    "Y.normalize.uA"          : 350.0,        // (uA)
+    "Y.ratio.B/A"             : 0.445,        // if decayed, efficiency x A/B
+    //                                        // ( "product" mode is prefferable. )
+    "Y.recycle.factor"        : 0.990,        // recycle factor of target material.
+
+    // ------------------------------------------------- //
+    // --- [3] time series settings                  --- //
+    // ------------------------------------------------- //
+
+    "beamON.01"               : {
+	"dt"                  : [ 10, "d" ], // [ time, unit ]  
+	"beam.relint"         :  1.0,        // relative Yield rate: Y  ==>  beam on/off = ( 1/0 )
+	"nPoints"             :  125,        // number of data samplings
+	"separation"          : false, 
+    },
+    "separation.01"           : {
+	"dt"                  : [ 2, "d" ],
+	"beam.relint"         : 0.0,
+	"nPoints"             : 25,
+	"separation"          : true,
+    }, 
+    "preparation.01"          : {
+	"dt"                  : [ 2, "d" ],  
+	"beam.relint"         : 0.0,
+	"nPoints"             : 25,
+	"separation"          : false,
+        "refill"              : true,
+        "refill.timing"       : "end", 
+    },
+    
+    // ------------------------------------------------- //
+    // --- [4] figure settings                       --- //
+    // ------------------------------------------------- //
+    "figure.num.plot"         : false, 
+    "figure.act.plot"         : true , 
+    "figure.inv.plot"         : true , 
+    
+    "figure.num.label.A"      :"$N_{Ra225}$" , 
+    "figure.num.label.B"      :"$N_{Ac225}$" , 
+    "figure.act.label.A"      :"$ ^{225}$Ra" ,
+    "figure.act.label.B"      :"$ ^{225}$Ac" ,
+    "figure.act.label.C"      :"Cumulative Production" ,
+    "figure.inv.label.I"      :"$ ^{226}$Ra Inventory" ,
+    "figure.inv.label.R"      :"Cumulative Refill",
+    "figure.inv.label.C"      :"Cumulative Production" ,
+
+    "figure.num.config"       : {
+	"figure.size"         : [5.0,5.0],
+	"figure.pngFile"      : "png/time_vs_atoms.png", 
+	"figure.position"     : [ 0.16, 0.16, 0.84, 0.84 ] ,
+	"ax1.x.range"         : { "auto":false, "min":0.0, "max": 100, "num": 5 },
+	"ax1.y.range"         : { "auto":true , "min":0.0, "max": 100, "num":11 },
+	"ax1.x.label"         : "Elapsed Time [d]"                 ,
+	"ax1.y.label"         : "Number of Atoms"          ,
+	"legend.location"     : "best"                     ,
+    }                                                      ,
+
+    "figure.act.config"       :{				  
+	"figure.size"         : [5.0,5.0],
+	"figure.pngFile"      : "png/time_vs_activity.png",
+	"figure.position"     : [ 0.16, 0.16, 0.84, 0.84 ]    ,
+	"ax1.y.normalize"     : 1.0e9, 
+	"ax2.y.normalize"     : 1.0e9, 
+	"ax1.x.range"         : { "auto":false, "min":0.0, "max":  500, "num":6 },
+	"ax1.y.range"         : { "auto":false, "min":0.0, "max":  100, "num":6 },
+	"ax2.y.range"         : { "auto":false, "min":0.0, "max": 1000, "num":6 },
+	"ax1.x.label"         : "Elapsed Time [day]"          ,
+	"ax1.y.label"         : "Activity [GBq]"              ,
+	"ax2.y.label"         : "Cumulative Production [GBq]" ,
+	"legend.location"     : "upper left"                  ,
+	"legend.fontsize"     : 11.0,
+    }, 
+
+    "figure.inv.label.I"      : "Inventory",
+    "figure.inv.label.R"      : "Cumulative Refill",
+    "figure.inv.label.C"      : "Cumulative Production",
+    
+    "figure.inv.config"       :{
+	"figure.size"         : [5.0,5.0],
+	"figure.pngFile"      : "png/time_vs_inventory.png",
+	"figure.position"     : [ 0.16, 0.16, 0.84, 0.84 ],
+	"ax1.y.normalize"     : 1.0e9, 
+	"ax2.y.normalize"     : 1.0e9, 
+	"ax1.x.range"         : { "auto":false, "min":0.0, "max": 500, "num":6 },
+	"ax1.y.range"         : { "auto":false, "min":0.0, "max":  12, "num":7 },
+	"ax2.y.range"         : { "auto":false, "min":0.0, "max":1200, "num":7 },
+	"ax2.y.label"         : "Cumulative Production [GBq]" ,
+	"ax1.x.label"         : "Time [d]"               ,
+	"ax1.x.label"         : "Elapsed Time [day]"          ,
+	"ax1.y.label"         : "$ ^{226}$Ra Inventory / Cumulative Refill [GBq]",
+	"ax2.y.label"         : "Cumulative Production [GBq]",
+	"legend.location"     : "center left"                 ,
+        "legend.fontsize"     : 11.0,
+        "ax1.legend.position" : [ 0.02, 0.65 ]
+
+    },
+
+}

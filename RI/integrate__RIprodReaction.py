@@ -8,10 +8,10 @@ import nk_toolkit.plot.gplot1D      as gp1
 
 
 # ========================================================= #
-# ===  estimate__RIproduction.py                        === #
+# ===  integrate__RIprodReaction.py                     === #
 # ========================================================= #
 
-def estimate__RIproduction( paramsFile=None ):
+def integrate__RIprodReaction( settingsFile=None ):
 
     e_, pf_, xs_ =  0, 1, 1
     mb2cm2       =  1.0e-27
@@ -19,16 +19,29 @@ def estimate__RIproduction( paramsFile=None ):
     # ------------------------------------------------- #
     # --- [1] load parameters from file             --- #
     # ------------------------------------------------- #
-    if ( paramsFile is None ): sys.exit( "[estimate__RIproduction.py] paramsFile == ???" )
+    if ( settingsFile is None ): sys.exit( "[integrate__RIprodReaction.py] settingsFile == ???" )
     import nkUtilities.json__formulaParser as jso
-    params = jso.json__formulaParser( inpFile=paramsFile )
+    params = jso.json__formulaParser( inpFile=settingsFile )
     
     # ------------------------------------------------- #
     # --- [2] calculate parameters & define EAxis   --- #
     # ------------------------------------------------- #
     #  -- [2-1] energy axis                         --  #
-    EAxis  = np.linspace( params["integral.EAxis.min"], params["integral.EAxis.max"], \
-                                params["integral.EAxis.num"] )
+    if   ( params["integral.EAxis.mode"].lower() == "linear" ):
+        EAxis  = np.linspace( params["integral.EAxis.min"], params["integral.EAxis.max"], \
+                              params["integral.EAxis.num"] )
+    elif ( params["integral.EAxis.mode"].lower() == "finer"  ):
+        sys.exit()
+        # EAxis  = np.unique( np.concatenate( [ xs_E, flux_edges ] ) )
+    elif ( params["integral.EAxis.mode"].lower() == "given"  ):
+        EAxis  = np.array( params["integral.EAxis.given"] )
+    elif ( params["integral.EAxis.mode"].lower() == "log"  ):
+        EAxis  = np.logspace( np.log10( params["integral.EAxis.min"] ), \
+                              np.log10( params["integral.EAxis.max"] ), \
+                              params["integral.EAxis.num"] )
+    else:
+        raise ValueError( "[ERROR] integral.EAxis.mode :: ['linear','given', 'finer', 'log' ]" )
+    
     #  -- [2-2] calculate other parameters          --  #
     params = calculate__parameters( params=params )
 
@@ -103,7 +116,7 @@ def load__photonFlux( EAxis=None, params=None ):
             p_nrm  = np.insert( p_nrm, [ 0, p_nrm.shape[0] ], [ pf_ret[0,pf_], pf_ret[-1,pf_] ] )
             p_nrm  = p_nrm / params["photon.beam.current.sim"]
         else:
-            print( "[estimate__RIproduction.py] unknown photon.bin2point.convert [ERROR] " )
+            print( "[integrate__RIprodReaction.py] unknown photon.bin2point.convert [ERROR] " )
         pf_raw = np.concatenate( [ e_avg[:,np.newaxis], p_nrm[:,np.newaxis] ], axis=1 )
 
     # ------------------------------------------------- #
@@ -136,7 +149,7 @@ def load__xsection( EAxis=None, params=None ):
     elif ( params["xsection.database"].lower() in [ "tendl", "talys" ] ):
         pass
     else:
-        print( "[estimate__RIproduction.py] xsection.database == {} ??? "\
+        print( "[integrate__RIprodReaction.py] xsection.database == {} ??? "\
                .format( params["xsection.database"] ) )
     
     # ------------------------------------------------- #
@@ -165,7 +178,7 @@ def integrate__yield( EAxis=None, dYield=None, params=None ):
     elif ( params["integral.method"] == "rectangular" ):
         YieldRate = np.dot( np.diff( EAxis ), dYield[:-1] )
     else:
-        print( "[estimate__RIproduction.py] integral.method == {} ??? "\
+        print( "[integrate__RIprodReaction.py] integral.method == {} ??? "\
                .format( params["integral.method"] ) )
         sys.exit()
 
@@ -195,7 +208,7 @@ def integrate__yield( EAxis=None, dYield=None, params=None ):
         ratio     = ( lam2/(lam2-lam1) )*( np.exp( -lam1*t_max_s )-np.exp( -lam2*t_max_s ) )*100
         Y_decayed = ( ratio/100.0 )* Y_product
         A_decayed = ( ratio/100.0 )* A_product
-        N_decayed = A_decayed / params["product.lambda.1/s"]
+        N_decayed = A_decayed / params["decayed.lambda.1/s"]
     else:
         t_max_d  , ratio                = None, None
         A_decayed, Y_decayed, N_decayed = None, None, None
@@ -264,20 +277,23 @@ def integrate__yield( EAxis=None, dYield=None, params=None ):
 # ===  fit__forRIproduction                             === #
 # ========================================================= #
 
-def fit__forRIproduction( xD=None, yD=None, xI=None, mode="linear", p0=None, threshold=None ):
+def fit__forRIproduction( xD=None, yD=None, xI=None, mode="linear", fill_value=0.0, \
+                          p0=None, threshold=None ):
 
     # ------------------------------------------------- #
     # --- [1] fitting                               --- #
     # ------------------------------------------------- #
     if   ( mode == "linear"   ):
-        fitFunc   = itp.interp1d( xD, yD, kind="linear", fill_value="extrapolate" )
+        # fitFunc   = itp.interp1d( xD, yD, kind="linear", fill_value="extrapolate" )
+        fitFunc   = itp.interp1d( xD, yD, kind="linear", \
+                                  fill_value=fill_value, bounds_error=False )
         yI        = fitFunc( xI )
     elif ( mode == "gaussian" ):
         fitFunc   = lambda eng,c1,c2,c3,c4,c5 : \
             c1*np.exp( -1.0/c2*( eng-c3 )**2 ) +c4*eng +c5
         copt,cvar = opt.curve_fit( fitFunc, xD, yD, p0=p0 )
         yI        = fitFunc( xI, *copt )
-    elif ( mode == "log-poly5th" ):
+    elif ( mode == "log-poly6th" ):
         indx      = np.where( ( xD >= np.min(xI) ) & ( xD <= np.max(xI) ) & ( yD > 0.0 ) )
         xT, yT    = xD[ indx ], np.log10( yD[indx] )
         xlims     = [ xT[0], xT[-1] ]
@@ -287,7 +303,7 @@ def fit__forRIproduction( xD=None, yD=None, xI=None, mode="linear", p0=None, thr
         yI        = np.where( ( xI >= xlims[0] ) & ( xI <= xlims[1] ), \
                               10.0**( fitFunc( xI, *copt ) ), 0.0 )
     else:
-        print( "[estimate__RIproduction.py] undefined mode :: {} ".format( mode ) )
+        print( "[integrate__RIprodReaction.py] undefined mode :: {} ".format( mode ) )
         sys.exit()
         
     # ------------------------------------------------- #
@@ -368,7 +384,7 @@ def draw__figures( params=None, EAxis=None, pf_fit=None, xs_fit=None, \
 # ========================================================= #
 def write__results( Data=None, params=None, stdout="minimum" ):
 
-    if ( Data is None ): sys.exit( "[estimate__RIproduction.py] Data == ???" )
+    if ( Data is None ): sys.exit( "[integrate__RIprodReaction.py] Data == ???" )
     text1        = "[paramters]\n"
     text2        = "[results]\n"
     keysdict     = { "product" : [ "YieldRate"     ,
@@ -429,7 +445,7 @@ def write__results( Data=None, params=None, stdout="minimum" ):
     if ( params["results.summaryFile"] is not None ):
         with open( params["results.summaryFile"], "w" ) as f:
             f.write( texts )
-        print( "[estimate__RIproduction.py] summary    is saved in {}"\
+        print( "[integrate__RIprodReaction.py] summary    is saved in {}"\
                .format( params["results.summaryFile"] ) )
 
     if ( params["results.yieldFile"] is not None ):
@@ -438,9 +454,9 @@ def write__results( Data=None, params=None, stdout="minimum" ):
                   Data["pf_fit"][:,np.newaxis], Data["xs_fit"][:,np.newaxis] ]
         Data_ = np.concatenate( Data_, axis=1 )
         names = [ "energy(MeV)", "dYield(atoms/MeV/s)", \
-                  "photonFlux(photons/MeV/uA/s)", "crossSection(mb)" ]
+                  "flux(atoms/MeV/uA/s)", "crossSection(cm2)" ]
         spf.save__pointFile( outFile=params["results.yieldFile"], Data=Data_, names=names, silent=True )
-        print( "[estimate__RIproduction.py] yield data is saved in {}"\
+        print( "[integrate__RIprodReaction.py] yield data is saved in {}"\
                .format( params["results.yieldFile"] ) )
 
     # ------------------------------------------------- #
@@ -478,7 +494,7 @@ def calculate__parameters( params=None ):
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
     # ------------------------------------------------- #
-    if ( params is None ): sys.exit( "[estimate__RIproduction.py] params == ???" )
+    if ( params is None ): sys.exit( "[integrate__RIprodReaction.py] params == ???" )
     if ( params["target.thick.type"].lower() in [ "bq", "fluence-bq" ] ):
         if ( ( params["target.mass.mg"] is not None ) or
              ( params["target.activity.Bq"] is None ) ):
@@ -509,8 +525,8 @@ def calculate__parameters( params=None ):
         else:
             params[key_h], params[key_l] = None, None
     if ( params["product.halflife"] is None ):
-        print( "[estimate__RIproduction.py]  [ERROR] product must be RI, at least." )
-        print( "[estimate__RIproduction.py]  product.halflife == {}"\
+        print( "[integrate__RIprodReaction.py]  [ERROR] product must be RI, at least." )
+        print( "[integrate__RIprodReaction.py]  product.halflife == {}"\
                .format( params["product.halflife"] ) )
         sys.exit()
         
@@ -562,7 +578,7 @@ def calculate__parameters( params=None ):
         # vol in phits's tally must be "V=1", or, flux will be devided by Volume V.
         #
     else:
-        print( "[estimate__RIproduction.py] target.thick.type == {} ?? [ERROR] "\
+        print( "[integrate__RIprodReaction.py] target.thick.type == {} ?? [ERROR] "\
                .format( params["target.thick.type"]  ) )
         sys.exit()
     # ------------------------------------------------- #
@@ -576,25 +592,27 @@ def calculate__parameters( params=None ):
 # ========================================================= #
 if ( __name__=="__main__" ):
 
+    default_settingsFile = "dat/RIprod_Ra226gn.json"
+    
     # ------------------------------------------------- #
     # --- [1] argument                              --- #
     # ------------------------------------------------- #
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument( "--paramsFile", help="input file name." )
+    parser.add_argument( "--settingsFile", help="input file name." )
     args   = parser.parse_args()
 
-    # -- paramsFile check -- #
-    if ( args.paramsFile is None ):
-        args.paramsFile = "dat/ri_prod.json"
-        print( "[estimate__RIproduction.py] paramsFile (default) == {}".format(args.paramsFile))
-    if ( not( os.path.exists( args.paramsFile ) ) ):
-        print( "[estimate__RIproduction.py] paramsFile does not exists [ERROR]" )
-        print( "[estimate__RIproduction.py] "
-               "(e.g.) python pyt/estimate__RIproduction.py --paramsFile ri_prod.json" )
+    # -- settingsFile check -- #
+    if ( args.settingsFile is None ):
+        args.settingsFile = default_settingsFile
+        print( "[integrate__RIprodReaction.py] settingsFile (default) == {}".format(args.settingsFile))
+    if ( not( os.path.exists( args.settingsFile ) ) ):
+        print( "[integrate__RIprodReaction.py] settingsFile does not exists [ERROR]" )
+        print( "[integrate__RIprodReaction.py] "
+               "(e.g.) python pyt/integrate__RIprodReaction.py --settingsFile ri_prod.json" )
         sys.exit()
 
     # ------------------------------------------------- #
     # --- [2] call Main Routine                     --- #
     # ------------------------------------------------- #
-    estimate__RIproduction( paramsFile=args.paramsFile )
+    integrate__RIprodReaction( settingsFile=args.settingsFile )

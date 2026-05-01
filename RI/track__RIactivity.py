@@ -106,7 +106,7 @@ def convert__tHalf2lambda( tH=0.0, unit=None, silent=True ):
 # ===  acquire__timeSeries                              === #
 # ========================================================= #
 
-def acquire__timeSeries( settingFile=None ):
+def acquire__timeSeries( settingsFile=None ):
 
     settings_base = { "series.iterate":1,
                       "refill.regular":False,
@@ -115,7 +115,7 @@ def acquire__timeSeries( settingFile=None ):
     # ------------------------------------------------- #
     # --- [1] load config                           --- #
     # ------------------------------------------------- #
-    with open( settingFile, "r" ) as f:
+    with open( settingsFile, "r" ) as f:
         settings = json5.load( f )
     settings = { **settings_base, **settings }
         
@@ -197,16 +197,18 @@ def acquire__timeSeries( settingFile=None ):
         # --- [4-2] separation ( [B] -> 0.0 )           --- #
         # ------------------------------------------------- #
         if ( sched["separation"] ):
-            if ( sched["separation.timing"].lower() == "beggining" ):
+            if ( sched["separation.timing"].lower() == "beginning" ):
                 if ( sched["separation.reserve"] ):
                     obtained += ld_B * B0_loc_
                 B0_loc    = 0.0
                 remaining = remaining * settings["Y.recycle.factor"]
         #  -- refill -- # 
         if ( sched["refill"] ):
-            if ( sched["refill.timing"].lower() == "beggining" ):
-                refill    += sched["refill.factor"] - remaining
-                remaining  = sched["refill.factor"]
+            if ( sched["refill.timing"].lower() == "beginning" ):
+                if ( ( settings["refill.threshold"] is None ) or
+                     ( remaining <= settings["refill.threshold"] ) ):
+                    refill    += sched["refill.factor"] - remaining
+                    remaining  = sched["refill.factor"]
                 
         # ------------------------------------------------- #
         # --- [4-3] update [A]                          --- #
@@ -235,16 +237,20 @@ def acquire__timeSeries( settingFile=None ):
         #  -- refill -- # 
         if ( sched["refill"] ):
             if ( sched["refill.timing"].lower() == "end" ):
-                refill    += sched["refill.factor"] - remaining
-                remaining  = sched["refill.factor"]
+                if ( ( settings["refill.threshold"] is None ) or
+                     ( remaining <= settings["refill.threshold"] ) ):
+                    refill    += sched["refill.factor"] - remaining
+                    remaining  = sched["refill.factor"]
 
         # ------------------------------------------------- #
         # --- [4-6] regular refill                      --- #
         # ------------------------------------------------- #
         if ( settings["refill.regular"] ):
             if ( ( (ik+1) % nRefill ) == 0 ):
-                refill    += settings["refill.regular.factor"] - remaining
-                remaining  = settings["refill.regular.factor"]
+                if ( ( settings["refill.threshold"] is None ) or
+                     ( remaining <= settings["refill.threshold"] ) ):
+                    refill    += settings["refill.regular.factor"] - remaining
+                    remaining  = settings["refill.regular.factor"]
         
                 
         # ------------------------------------------------- #
@@ -253,7 +259,7 @@ def acquire__timeSeries( settingFile=None ):
         t_loc          = np.linspace( t0h, t1h, sched["nPoints"] )
         Anum, Bnum     = func_A( t_loc ), func_B( t_loc )
         Aact, Bact     = ld_A*Anum, ld_B*Bnum
-        if   ( sched["separation.timing"].lower() == "beggining" ):
+        if   ( sched["separation.timing"].lower() == "beginning" ):
             Bcum       = np.repeat(       obtained, sched["nPoints"] )
         elif ( sched["separation.timing"].lower() == "end" ):
             Bcum       = np.repeat(      obtained_, sched["nPoints"] )
@@ -291,16 +297,16 @@ def acquire__timeSeries( settingFile=None ):
 # ===  draw__figure                                     === #
 # ========================================================= #
 
-def draw__figure( Data=None, settings=None, settingFile=None ):
+def draw__figure( Data=None, settings=None, settingsFile=None ):
 
-    t_, NA_, NB_, AA_, AB_, CB_, RM_ = 0, 1, 2, 3, 4, 5, 6
-    min_, max_, num_                 = 0, 1, 2
+    t_, NA_, NB_, AA_, AB_, CB_, RM_, RF_ = 0, 1, 2, 3, 4, 5, 6, 7
+    min_, max_, num_                      = 0, 1, 2
 
     if ( settings is None ):
-        if ( settingFile is None ):
-            sys.exit( "[dray__figure] settings & settingFile == None " )
+        if ( settingsFile is None ):
+            sys.exit( "[dray__figure] settings & settingsFile == None " )
         else:
-            with open( settingFile, "r" ) as f:
+            with open( settingsFile, "r" ) as f:
                 settings = json5.load( f )
     
     # ------------------------------------------------- #
@@ -334,8 +340,9 @@ def draw__figure( Data=None, settings=None, settingFile=None ):
             fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_],\
                             color="C2", label=settings["figure.act.label.C"] )
             fig.set__axis2()
-        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
+        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="grey" )
         fig.set__axis   ()
+        fig.set__legend ()
         fig.save__figure()
     
     # ------------------------------------------------- #
@@ -346,11 +353,14 @@ def draw__figure( Data=None, settings=None, settingFile=None ):
         fig    = gpl.gplot1D( config=config )
         fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,RM_], \
                         color="C3", label=settings["figure.inv.label.I"] )
+        fig.add__plot ( xAxis=Data[:,t_], yAxis=Data[:,RF_], \
+                        color="C4", label=settings["figure.inv.label.R"] )
         if ( settings["mode.cumulative"] ):
             fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_], \
                             color="C2", label=settings["figure.inv.label.C"] )
-        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="lightgrey" )
+        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="grey" )
         fig.set__axis   ()
+        fig.set__legend ()
         fig.save__figure()
         
     return()
@@ -360,12 +370,12 @@ def draw__figure( Data=None, settings=None, settingFile=None ):
 # ===  save__summary                                    === #
 # ========================================================= #
 
-def save__summary( settingFile=None, tEvo=None ):
+def save__summary( settingsFile=None, tEvo=None ):
 
     # ------------------------------------------------- #
     # --- [1] data load                             --- #
     # ------------------------------------------------- #
-    with open( settingFile, "r" ) as f:
+    with open( settingsFile, "r" ) as f:
         settings = json5.load( f )
     data    = pd.DataFrame( tEvo, columns=names )
 
@@ -410,22 +420,22 @@ def save__summary( settingFile=None, tEvo=None ):
 # ===   track__RIactivity.py                            === #
 # ========================================================= #
 
-def track__RIactivity( settingFile="dat/settings.json" ):
+def track__RIactivity( settingsFile="dat/settings-trackRI.json" ):
 
     # ------------------------------------------------- #
     # --- [1] calcualte time series                 --- #
     # ------------------------------------------------- #
-    tEvo = acquire__timeSeries( settingFile=settingFile )
+    tEvo = acquire__timeSeries( settingsFile=settingsFile )
 
     # ------------------------------------------------- #
     # --- [2] write summary                         --- #
     # ------------------------------------------------- #
-    ret  = save__summary( settingFile=settingFile, tEvo=tEvo )
+    ret  = save__summary( settingsFile=settingsFile, tEvo=tEvo )
     
     # ------------------------------------------------- #
     # --- [2] draw figure                           --- #
     # ------------------------------------------------- #
-    ret  = draw__figure( Data=tEvo, settingFile=settingFile )
+    ret  = draw__figure( Data=tEvo, settingsFile=settingsFile )
     
     
     
@@ -435,29 +445,29 @@ def track__RIactivity( settingFile="dat/settings.json" ):
 
 if ( __name__=="__main__" ):
 
-    default_settingFile="dat/settings.json"    
+    default_settingsFile="dat/settings-trackRI.json"    
     
     # ------------------------------------------------- #
     # --- [1] arguments                             --- #
     # ------------------------------------------------- #
     import argparse
     parser      = argparse.ArgumentParser()
-    parser.add_argument( "--settingFile"  , help="setting config file name (.json)" )
+    parser.add_argument( "--settingsFile"  , help="setting config file name (.json)" )
     args        = parser.parse_args()
-    settingFile = args.settingFile
-    if ( settingFile is None ):
-        print( "[track__RIactivity.py] no --settingFile." )
-        if ( os.path.exists( default_settingFile ) ):
-            settingFile = default_settingFile
+    settingsFile = args.settingsFile
+    if ( settingsFile is None ):
+        print( "[track__RIactivity.py] no --settingsFile." )
+        if ( os.path.exists( default_settingsFile ) ):
+            settingsFile = default_settingsFile
             print( "[track__RIactivity.py] default : {} will be used."\
-                   .format( default_settingFile ) )
+                   .format( default_settingsFile ) )
         else:
-            print( "[track__RIactivity.py] specify --settingFile ... [ERROR]" )
+            print( "[track__RIactivity.py] specify --settingsFile ... [ERROR]" )
             sys.exit()
 
     # ------------------------------------------------- #
     # --- [2] run                                   --- #
     # ------------------------------------------------- #
-    track__RIactivity( settingFile=settingFile )
+    track__RIactivity( settingsFile=settingsFile )
 
     

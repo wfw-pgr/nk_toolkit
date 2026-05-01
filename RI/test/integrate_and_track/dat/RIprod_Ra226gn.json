@@ -6,8 +6,8 @@
     /* ---  [1]  General settings                                      --- */
     /* ------------------------------------------------------------------- */
     "results.summaryFile"          : "dat/summary__Ra226gn.dat",
-    "results.yieldFile"            : "dat/dYield_vs_energy__Ra226gn.dat",
     "results.jsonFile"             : "dat/results__Ra226gn.json",
+    "results.yieldFile"            : "dat/dYield_vs_energy__Ra226gn.dat",
     "results.time.unit"            : "d",
     
     /* ------------------------------------------------------------------- */
@@ -28,16 +28,18 @@
     // -- area  -- //  [ "direct", "disk" ]
     "target.area.type"             :"disk",                           // [ "direct", "disk" ]
     "target.area.direct.cm2"       :  null,                           // if ( type == direct )
-    "target.area.diameter.mm"      :   3.0,                           // if ( type == disk )
+    "target.area.diameter.mm"      :  10.0,                           // if ( type == disk )
     
     
     /* ------------------------------------------------------------------- */
     /* ---  [3]  integral settings                                     --- */
     /* ------------------------------------------------------------------- */
     "integral.method"              :"simpson",     // [ "simpson", "trapezoid", "rectangular"]
+    "integral.EAxis.mode"          :"linear" ,     // [ "linear", "given", "finer", "log"]
     "integral.EAxis.min"           :0.0,           // (MeV)
     "integral.EAxis.max"           :50.0,          // (MeV)
-    "integral.EAxis.num"           :501,           // 
+    "integral.EAxis.num"           :501,           //
+    "integral.EAxis.given"         :null,          // (MeV)
     
     /* ------------------------------------------------------------------- */
     /* ---  [4]  photon flux settings                                  --- */
@@ -45,13 +47,13 @@
     /*  photon flux's unit  == ( photons/MeV/uA/s )                        */
     /* ------------------------------------------------------------------- */
     "photon.filetype"              : "phits-out",  // ["phits-out","energy-fluence"]
-    "photon.filename"              : "dat/fluence_energy__Ra60kBq_d14mm.dat",
+    "photon.filename"              : "dat/fluence_g_energy.dat",
     "photon.bin2point.convert"     : "edge",       // convert binned data into E v.s. photons
     "photon.fit.method"            : "linear",     // [ "linear", "gaussian" ]
     "photon.fit.p0"                :  null,        // initial parameter for fitting.
     "photon.beam.current.sim"      : 100.0,        // (uA) current in PHITS sim.
-    "photon.beam.current.use"      : 300.0,        // (uA) current to be assumed.
-    "photon.beam.duration.h"       : 120.0,        // (h)
+    "photon.beam.current.use"      : 350.0,        // (uA) current to be assumed.
+    "photon.beam.duration.h"       : 240.0,        // (h)
     /* ------------------------------------------------------------------- */
     /* --- photon.filetype=="phits-out"         T-Track output file        */
     /*                               ( e-lower, e-upper, fluence, error )  */
@@ -70,7 +72,7 @@
     "xsection.filename"            :"xs/xs__JENDL5_Ra226gn.dat",
     "xsection.database"            : "JENDL",           // JENDL (eV-barn) or TENDL (MeV-mb)
     "xsection.fit.Eth"             :     6.4,           // (MeV)
-    "xsection.fit.method"          :"linear",           // [ "linear", "gaussian", "log-poly5th" ]
+    "xsection.fit.method"          :"linear",           // [ "linear", "gaussian", "log-poly6th" ]
     "xsection.fit.p0"              :    null,           // linear
     
     /* ------------------------------------------------------------------- */
