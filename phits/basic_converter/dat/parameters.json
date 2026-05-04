@@ -172,7 +172,7 @@
     "buff.margin"            : "50.0 * @mm",
     "buff.rpp"               : [ "@lyr.xMin     -@buff.margin", "@lyr.xMax     +@buff.margin",
                                  "@lyr.yMin     -@buff.margin", "@lyr.yMax     +@buff.margin",
-                                 "@lyr.01.rpp[4]-@buff.margin", "@lyr.01.rpp[5]+@buff.margin", ],
+                                 "@lyr.01.rpp[4]-@buff.margin", "@lyr.16.rpp[5]+@buff.margin", ],
     "bb.rpp"                 : [ "-500.0*@mm", "+500.0*@mm",
                                  "-500.0*@mm", "+500.0*@mm",
                                  "-500.0*@mm", "+500.0*@mm", ], 

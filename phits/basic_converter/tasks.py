@@ -148,8 +148,13 @@ def run( ctx, phits_cmd="phits.sh", exeFile="inp/execute.phits.inp" ):
 # ========================================================= #
 # ===  post-process of the calculation                  === #
 # ========================================================= #
-@invoke.task
-def post( ctx, factor=1.0 ):
+@invoke.task(
+    help={
+        "factor"     : "factor of cell2point conversion for Femtet.",
+        "phits_mesh" : "Enable gmsh-phits mode ( T/F or --phits-mesh/--no-phits-mesh )", \
+    }
+)
+def post( ctx, factor=1.0, phits_mesh=False ):
     
     # ------------------------------------------------- #
     # --- [1] post execution commands               --- #
