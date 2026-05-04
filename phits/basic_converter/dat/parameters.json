@@ -1,0 +1,202 @@
+{
+    
+    // ---------------------------------------------- //
+    // ---  Simulation Control Settings          ---- //
+    // ---------------------------------------------- //
+    //
+    "sim.icntl"              :     0,    // ( 0:transport, 6:check-source, 8:check-Geometry )
+    "sim.istdev"             :     2,    // ( 0:optimal  , 1:batch-stddev, 2:history-stddev )
+                                         // ( +:New, -:Continue )
+    "sim.parallel.type"      : "MPI",    // "MPI" / "OMP"
+    "sim.parallel.nProc"     :    15,
+    "sim.nParticle"          : 1.5e5,    // preferably  nProc * xxx
+    "sim.nBatch"             : "@sim.parallel.nProc*50",
+    "sim.nCascade"           : "@sim.nParticle/@sim.nBatch",
+    "sim.phits_output"       : "out/phits.out",
+
+    
+    // --- level7 & galleria --- //    ( 133.144.160.74 & 133.144.160.131 )
+    "sim.phits_directory"    : "/mnt/c/phits/build_phits328A/phits/",
+    "sim.phits_xsdir"        : "/mnt/c/phits/build_phits328A/phits/data/xsdir.jnd",
+    
+    // ---     rdhpc1        --- //    ( 10.225.216.10   )
+    // "sim.phits_directory" : "/common1/hpclocal/PHITS/phits321/phits/",
+    // "sim.phits_xsdir"     : "/home/users/70727338/Lib80x/xsdir.jnd",
+
+
+    
+    // ---------------------------------------------- //
+    // ---  convertor Settings                   ---- //
+    // ---------------------------------------------- //
+    "converter.thick"        : "1.0 * @mm",
+    "converter.matN-dens"    : "@Ta.matN-dens", 
+
+    
+    
+    // ---------------------------------------------- //
+    // ---  target Settings                      ---- //
+    // ---------------------------------------------- //
+    "target.distance"        : "4.0  * @mm",
+    "target.diameter"        : "10.0 * @mm",
+    "target.offset.x"        : "0.0  * @mm",
+    "target.matN-dens"       : "@RaCl2.matN-dens",
+    //
+    "target.density"         : "@target.matN-dens[1]", 
+    "target.radius"          : "0.5  * @target.diameter",
+    "target.Area"            : "0.25 * @pi * ( @target.diameter )*( @target.diameter )",
+
+    
+    // -- for non-RI -- //
+    // "target.mass"         : 4.31e-3,                                                // - [g] 
+    // "target.thick"        : "@target.mass / ( abs(@target.density)*@target.Area )", // - [cm] 
+
+    
+    // -- for RI     -- // 
+    "target.activity"        : 11.1e9,                        // - [Bq]    //
+    "target.halflife"        : "1600.0*365.0*24.0*3600",      // - [s]     //
+    "target.g_mol"           : 297.0,                         // - [g/mol] //
+    //
+    "target.QTM"             : "@target.activity * @target.halflife * @target.g_mol",
+    "target.thick"           : "@target.QTM / ( @ln2*@NAvogadro * abs(@target.density)*@target.Area )",
+    
+    // -- quartz tube -- //
+    "qTube.thick"            : "1.0  * @mm",
+    "qTube.length"           : "20.0 * @mm",
+    //
+    "qTube.diameter"         : "@target.diameter + 2.0*@qTube.thick",
+    "qTube.radius"           :  "0.5 * @qTube.diameter",
+    "qAir.radius"            : "@qTube.radius - @qTube.thick",
+    "qAir.length"            : "@qTube.length - @qTube.thick*2",
+
+    
+    // ---------------------------------------------- //
+    // ---  source part      :: beam settings        ---- //
+    // ---------------------------------------------- //
+    "beam.type"              : "gaussian",                // [ "gaussian" ]
+    "beam.energy"            :     40.0,
+    "beam.current"           : 100.0e-6,
+    "beam.FWHM"              : "  6.00 * @mm",
+    "beam.zStart"            : "-200.0 * @mm",
+    "beam.length"            : " 10.5  * @mm",
+    //
+    "beam.totfact"           : "@beam.current / 1.602e-19", // -- unit :: [ particles / s ] -- //
+    "beam.zEnd"              : "@beam.zStart - @beam.length",
+
+
+    // ---------------------------------------------- //
+    // ---  geometry part    ::                     ---- //
+    // ---------------------------------------------- //
+
+    // --------------------------- //
+    // -- convertor             -- //
+    // --------------------------- //
+    "lyr.Lx"                 : "300.0 * @mm",
+    "lyr.Ly"                 : "300.0 * @mm",
+    "lyr.Ti.thick"           : "0.05  * @mm",
+    "lyr.He.thick"           : "14.0  * @mm",
+    "lyr.H2O.thick"          : "1.5   * @mm",
+    "lyr.SUS316.thick"       : "0.5   * @mm",
+    "lyr.Housing.thick"      : "0.1   * @mm",
+    "lyr.airgap1.thick"      : "38.3  * @mm",
+    "lyr.airgap2.thick"      : "0.5   * @mm",
+    "lyr.airgap3.thick"      : "@target.distance + 1.2*@qTube.length",
+    
+    "lyr.xMin"               : "(-0.5) * @lyr.Lx",
+    "lyr.xMax"               : "(+0.5) * @lyr.Lx",
+    "lyr.yMin"               : "(-0.5) * @lyr.Ly",
+    "lyr.yMax"               : "(+0.5) * @lyr.Ly",
+    "lyr.zstart"             : "-1.0*( 2.0*@lyr.Ti.thick + @lyr.He.thick + @lyr.airgap1.thick + 1.0*@lyr.SUS316.thick + 3.0*@converter.thick + 3.0*@lyr.H2O.thick )",
+
+    // -- [01]  Ti   0.05 mm   -- //
+    "lyr.01.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax", 
+                                 "@lyr.zstart"         ,  "@lyr.zstart+@lyr.Ti.thick" ], 
+    // -- [02]  He   14.0 mm   -- //
+    "lyr.02.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.01.rpp[5]", "@lyr.01.rpp[5]+@lyr.He.thick"  ],
+    // -- [03]  Ti   0.05 mm   -- //
+    "lyr.03.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.02.rpp[5]", "@lyr.02.rpp[5]+@lyr.Ti.thick" ],
+    // -- [04]  Air  38.3 mm   -- //
+    "lyr.04.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.03.rpp[5]", "@lyr.03.rpp[5]+@lyr.airgap1.thick" ],
+    // -- [05]  SUS316 0.5 mm  -- //
+    "lyr.05.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.04.rpp[5]", "@lyr.04.rpp[5]+@lyr.SUS316.thick" ],
+    // -- [06]  H2O    1.5 mm  -- //
+    "lyr.06.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.05.rpp[5]", "@lyr.05.rpp[5]+@lyr.H2O.thick" ],
+    // -- [07] converter(1) 1.0 mm  -- //
+    "lyr.07.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.06.rpp[5]", "@lyr.06.rpp[5]+@converter.thick" ],
+    // -- [08]  H2O    1.5 mm  -- //
+    "lyr.08.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.07.rpp[5]", "@lyr.07.rpp[5]+@lyr.H2O.thick" ],
+    // -- [09] converter(2) 1.0 mm  -- //
+    "lyr.09.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.08.rpp[5]", "@lyr.08.rpp[5]+@converter.thick" ],
+    // -- [10]  H2O    1.5 mm  -- //
+    "lyr.10.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.09.rpp[5]", "@lyr.09.rpp[5]+@lyr.H2O.thick" ],
+    // -- [11] converter(3) 1.0 mm  -- //
+    "lyr.11.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.10.rpp[5]", "@lyr.10.rpp[5]+@converter.thick" ],
+    // -- [12]  H2O    1.5 mm  -- //
+    "lyr.12.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.11.rpp[5]", "@lyr.11.rpp[5]+@lyr.H2O.thick" ],
+    // -- [13]  SUS316 0.5 mm  -- //
+    "lyr.13.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.12.rpp[5]", "@lyr.12.rpp[5]+@lyr.SUS316.thick" ],
+    // -- [14]  air      3.0 mm  -- //
+    "lyr.14.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.13.rpp[5]", "@lyr.13.rpp[5]+@lyr.airgap2.thick" ],
+    // -- [15]  SUS316   0.1 mm  -- //
+    "lyr.15.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.14.rpp[5]", "@lyr.14.rpp[5]+@lyr.Housing.thick" ],
+    // -- [16]  air      xxx mm  -- //
+    "lyr.16.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax",
+                                 "@lyr.15.rpp[5]", "@lyr.15.rpp[5]+@lyr.airgap3.thick" ],
+    
+    // --------------------------- //
+    // -- target / quartz       -- //
+    // --------------------------- //
+    "qTube.rcc"              : [ "@target.offset.x", 0.0, "@target.distance - @qTube.thick",
+                                 0.0, 0.0, "@qTube.length", "@qTube.radius"   ],
+    "qAir.rcc"               : [ "@target.offset.x", 0.0, "@target.distance", 
+                                 0.0, 0.0, "@qAir.length" , "@qAir.radius"    ], 
+    "target.rcc"             : [ "@target.offset.x", 0.0, "@target.distance",
+                                 0.0, 0.0, "@target.thick", "@target.radius"  ],
+
+    // --------------------------- //
+    // -- buffer air / bb       -- //
+    // --------------------------- //
+    "buff.margin"            : "50.0 * @mm",
+    "buff.rpp"               : [ "@lyr.xMin     -@buff.margin", "@lyr.xMax     +@buff.margin",
+                                 "@lyr.yMin     -@buff.margin", "@lyr.yMax     +@buff.margin",
+                                 "@lyr.01.rpp[4]-@buff.margin", "@lyr.01.rpp[5]+@buff.margin", ],
+    "bb.rpp"                 : [ "-500.0*@mm", "+500.0*@mm",
+                                 "-500.0*@mm", "+500.0*@mm",
+                                 "-500.0*@mm", "+500.0*@mm", ], 
+
+    "closeup.margin"         : "10.0 * @mm", 
+    "closeup.rpp"            : [ "-20*@mm", "20*@mm", "-20*@mm", "20*@mm",
+                                 "@lyr.05.rpp[4]-@closeup.margin",
+                                 "@lyr.16.rpp[5]+@closeup.margin", ],
+
+
+    // ---------------------------------------------- //
+    // ---  tally part       :: tally settings        ---- //
+    // ---------------------------------------------- //
+    "tally.fluence-energy.sw": true,
+    "tally.fluence-g-xz.sw"  : true,
+    "tally.geometry-xz.sw"   : true,
+
+    // ---------------------------------------------- //
+    // ---  Constants  Settings                  ---- //
+    // ---------------------------------------------- //    
+    "mm"                     : 0.1,
+    "m2cm"                   : 100.0,
+    "pi"                     : 3.14159265358,
+    "ln2"                    : 0.69314718056,
+    "NAvogadro"              : 6.02e23,
+    
+}

@@ -1,0 +1,24 @@
+--------------------------------------------------------------
+ basic converter setup
+--------------------------------------------------------------
+
+[INPUT]
+
+	* dat/materials.json
+	* dat/parameters.json
+
+	* inp/main.phits.j2 ( +他 )
+
+
+[OUTPUT]
+
+	* inp/materials.phits.j2
+	* inp/execute.phits.inp
+
+
+[HOWTO]
+
+	$ invoke build
+	$ invoke run
+	$ invoke post
+

@@ -46,10 +46,12 @@ def materials__fromJSON( matFile="dat/materials.json", \
     # ------------------------------------------------- #
     dnDB = {}
     for key in keys:
-        dkey       = matDB[key]["Name"] + ".density"
-        nkey       = matDB[key]["Name"] + ".matNum"
-        dnDB[dkey] = ( matDB[key] )["Density"]
-        dnDB[nkey] = ( matDB[key] )["matNum"]
+        dkey        = matDB[key]["Name"] + ".density"
+        nkey        = matDB[key]["Name"] + ".matNum"
+        dnkey       = matDB[key]["Name"] + ".matN-dens"
+        dnDB[dkey]  =   ( matDB[key] )["Density"]
+        dnDB[nkey]  =   ( matDB[key] )["matNum"]
+        dnDB[dnkey] = [ ( matDB[key] )["matNum"], ( matDB[key] )["Density"] ]
     return( dnDB )
 
 

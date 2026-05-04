@@ -1,0 +1,91 @@
+
+$$ ================================================================= $$
+$$ ===                  Geometry                                 === $$
+$$ ================================================================= $$
+
+$$ ---------------------------------------- $$
+$$ ---         surface                  --- $$
+$$ ---------------------------------------- $$
+[Surface]
+
+
+   $$ ------------------------------------------- $$
+   $$ --- [1] target system                    -- $$
+   $$ ------------------------------------------- $$
+   $$ [surfNum] [rpp] [xMin] [xMax] [yMin] [yMax] [zMin] [zMax]  -- $
+   21  rpp  {{ prm["lyr.01.rpp"] | join(" ") }}
+   22  rpp  {{ prm["lyr.02.rpp"] | join(" ") }}
+   23  rpp  {{ prm["lyr.03.rpp"] | join(" ") }}
+   24  rpp  {{ prm["lyr.04.rpp"] | join(" ") }}
+   25  rpp  {{ prm["lyr.05.rpp"] | join(" ") }}
+   26  rpp  {{ prm["lyr.06.rpp"] | join(" ") }}
+   27  rpp  {{ prm["lyr.07.rpp"] | join(" ") }}
+   28  rpp  {{ prm["lyr.08.rpp"] | join(" ") }}
+   29  rpp  {{ prm["lyr.09.rpp"] | join(" ") }}
+   30  rpp  {{ prm["lyr.10.rpp"] | join(" ") }}
+   31  rpp  {{ prm["lyr.11.rpp"] | join(" ") }}
+   32  rpp  {{ prm["lyr.12.rpp"] | join(" ") }}
+   33  rpp  {{ prm["lyr.13.rpp"] | join(" ") }}
+   34  rpp  {{ prm["lyr.14.rpp"] | join(" ") }}
+   35  rpp  {{ prm["lyr.15.rpp"] | join(" ") }}
+   36  rpp  {{ prm["lyr.16.rpp"] | join(" ") }}
+
+   $$ ------------------------------------------- $$
+   $$ --- [2] irradiation target               -- $$
+   $$ ------------------------------------------- $$
+   $$ [surfNum] [rcc] [x0] [y0] [z0] [dx] [dy] [dz] [r0] -- $
+   41  rcc  {{ prm["qTube.rcc"]  | join(" ") }}
+   43  rcc  {{ prm["qAir.rcc"]   | join(" ") }}
+   45  rcc  {{ prm["target.rcc"] | join(" ") }}
+   
+   $$ ------------------------------------------- $$
+   $$ --- [3] background air / boundary void   -- $$
+   $$ ------------------------------------------- $$
+   $$  --  background air     -- $$
+   $$ [surfNum] [rpp] [xMin] [xMax] [yMin] [yMax] [zMin] [zMax]  -- $
+   51  rpp  {{ prm["buff.rpp"]   | join(" ") }}
+   61  rpp  {{ prm["bb.rpp"]     | join(" ") }}
+
+
+
+$$ ---------------------------------------- $$
+$$ ---           cell                   --- $$
+$$ ---------------------------------------- $$
+[Cell]
+
+   $$ ------------------------------------------- $$
+   $$ --- [1] target system                    -- $$
+   $$ ------------------------------------------- $$
+
+   $$ [cellNum] [matNum] [Density] [surfNums]
+   321 {{prm["Ti.matN-dens"]        | join(" ") }} -21
+   322 {{prm["He.matN-dens"]        | join(" ") }} -22
+   323 {{prm["Ti.matN-dens"]        | join(" ") }} -23
+   324 {{prm["Air.matN-dens"]       | join(" ") }} -24
+   325 {{prm["SUS316.matN-dens"]    | join(" ") }} -25
+   326 {{prm["H2O.matN-dens"]       | join(" ") }} -26
+   327 {{prm["converter.matN-dens"] | join(" ") }} -27
+   328 {{prm["H2O.matN-dens"]       | join(" ") }} -28
+   329 {{prm["converter.matN-dens"] | join(" ") }} -29
+   330 {{prm["H2O.matN-dens"]       | join(" ") }} -30
+   331 {{prm["converter.matN-dens"] | join(" ") }} -31
+   332 {{prm["H2O.matN-dens"]       | join(" ") }} -32
+   333 {{prm["SUS316.matN-dens"]    | join(" ") }} -33
+   334 {{prm["Air.matN-dens"]       | join(" ") }} -34
+   335 {{prm["SUS316.matN-dens"]    | join(" ") }} -35
+   336 {{prm["Air.matN-dens"]       | join(" ") }} -36 +41
+
+   $$ ------------------------------------------- $$
+   $$ --- [2] irradiation target               -- $$
+   $$ ------------------------------------------- $$
+   341 {{prm["SiO2.matN-dens"]      | join(" ") }} -41 +43
+   343 {{prm["Air.matN-dens"]       | join(" ") }} -43 +45
+   345 {{prm["target.matN-dens"]    | join(" ") }} -45
+
+   $$ ------------------------------------------- $$
+   $$ --- [3] background air / boundary void   -- $$
+   $$ ------------------------------------------- $$
+   351 {{prm["Air.matN-dens"]       | join(" ") }} -51 +21 +22 +23 +24 +25 +26 +27 +28 +29
+                                                   +30 +31 +32 +33 +34 +35 +36
+   361 {{prm["Air.matN-dens"]       | join(" ") }} -61 +51
+   301 -1                                          +61
