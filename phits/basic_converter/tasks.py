@@ -194,6 +194,44 @@ def post( ctx, factor=1.0, phits_mesh=False ):
 
 
 # ========================================================= #
+# ===  run track__RIactivity.py                         === #
+# ========================================================= #
+@invoke.task
+def track( ctx, settingsFile="dat/settings-trackRI.json" ):
+    """Run the track__RIactivity.py"""
+    tri.track__RIactivity( settingsFile=settingsFile )
+
+
+# ========================================================= #
+# ===  run integrate__RIprodReaction.py                 === #
+# ========================================================= #
+@invoke.task
+def integrate( ctx, settingsFile="dat/RIprod_Ra226gn.json" ):
+    """Run the integrate__RIprodReaction.py"""
+    irr.integrate__RIprodReaction( settingsFile=settingsFile )
+
+
+# ========================================================= #
+# ===  clean output files                               === #
+# ========================================================= #
+@invoke.task
+def clean( ctx ):
+    """Remove output files from previous runs."""
+    patterns = [ "png/*.png", \
+                 "dat/results__*.json", "dat/summary__*.dat" , "dat/dYield_vs_energy__*.dat", \
+                 "dat/summary__*.json", "dat/results__*.csv" , \
+                ]
+    for pattern in patterns:
+        for path in glob.glob( pattern ):
+            if os.path.isfile(path):
+                print( f"Removing file {path}" )
+                os.remove(path)
+            elif os.path.isdir(path):
+                print( f"Removing directory {path}" )
+                shutil.rmtree(path)
+            
+
+# ========================================================= #
 # ===  build run post-process :: phits calculation      === #
 # ========================================================= #
 @invoke.task
@@ -208,4 +246,6 @@ def all( ctx, \
     build( ctx, inpFile=inpFile, materialFile=materialFile, exeFile=exeFile )
     run  ( ctx, phits_cmd=phits_cmd, exeFile=exeFile )
     post ( ctx )
+    integrate( ctx )
+    track( ctx )
     return()
