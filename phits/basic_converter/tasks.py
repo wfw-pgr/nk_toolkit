@@ -1,13 +1,15 @@
-import os, sys, subprocess, time, json5
+import os, sys, subprocess, time, glob, json5, shutil
 import invoke
 import meshio, jinja2
-import numpy                                 as np
-import datetime                              as dt
-import nkUtilities.show__section             as sct
-import nk_toolkit.phits.materials__fromJSON  as mfj
-import nk_toolkit.phits.tetra_toolkit        as ttk
-import nk_toolkit.gmsh.mesh__solidworksSTEP  as mss
-import nk_toolkit.legacy.json__formulaParser as jso
+import numpy                                   as np
+import datetime                                as dt
+import nkUtilities.show__section               as sct
+import nk_toolkit.phits.materials__fromJSON    as mfj
+import nk_toolkit.phits.tetra_toolkit          as ttk
+import nk_toolkit.gmsh.mesh__solidworksSTEP    as mss
+import nk_toolkit.legacy.json__formulaParser   as jso
+import nk_toolkit.RI.track__RIactivity         as tri
+import nk_toolkit.RI.integrate__RIprodReaction as irr
 
 
 # ========================================================= #
