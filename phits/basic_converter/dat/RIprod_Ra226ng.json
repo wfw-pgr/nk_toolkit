@@ -1,0 +1,92 @@
+{
+    
+    // reaction :: Ra226(n,g)Ra227 => Ra226ng //
+    
+    /* ------------------------------------------------------------------- */
+    /* ---  [1]  General settings                                      --- */
+    /* ------------------------------------------------------------------- */
+    "results.summaryFile"          : "dat/summary__Ra226ng.dat",
+    "results.jsonFile"             : "dat/results__Ra226ng.json",
+    "results.yieldFile"            : "dat/dYield_vs_energy__Ra226ng.dat",
+    "results.time.unit"            : "d",
+    
+    /* ------------------------------------------------------------------- */
+    /* ---  [2]  target materials settings                             --- */
+    /* ------------------------------------------------------------------- */
+    "target.g/cm3"                 :     4.9,                         // Ra
+    "target.g/mol"                 :   297.0,                         // RaCl2
+    "target.mass.mg"               :    null,                         // (mg)
+    "target.activity.Bq"           :  11.1e9,                         // (Bq)
+    "target.halflife"              : { "value":  1600, "unit":"y" },  // (Ra-226)
+    "product.halflife"             : { "value":  42.2, "unit":"m" },  // (Ra-225) 
+    "decayed.halflife"             : { "value":  21.7, "unit":"y" },  // (Ac-225) 
+    
+    // -- thick -- //  [ "Bq", "direct", "fluence-Bq", "fluence-mass" ]
+    "target.thick.type"            :"fluence-Bq",
+    "target.thick.direct.mm"       : null,                            // if ( type == direct )
+    
+    // -- area  -- //  [ "direct", "disk" ]
+    "target.area.type"             :"disk",                           // [ "direct", "disk" ]
+    "target.area.direct.cm2"       :  null,                           // if ( type == direct )
+    "target.area.diameter.mm"      :  10.0,                           // if ( type == disk )
+    
+    
+    /* ------------------------------------------------------------------- */
+    /* ---  [3]  integral settings                                     --- */
+    /* ------------------------------------------------------------------- */
+    "integral.method"              :"trapezoid",   // [ "simpson", "trapezoid", "rectangular"]
+    "integral.EAxis.mode"          :"log",         // [ "linear", "given", "finer", "log"]
+    "integral.EAxis.min"           :1.0e-10,       // (MeV)
+    "integral.EAxis.max"           :1.0e2,         // (MeV)
+    "integral.EAxis.num"           :501,           //
+    "integral.EAxis.given"         :null,          // (MeV)
+    
+    /* ------------------------------------------------------------------- */
+    /* ---  [4]  photon flux settings                                  --- */
+    /* ------------------------------------------------------------------- */
+    /*  photon flux's unit  == ( photons/MeV/uA/s )                        */
+    /* ------------------------------------------------------------------- */
+    "photon.filetype"              : "phits-out",  // ["phits-out","energy-fluence"]
+    "photon.filename"              : "dat/fluence-n-energy.dat",
+    "photon.bin2point.convert"     : "edge",       // convert binned data into E v.s. photons
+    "photon.fit.method"            : "linear",     // [ "linear", "gaussian" ]
+    "photon.fit.p0"                :  null,        // initial parameter for fitting.
+    "photon.beam.current.sim"      : 100.0,        // (uA) current in PHITS sim.
+    "photon.beam.current.use"      : 300.0,        // (uA) current to be assumed.
+    "photon.beam.duration.h"       : 120.0,        // (h)
+    /* ------------------------------------------------------------------- */
+    /* --- photon.filetype=="phits-out"         T-Track output file        */
+    /*                               ( e-lower, e-upper, fluence, error )  */
+    /* --- photon.filetype=="energy-fluence"    extracted data             */
+    /*                               ( energy, fluence)                    */
+    /* ------------------------------------------------------------------- */
+
+    
+    /* ------------------------------------------------------------------- */
+    /* ---  [5]  cross-section settings                                --- */
+    /* ------------------------------------------------------------------- */
+    /*  cross-section's unit   ( TENDL: (MeV,mb), JENDL: (eV,b) )          */
+    /* ------------------------------------------------------------------- */
+    // "xsection.filename"            :"dat/xs__TENDL2023_Ra226ng.dat",
+    // "xsection.database"            : "TENDL",         // JENDL (eV-barn) or TENDL (MeV-mb)
+    "xsection.filename"            :"xs/xs__JENDL5_Ra226ng.dat",
+    "xsection.database"            : "JENDL",           // JENDL (eV-barn) or TENDL (MeV-mb)
+    "xsection.fit.Eth"             :     0.0,           // (MeV)
+    "xsection.fit.method"          :"linear",           // [ "linear", "gaussian", "log-poly6th" ]
+    "xsection.fit.p0"              :    null,           // linear
+    
+    /* ------------------------------------------------------------------- */
+    /* ---  [6]  plot settings                                         --- */
+    /* ------------------------------------------------------------------- */
+    "plot.config"                  : {
+	"figure.pngFile" : "png/dYield-energy-n.png",
+	"ax1.x.range"    : { "auto":false, "min": 1.0e-10, "max":1.0e2, "num":13 },
+        "ax1.y.range"    : { "auto":false, "min": 1.0e-4,  "max":1.0e2, "num":7  },
+        "ax1.x.log"      : true,
+        "ax1.y.log"      : true,
+    }, 
+    "plot.xsection.norm"           :1.0e6,         // (mb)       
+    "plot.photon.norm"             :1.0e4,         // (photons/MeV/uA/s)
+    "plot.dYield.norm"             :1.0e4,         // (atoms/MeV/s)  
+    "plot.norm.auto"               :true,          // if true, automatic range
+}
