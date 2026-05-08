@@ -5,13 +5,6 @@ import nk_toolkit.impactx.io_toolkit as itk
 
 
 # ========================================================= #
-# ===  analyze_toolkit.py                               === #
-# ========================================================= #
-def analyze_toolkit():
-    postProcess__beam()
-
-
-# ========================================================= #
 # ===  get__postprocessed                               === #
 # ========================================================= #
 def get__postprocessed( recoFile=None, statFile=None, refpFile=None, postFile=None, \
@@ -307,6 +300,207 @@ def calc__statsFromBPMs( bpmsFile=None, refpFile=None, steps=None ) -> pd.DataFr
     return( ret )
     
 
+
+# ========================================================= #
+# ===  calculate covariance                             === #
+# ========================================================= #
+
+def calc__covariance( bpmsFile=None ) -> pd.DataFrame:
+
+    # abpm : pd.dataframe, xp,yp,tp, px,py,pt, wt
+
+    # ------------------------------------------------- #
+    # --- [2] prepare variables                     --- #
+    # ------------------------------------------------- #
+    with h5py.File( bpmsFile, "r" ) as f:
+        isteps = sorted( int(ik) for ik in f["data"].keys() )
+        for step in isteps:
+            key = str( step )
+            if ( not( key in f["data"] ) ):
+                stack.append( dict.fromkeys( columns, np.nan ) | { "step": step } )
+                continue
+        
+            # ------------------------------------------------- #
+            # --- [2-1] prepare variables                   --- #
+            # ------------------------------------------------- #
+            xp        = f["data"][key]["particles"]["beam"]["position"]["x"][:]
+            yp        = f["data"][key]["particles"]["beam"]["position"]["y"][:]
+            tp        = f["data"][key]["particles"]["beam"]["position"]["t"][:]
+            px        = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
+            py        = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
+            pt        = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+            weights   = f["data"][key]["particles"]["beam"]["weighting"][:]
+            coords    = np.concatenate( [ xp[:,np.newaxis], px[:,np.newaxis], yp[:,np.newaxis], \
+                                          py[:,np.newaxis], tp[:,np.newaxis], pt[:,np.newaxis] ], \
+                                        axis=1 )
+
+            # ------------------------------------------------- #
+            # --- [3] mean values                           --- #
+            # ------------------------------------------------- #
+            mean_xp     = _weighted_mean( xp, weights )
+            mean_yp     = _weighted_mean( yp, weights )
+            mean_tp     = _weighted_mean( tp, weights )
+            mean_px     = _weighted_mean( px, weights )
+            mean_py     = _weighted_mean( py, weights )
+            mean_pt     = _weighted_mean( pt, weights )
+            means       = np.array( [ mean_xp, mean_px, mean_yp, mean_py, mean_tp, mean_pt ] )
+            
+            # ------------------------------------------------- #
+            # --- [4] calculate covariance                  --- #
+            # ------------------------------------------------- #
+            xp_,px_,yp_ = 0, 1, 2
+            py_,tp_,pt_ = 3, 4, 5
+            covMat      = np.zeros( (6,6) )
+            
+            for ik in range( xp_, pt_+1 ):
+                for jk in range( ik, pt_+1 ):
+                    covMat[ik,jk] = _weighted_covariance( coords[:,ik], coords[:,jk], \
+                                                          weights, means[ik], means[jk] )
+                    covMat[jk,ik] = covMat[ik,jk]
+
+    labels = ["xp","px","yp","py","tp","pt"]
+    ret    = pd.DataFrame( covMat, index=labels, columns=labels )
+    return( ret )
+
+
+# ========================================================= #
+# ===  calculate correlations                           === #
+# ========================================================= #
+
+def calc__correlations( bpmsFile=None ) -> pd.DataFrame:
+
+    # ------------------------------------------------- #
+    # --- [1] functions                             --- #
+    # ------------------------------------------------- #
+    def _weighted_mean( val, weights ):
+        weight_sum = np.sum(weights)
+        if weight_sum == 0.0:
+            return np.nan
+        return( float( np.sum( val*weights ) / weight_sum ) )
+    
+    def _weighted_covariance( valX, valY, weights, meanX, meanY ):
+        weight_sum = np.sum(weights)
+        if weight_sum == 0.0:
+            return np.nan
+        return( float( np.sum( weights * ( valX-meanX )*( valY-meanY ) ) / weight_sum ) )
+
+    def _corr( cov, sigma, v1, v2 ):
+        denom = sigma[v1] * sigma[v2]
+        if ( ( not np.isfinite( denom ) ) or ( denom == 0.0 ) ): 
+            return( np.nan )
+        else:
+            return( float( cov.loc[ v1,v2 ] / denom ) )
+
+
+    # ------------------------------------------------- #
+    # --- [2] main loop                             --- #
+    # ------------------------------------------------- #
+    stack   = []
+    with h5py.File( bpmsFile, "r" ) as f:
+        isteps = sorted( int(ik) for ik in f["data"].keys() )
+        for step in isteps:
+            key = str( step )
+            if ( not( key in f["data"] ) ):
+                stack.append( dict.fromkeys( columns, np.nan ) | { "step": step } )
+                continue
+        
+            # ------------------------------------------------- #
+            # --- [2-1] prepare variables                   --- #
+            # ------------------------------------------------- #
+            xp        = f["data"][key]["particles"]["beam"]["position"]["x"][:]
+            yp        = f["data"][key]["particles"]["beam"]["position"]["y"][:]
+            tp        = f["data"][key]["particles"]["beam"]["position"]["t"][:]
+            px        = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
+            py        = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
+            pt        = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
+            weights   = f["data"][key]["particles"]["beam"]["weighting"][:]
+            coords    = np.concatenate( [ xp[:,np.newaxis], px[:,np.newaxis], yp[:,np.newaxis], \
+                                          py[:,np.newaxis], tp[:,np.newaxis], pt[:,np.newaxis] ], \
+                                        axis=1 )
+
+            # ------------------------------------------------- #
+            # --- [2-2] mean values                         --- #
+            # ------------------------------------------------- #
+            mean_xp     = _weighted_mean( xp, weights )
+            mean_yp     = _weighted_mean( yp, weights )
+            mean_tp     = _weighted_mean( tp, weights )
+            mean_px     = _weighted_mean( px, weights )
+            mean_py     = _weighted_mean( py, weights )
+            mean_pt     = _weighted_mean( pt, weights )
+            means       = np.array( [ mean_xp, mean_px, mean_yp, mean_py, mean_tp, mean_pt ] )
+            
+            # ------------------------------------------------- #
+            # --- [2-3] calculate covariance                --- #
+            # ------------------------------------------------- #
+            xp_,px_,yp_ = 0, 1, 2
+            py_,tp_,pt_ = 3, 4, 5
+            covMat      = np.zeros( (6,6) )
+            for ik in range( xp_, pt_+1 ):
+                for jk in range( ik, pt_+1 ):
+                    covMat[ik,jk] = _weighted_covariance( coords[:,ik], coords[:,jk], \
+                                                          weights, means[ik], means[jk] )
+                    covMat[jk,ik] = covMat[ik,jk]
+            labels = ["xp","px","yp","py","tp","pt"]
+            cov    = pd.DataFrame( covMat, index=labels, columns=labels )
+            sigma  = pd.Series( np.sqrt( np.diag( cov ) ).astype( float ), \
+                                index=cov.index )
+
+            xp_yp  = _corr( cov, sigma, "xp", "yp" )
+            xp_tp  = _corr( cov, sigma, "xp", "tp" )
+            xp_px  = _corr( cov, sigma, "xp", "px" )
+            xp_py  = _corr( cov, sigma, "xp", "py" )
+            xp_pt  = _corr( cov, sigma, "xp", "pt" )
+            
+            yp_tp  = _corr( cov, sigma, "yp", "tp" )
+            yp_px  = _corr( cov, sigma, "yp", "px" )
+            yp_py  = _corr( cov, sigma, "yp", "py" )
+            yp_pt  = _corr( cov, sigma, "yp", "pt" )
+            
+            tp_px  = _corr( cov, sigma, "tp", "px" )
+            tp_py  = _corr( cov, sigma, "tp", "py" )
+            tp_pt  = _corr( cov, sigma, "tp", "pt" )
+            
+            px_py  = _corr( cov, sigma, "px", "py" )
+            px_pt  = _corr( cov, sigma, "px", "pt" )
+            
+            py_pt  = _corr( cov, sigma, "py", "pt" )
+            
+            row    = { "step" :step,  
+                       "xp-yp":xp_yp, "xp-tp":xp_tp, "xp-px":xp_px, "xp-py":xp_py, "xp-pt":xp_pt,
+                       "yp-tp":yp_tp, "yp-px":yp_px, "yp-py":yp_py, "yp-pt":yp_pt, 
+                       "tp-px":tp_px, "tp-py":tp_py, "tp-pt":tp_pt, 
+                       "px-py":px_py, "px-pt":px_pt, 
+                       "py-pt":py_pt, 
+                      }
+    stack.append( row )
+    ret = pd.DataFrame( stack )
+    return( ret )
+    
+
+# ========================================================= #
+# ===   Execution of Pragram                            === #
+# ========================================================= #
+
+if ( __name__=="__main__" ):
+    analyze_toolkit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
 # # ========================================================= #
 # # ===  calculate statistic values from BPMs data        === #
 # # ========================================================= #
@@ -492,187 +686,3 @@ def calc__statsFromBPMs( bpmsFile=None, refpFile=None, steps=None ) -> pd.DataFr
 #         } )
 #     ret = pd.DataFrame( stack )
 #     return( ret )
-
-
-# ========================================================= #
-# ===  calculate covariance                             === #
-# ========================================================= #
-
-def calc__covariance( bpmsFile=None ) -> pd.DataFrame:
-
-    # abpm : pd.dataframe, xp,yp,tp, px,py,pt, wt
-
-    # ------------------------------------------------- #
-    # --- [2] prepare variables                     --- #
-    # ------------------------------------------------- #
-    with h5py.File( bpmsFile, "r" ) as f:
-        isteps = sorted( int(ik) for ik in f["data"].keys() )
-        for step in isteps:
-            key = str( step )
-            if ( not( key in f["data"] ) ):
-                stack.append( dict.fromkeys( columns, np.nan ) | { "step": step } )
-                continue
-        
-            # ------------------------------------------------- #
-            # --- [2-1] prepare variables                   --- #
-            # ------------------------------------------------- #
-            xp        = f["data"][key]["particles"]["beam"]["position"]["x"][:]
-            yp        = f["data"][key]["particles"]["beam"]["position"]["y"][:]
-            tp        = f["data"][key]["particles"]["beam"]["position"]["t"][:]
-            px        = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
-            py        = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
-            pt        = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
-            weights   = f["data"][key]["particles"]["beam"]["weighting"][:]
-            coords    = np.concatenate( [ xp[:,np.newaxis], px[:,np.newaxis], yp[:,np.newaxis], \
-                                          py[:,np.newaxis], tp[:,np.newaxis], pt[:,np.newaxis] ], \
-                                        axis=1 )
-
-            # ------------------------------------------------- #
-            # --- [3] mean values                           --- #
-            # ------------------------------------------------- #
-            mean_xp     = _weighted_mean( xp, weights )
-            mean_yp     = _weighted_mean( yp, weights )
-            mean_tp     = _weighted_mean( tp, weights )
-            mean_px     = _weighted_mean( px, weights )
-            mean_py     = _weighted_mean( py, weights )
-            mean_pt     = _weighted_mean( pt, weights )
-            means       = np.array( [ mean_xp, mean_px, mean_yp, mean_py, mean_tp, mean_pt ] )
-            
-            # ------------------------------------------------- #
-            # --- [4] calculate covariance                  --- #
-            # ------------------------------------------------- #
-            xp_,px_,yp_ = 0, 1, 2
-            py_,tp_,pt_ = 3, 4, 5
-            covMat      = np.zeros( (6,6) )
-            
-            for ik in range( xp_, pt_+1 ):
-                for jk in range( ik, pt_+1 ):
-                    covMat[ik,jk] = _weighted_covariance( coords[:,ik], coords[:,jk], \
-                                                          weights, means[ik], means[jk] )
-                    covMat[jk,ik] = covMat[ik,jk]
-
-    labels = ["xp","px","yp","py","tp","pt"]
-    ret    = pd.DataFrame( covMat, index=labels, columns=labels )
-    return( ret )
-
-
-# ========================================================= #
-# ===  calculate correlations                           === #
-# ========================================================= #
-
-def calc__correlations( bpmsFile=None ) -> pd.DataFrame:
-
-    # ------------------------------------------------- #
-    # --- [1] functions                             --- #
-    # ------------------------------------------------- #
-    def _weighted_mean( val, weights ):
-        weight_sum = np.sum(weights)
-        if weight_sum == 0.0:
-            return np.nan
-        return( float( np.sum( val*weights ) / weight_sum ) )
-    
-    def _weighted_covariance( valX, valY, weights, meanX, meanY ):
-        weight_sum = np.sum(weights)
-        if weight_sum == 0.0:
-            return np.nan
-        return( float( np.sum( weights * ( valX-meanX )*( valY-meanY ) ) / weight_sum ) )
-
-    def _corr( cov, sigma, v1, v2 ):
-        denom = sigma[v1] * sigma[v2]
-        if ( ( not np.isfinite( denom ) ) or ( denom == 0.0 ) ): 
-            return( np.nan )
-        else:
-            return( float( cov.loc[ v1,v2 ] / denom ) )
-
-
-    # ------------------------------------------------- #
-    # --- [2] main loop                             --- #
-    # ------------------------------------------------- #
-    stack   = []
-    with h5py.File( bpmsFile, "r" ) as f:
-        isteps = sorted( int(ik) for ik in f["data"].keys() )
-        for step in isteps:
-            key = str( step )
-            if ( not( key in f["data"] ) ):
-                stack.append( dict.fromkeys( columns, np.nan ) | { "step": step } )
-                continue
-        
-            # ------------------------------------------------- #
-            # --- [2-1] prepare variables                   --- #
-            # ------------------------------------------------- #
-            xp        = f["data"][key]["particles"]["beam"]["position"]["x"][:]
-            yp        = f["data"][key]["particles"]["beam"]["position"]["y"][:]
-            tp        = f["data"][key]["particles"]["beam"]["position"]["t"][:]
-            px        = f["data"][key]["particles"]["beam"]["momentum"]["x"][:]
-            py        = f["data"][key]["particles"]["beam"]["momentum"]["y"][:]
-            pt        = f["data"][key]["particles"]["beam"]["momentum"]["t"][:]
-            weights   = f["data"][key]["particles"]["beam"]["weighting"][:]
-            coords    = np.concatenate( [ xp[:,np.newaxis], px[:,np.newaxis], yp[:,np.newaxis], \
-                                          py[:,np.newaxis], tp[:,np.newaxis], pt[:,np.newaxis] ], \
-                                        axis=1 )
-
-            # ------------------------------------------------- #
-            # --- [2-2] mean values                         --- #
-            # ------------------------------------------------- #
-            mean_xp     = _weighted_mean( xp, weights )
-            mean_yp     = _weighted_mean( yp, weights )
-            mean_tp     = _weighted_mean( tp, weights )
-            mean_px     = _weighted_mean( px, weights )
-            mean_py     = _weighted_mean( py, weights )
-            mean_pt     = _weighted_mean( pt, weights )
-            means       = np.array( [ mean_xp, mean_px, mean_yp, mean_py, mean_tp, mean_pt ] )
-            
-            # ------------------------------------------------- #
-            # --- [2-3] calculate covariance                --- #
-            # ------------------------------------------------- #
-            xp_,px_,yp_ = 0, 1, 2
-            py_,tp_,pt_ = 3, 4, 5
-            covMat      = np.zeros( (6,6) )
-            for ik in range( xp_, pt_+1 ):
-                for jk in range( ik, pt_+1 ):
-                    covMat[ik,jk] = _weighted_covariance( coords[:,ik], coords[:,jk], \
-                                                          weights, means[ik], means[jk] )
-                    covMat[jk,ik] = covMat[ik,jk]
-            labels = ["xp","px","yp","py","tp","pt"]
-            cov    = pd.DataFrame( covMat, index=labels, columns=labels )
-            sigma  = pd.Series( np.sqrt( np.diag( cov ) ).astype( float ), \
-                                index=cov.index )
-
-            xp_yp  = _corr( cov, sigma, "xp", "yp" )
-            xp_tp  = _corr( cov, sigma, "xp", "tp" )
-            xp_px  = _corr( cov, sigma, "xp", "px" )
-            xp_py  = _corr( cov, sigma, "xp", "py" )
-            xp_pt  = _corr( cov, sigma, "xp", "pt" )
-            
-            yp_tp  = _corr( cov, sigma, "yp", "tp" )
-            yp_px  = _corr( cov, sigma, "yp", "px" )
-            yp_py  = _corr( cov, sigma, "yp", "py" )
-            yp_pt  = _corr( cov, sigma, "yp", "pt" )
-            
-            tp_px  = _corr( cov, sigma, "tp", "px" )
-            tp_py  = _corr( cov, sigma, "tp", "py" )
-            tp_pt  = _corr( cov, sigma, "tp", "pt" )
-            
-            px_py  = _corr( cov, sigma, "px", "py" )
-            px_pt  = _corr( cov, sigma, "px", "pt" )
-            
-            py_pt  = _corr( cov, sigma, "py", "pt" )
-            
-            row    = { "step" :step,  
-                       "xp-yp":xp_yp, "xp-tp":xp_tp, "xp-px":xp_px, "xp-py":xp_py, "xp-pt":xp_pt,
-                       "yp-tp":yp_tp, "yp-px":yp_px, "yp-py":yp_py, "yp-pt":yp_pt, 
-                       "tp-px":tp_px, "tp-py":tp_py, "tp-pt":tp_pt, 
-                       "px-py":px_py, "px-pt":px_pt, 
-                       "py-pt":py_pt, 
-                      }
-    stack.append( row )
-    ret = pd.DataFrame( stack )
-    return( ret )
-    
-
-# ========================================================= #
-# ===   Execution of Pragram                            === #
-# ========================================================= #
-
-if ( __name__=="__main__" ):
-    analyze_toolkit()

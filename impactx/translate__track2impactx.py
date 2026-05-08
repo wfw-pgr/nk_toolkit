@@ -17,18 +17,19 @@ def translate__track2impactx( paramsFile   ="dat/parameters.json", \
                                       phaseFile =phaseFile , outFile=impactxBLFile )
     
     with open( paramsFile, "r" ) as f:
-        params = json5.load( f )
-        Lcav   = params["translate.cavity.length"]
-        factor = params["translate.quad.factor"]
+        params    = json5.load( f )
+        Lcav      = params["translate.cavity.length"]
+        qm_factor = params["translate.quad.factor"]
     
     if ( Lcav > 0.0 ):
         ret = adjust__driftlength    ( inpFile=impactxBLFile, outFile=impactxBLFile, \
                                        Lcav=Lcav )
-    if ( factor != 1.0 ):
+    if ( qm_factor != 1.0 ):
         ret = adjust__QmagnetStrength( inpFile=impactxBLFile, outFile=impactxBLFile, \
-                                       factor=factor )
+                                       factor=qm_factor )
     return( ret )
     
+
 
 # ========================================================= #
 # ===  extract__trackv38_beamline.py                    === #
@@ -135,6 +136,7 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
     return( elements )
         
 
+
 # ========================================================= #
 # ===  translate__impactxElements.py                    === #
 # ========================================================= #
@@ -144,16 +146,12 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
                                 outFile   ="dat/beamline_impactx.json", \
                                 phaseFile ="dat/rfphase.csv" ):
 
+    # ========================================================= #
+    # ===  functions                                        === #
+    # ========================================================= #
+    
     # ------------------------------------------------- #
-    # --- [1] load files                            --- #
-    # ------------------------------------------------- #
-    with open( paramsFile, "r" ) as f:
-        params   = json5.load( f )
-    with open( inpFile, "r" ) as f:
-        elements = json5.load( f )
-
-    # ------------------------------------------------- #
-    # --- [2] guess phase routine                   --- #
+    # --- [0-1] RFcavity's phase                    --- #
     # ------------------------------------------------- #
     def guess__RFcavityPhase( elements=None, params=None, phaseFile=None ):
 
@@ -161,7 +159,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         cv  = 299792458.0   # light of speed [m/s]
         
         # ------------------------------------------------- #
-        # --- [2-1] use functions                       --- #
+        # --- [0-1-1] use functions                     --- #
         # ------------------------------------------------- #
         def norm_angle( deg ):
             deg  = np.asarray( deg, dtype=float )
@@ -170,7 +168,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             return( ret )
     
         # ------------------------------------------------- #
-        # --- [2-2] guess initial rfcavity phase        --- #
+        # --- [0-1-2] guess initial rfcavity phase      --- #
         # ------------------------------------------------- #
         Ek0         = params["beam.Ek.MeV/u"] * params["beam.u.nucleon"]
         Em0         = params["beam.mass.amu"] * amu
@@ -202,7 +200,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         df["phi_b"] = 0.0
         
         # ------------------------------------------------- #
-        # --- [2-3] return                              --- #
+        # --- [0-1-3] return                            --- #
         # ------------------------------------------------- #
         if ( phaseFile is not None ):
             df.to_csv( phaseFile )
@@ -210,7 +208,22 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
 
     
     # ------------------------------------------------- #
-    # --- [3] convert routine                       --- #
+    # --- [0-2] convert MaryLie unit => MADX unit   --- #
+    # ------------------------------------------------- #
+    def convert__MaryLie2MADX( elements=None, phase_df=None, retype=True ):
+        for key in elements.keys():
+            if ( elements[key]["type"] == "quadrupole" ):
+                elements[key]["k"] = elements[key]["k"] / phase_df.loc[ key, "Brho" ]
+                if ( retype ):
+                    elements[key]["type"] = "quadrupole.linear"
+            if ( elements[key]["type"] == "drift" ):
+                if ( retype ):
+                    elements[key]["type"] = "drift.linear"
+        return( elements )
+
+    
+    # ------------------------------------------------- #
+    # --- [0-3] convert routine                     --- #
     # ------------------------------------------------- #
     def convert__rfcavity( element, params, phase_df ):
         amu    = 931.494  # [MeV]
@@ -225,7 +238,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         return( ret )
 
     # ------------------------------------------------- #
-    # --- [3] convert shortrf                       --- #
+    # --- [0-4] convert shortrf                     --- #
     # ------------------------------------------------- #
     def convert__shortrf( element, params, phase_df ):
         amu    = 931.494  # [MeV]
@@ -238,16 +251,15 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         return( ret )
 
 
-
-    # ========================================================= #
-    # ===  convert_to_rfgap                                 === #
-    # ========================================================= #
+    # ------------------------------------------------- #
+    # --- [0-5] convert rfgap ( TRACE3D's element ) --- #
+    # ------------------------------------------------- #
     def convert__rfgap( element, params, phase_df ):
         
         amu    = 931.494
         
         # ------------------------------------------------- #
-        # --- [1] rfgap model of the trace3D code       --- #
+        # --- [0-5-1] rfgap model of the trace3D code   --- #
         # ------------------------------------------------- #
         def rfgap( Vg     = 1.0,       # [MV]
                    phi    = -45.0,     # [deg]   # for particle ??
@@ -260,7 +272,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             qa      = abs( charge )    # (C)
         
             # ------------------------------------------------- #
-            # --- [1] calculation                           --- #
+            # --- [0-5-2] calculation                       --- #
             # ------------------------------------------------- #
             phis    =  phi/180.0*np.pi
             lamb    =  cv / freq
@@ -282,7 +294,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             p0c     = np.sqrt( Ek**2 + 2.0*Ek*mass )  # (MeV)
         
             # ------------------------------------------------- #
-            # --- [2] r-matrix                              --- #
+            # --- [0-5-3] r-matrix                          --- #
             # ------------------------------------------------- #            
             #  -- my notation ( for [T, PT] ) --  #
             rmat_     = np.zeros( (7,7) )
@@ -299,12 +311,12 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             rmat       = ( np.copy( rmat_[1:,1:] ) ).tolist()    # list for json5 dump
             
             # ------------------------------------------------- #
-            # --- [3] return                                --- #
+            # --- [0-5-4] return                            --- #
             # ------------------------------------------------- #
             return( rmat )
 
         # ------------------------------------------------- #
-        # --- [2] set values for LinearMap              --- #
+        # --- [0-5-5] set values for LinearMap          --- #
         # ------------------------------------------------- #
         name   = element["name"].replace( "rf", "gap" )
         Vg     = element["volt"]
@@ -317,7 +329,19 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         ret    = { "type":"rfgap", "name":name, "ds":0.0, "R":Rmat  }
         return( ret )
 
+
+    # ========================================================= #
+    # ===  Main Routine                                     === #
+    # ========================================================= #
     
+    # ------------------------------------------------- #
+    # --- [1] load files                            --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params   = json5.load( f )
+    with open( inpFile   , "r" ) as f:
+        elements = json5.load( f )
+
     # ------------------------------------------------- #
     # --- [2] call converter                        --- #
     # ------------------------------------------------- #
@@ -362,9 +386,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["drift","drift.linear"] ) }
     
-    
     # ------------------------------------------------- #
-    # --- [3] save and return                       --- #
+    # --- [4] save and return                       --- #
     # ------------------------------------------------- #
     if ( outFile is not None ):
         with open( outFile, "w" ) as f:
@@ -372,20 +395,6 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             print( "[translate__track2impactx.py] output :: {}".format( outFile ) )
     return( elements_ )
 
-
-# ========================================================= #
-# ===  convert__MaryLie2MADX                            === #
-# ========================================================= #
-def convert__MaryLie2MADX( elements=None, phase_df=None, retype=True ):
-    for key in elements.keys():
-        if ( elements[key]["type"] == "quadrupole" ):
-            elements[key]["k"] = elements[key]["k"] / phase_df.loc[ key, "Brho" ]
-            if ( retype ):
-                elements[key]["type"] = "quadrupole.linear"
-        if ( elements[key]["type"] == "drift" ):
-            if ( retype ):
-                elements[key]["type"] = "drift.linear"
-    return( elements )
 
 
 # ========================================================= #
@@ -431,6 +440,7 @@ def adjust__driftlength( Lcav=None, elements=None, \
             json5.dump( elements, f, indent=4 )
             print( "[adjust__driftlength] output :: {}".format( outFile ) )
     return( elements )
+
 
 
 # ========================================================= #
