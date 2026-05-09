@@ -1,6 +1,6 @@
 
 
-{% if prm["tally.fluence-energy.sw"] %}
+{% if prm["tally.fluence-g-energy.sw"] %}
 $$ ---------------------------------------------------------- $$
 $$ --- tally for fluence - energy for RIprodReaction       ---$$
 $$ ---------------------------------------------------------- $$
@@ -85,4 +85,61 @@ $$ ---------------------------------------------------------- $$
  epsout =    1
 {% endif %}
 
+
+
+
+
+{% if prm["tally.fluence-n-energy.sw"] %}
+$$ ---------------------------------------------------------- $$
+$$ --- tally for fluence-energy for (n,g) reaction         ---$$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  reg
+    reg =  345              $$ target region number ::
+    volume
+     reg     vol
+     345     1.0            $$ vol=1.0 => count mode.
+ e-type =    5
+   edel =  0.4605170186     $$ ln(10)  for dE = ln(Mi+1/Mi)/N   ( Mi+1/Mi = 10^(1/N) )
+   emin =  1.0e-10
+   emax =  1.0e2
+   part =  neutron
+   unit =    2              $$ unit is [1/cm^2/MeV/source]
+   axis =  eng
+   file =  out/fluence-n-energy.dat
+  x-txt =  energy [MeV]
+  y-txt =  track length [neutrons m/MeV/s]
+ epsout =    1
+{% endif %}
+
+
+{% if prm["tally.fluence-n-xz.sw"] %}
+$$ ---------------------------------------------------------- $$
+$$ --- tally for neutron fluence x-z (2d)                 --- $$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  xyz          $$ mesh    :: [ xyz, r-z, reg, tet ]
+ x-type =    2          $$ x-type  :: [ 1: (nx,data[nx+1]), 2:(nx,xmin,xmax), 3:logarithmic ]
+     nx =   100
+   xmin =  {{prm["closeup.rpp"][0]}}   $$ "buff.rpp" or "closeup.rpp"
+   xmax =  {{prm["closeup.rpp"][1]}}
+ y-type =    2
+     ny =    1
+   ymin =  {{prm["closeup.rpp"][2]}}
+   ymax =  {{prm["closeup.rpp"][3]}}
+ z-type =    2
+     nz =   100
+   zmin =  {{prm["closeup.rpp"][4]}}
+   zmax =  {{prm["closeup.rpp"][5]}}
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e2
+   axis =   xz
+   part =  neutron
+   file =  out/fluence-n-xz.dat
+  title =  neutron fluence in xz plane
+  gshow =    1
+ epsout =    1
+{% endif %}
 

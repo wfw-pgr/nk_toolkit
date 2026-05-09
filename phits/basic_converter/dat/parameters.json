@@ -186,9 +186,11 @@
     // ---------------------------------------------- //
     // ---  tally part       :: tally settings        ---- //
     // ---------------------------------------------- //
-    "tally.fluence-energy.sw": true,
-    "tally.fluence-g-xz.sw"  : true,
-    "tally.geometry-xz.sw"   : true,
+    "tally.fluence-g-energy.sw" : true,
+    "tally.fluence-g-xz.sw"     : true,
+    "tally.geometry-xz.sw"      : true,
+    "tally.fluence-n-energy.sw" : true,
+    "tally.fluence-n-xz.sw"     : true,
 
     // ---------------------------------------------- //
     // ---  Constants  Settings                  ---- //
