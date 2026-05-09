@@ -1,4 +1,4 @@
-import os, sys, json5, h5py
+import os, json5, h5py
 import numpy  as np
 import pandas as pd
 
@@ -7,7 +7,7 @@ import pandas as pd
 # ========================================================= #
 
 def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None, 
-                      redefine_pid=True, redefine_step=True, step_start=0 ):
+                      redefine_pid=True, redefine_step=True, step_start=0, pid_start=0 ):
 
     default_step_start = 1
     
@@ -47,7 +47,7 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
     # --- [2] return                                --- #
     # ------------------------------------------------- #
     if ( redefine_pid  ):
-        ret["pid"]  = pd.factorize( ret["pid"]  )[0] + step_start
+        ret["pid"]  = pd.factorize( ret["pid"]  )[0] + pid_start
     if ( redefine_step ):
         ret["step"] = pd.factorize( ret["step"] )[0] + step_start
     if ( random_choice is not None ):
@@ -57,10 +57,8 @@ def load__impactHDF5( inpFile=None, pids=None, steps=None, random_choice=None,
         pids  = np.random.choice( np.arange(1,npart+1), size=random_choice, replace=False )
     if ( pids  is not None ):
         ret   = ret[ ret["pid"].isin( pids ) ]
-    # if ( steps is not None ):
-    #     ret   = ret[ ret["step"].isin( steps ) ]
-        
     return( ret )
+
 
 
 # ========================================================= #
@@ -71,7 +69,10 @@ def get__particles( recoFile=None, refpFile=None, bpmsFile=None, steps=None, pid
     
     amu = 931.494
     cv  = 2.99792458e8
-    
+
+    # ------------------------------------------------- #
+    # --- [0] functions                             --- #
+    # ------------------------------------------------- #
     def norm_angle( deg ):
         deg  = np.asarray( deg, dtype=float )
         ret  = ( ( deg + 180.0 ) % 360.0 ) - 180.0
@@ -90,15 +91,15 @@ def get__particles( recoFile=None, refpFile=None, bpmsFile=None, steps=None, pid
     # ------------------------------------------------- #
     with open( recoFile, "r" ) as f:
         records = json5.load( f )
-    bpms = load__impactHDF5( inpFile=bpmsFile, pids=pids, \
-                             steps=steps, redefine_step=False, \
-                             step_start=0 ).reset_index( drop=True )
-    refp = pd.read_csv( refpFile, sep=r"\s+" )
+    bpms     = load__impactHDF5( inpFile=bpmsFile, pids=pids, \
+                                 steps=steps, redefine_step=False, \
+                                 step_start=0 ).reset_index( drop=True )
+    refp_df_ = pd.read_csv( refpFile, sep=r"\s+" )
 
     # ------------------------------------------------- #
     # --- [3] concatenate ref / particle data       --- #
     # ------------------------------------------------- #
-    refp_df  = refp.loc[ bpms["step"], : ]
+    refp_df  = refp_df_.loc[ bpms["step"], : ]
     slist    = [ "s","beta","gamma", "x","y","z","t", "px","py","pz","pt" ]
     renames  = { s:"ref_"+s for s in slist }
     refp_df  = ( refp_df[ slist ] ).rename( columns=renames ).reset_index( drop=True )
@@ -109,20 +110,16 @@ def get__particles( recoFile=None, refpFile=None, bpmsFile=None, steps=None, pid
     # ------------------------------------------------- #
     rf_freq        = records["beam.freq.Hz"]  * records["beam.harmonics"]
     Em0            = records["beam.mass.amu"] * amu
-    Ek0            = records["beam.Ek.MeV/u"] * records["beam.u.nucleon"]
-    Et0            = Em0 + Ek0
-    p0c            = np.sqrt( Et0**2 - Em0**2 )
     bpms["Ek_ref"] = ( bpms["ref_gamma"] - 1.0 ) * Em0
-    bpms["Et_ref"] = bpms["Ek_ref"] + Em0
+    bpms["Et_ref"] =   bpms["Ek_ref"] + Em0
     bpms["p0c"]    = bpms["ref_beta"] * bpms["ref_gamma"] * Em0 
-    bpms["p0c"]    = np.sqrt( bpms["Et_ref"]**2 - Em0**2 )
     bpms["dEk"]    = ( -1.0 ) * bpms["p0c"] * bpms["pt"] 
-    # bpms["dEk"]    = p0c * bpms["pt"]
     bpms["Ek"]     = bpms["Ek_ref"] + bpms["dEk"]
     bpms["dt"]     = bpms["tp"]  / cv
     bpms["dphi"]   = norm_angle( (                    bpms["dt"] ) * rf_freq * 360.0 )
     bpms["phi"]    = norm_angle( ( bpms["ref_t"]/cv + bpms["dt"] ) * rf_freq * 360.0 )
     return( bpms )
+
 
 
 # ========================================================= #
@@ -142,119 +139,4 @@ def get__beamStats( statFile="impactx/diags/reduced_beam_characteristics.0", \
     return( ret )
 
 
-# ========================================================= #
-# ===  convert__hdf2vtk.py                              === #
-# ========================================================= #
 
-def convert__hdf2vtk( hdf5File=None, outFile=None, \
-                      pids=None, steps=None, random_choice=None ):
-
-    # ------------------------------------------------- #
-    # --- [1] arguments check                       --- #
-    # ------------------------------------------------- #
-    if ( os.path.exists( hdf5File ) ):
-        Data = load__impactHDF5( inpFile=hdf5File, random_choice=random_choice, \
-                                 pids=pids, steps=steps )
-    else:
-        raise FileNotFoundError( f"[ERROR] HDF5 File not Found :: {hdf5File}" )
-    if ( outFile is None ):
-        raise TypeError( f"[ERROR] outFile == {outFile} ???" )
-    else:
-        ext = os.path.splitext( outFile )[1]
-
-    # ------------------------------------------------- #
-    # --- [2] save as vtk poly data                 --- #
-    # ------------------------------------------------- #
-    steps = sorted( Data["step"].unique() )
-
-    for ik,step in enumerate(steps):
-        # -- points coordinate make -- #
-        df     = Data[ Data["step"] == step ]
-        df     = df[ np.isfinite(df["xp"]) & \
-                     np.isfinite(df["yp"]) & \
-                     np.isfinite(df["tp"]) ]
-        if ( df.shape[0] == 0 ):
-            print( "[impactx_toolkit.py] [WARNING] no appropriate point data :: ik={0}, step={1}".format( ik, step ) )
-            continue
-        df["dt"] = df["tp"] - df["tp"].mean()
-        coords   = df[ ["xp", "yp", "dt"] ].to_numpy()
-        cloud    = pv.PolyData( coords )
-        # -- momentum & pid -- #
-        cloud.point_data["pid"]      = df["pid"].to_numpy()
-        cloud.point_data["x"]        = df["xp" ].to_numpy()
-        cloud.point_data["y"]        = df["yp" ].to_numpy()
-        cloud.point_data["t"]        = df["tp" ].to_numpy()
-        cloud.point_data["dt"]       = df["dt" ].to_numpy()
-        cloud.point_data["momentum"] = df[ ["px", "py", "pz"] ].to_numpy()
-    
-        # -- save file -- #
-        houtFile = outFile.replace( ext, "-{0:06}".format(ik+1) + ext )
-        cloud.save( houtFile )
-        print( "[convert__hdf2vtk.py] outFile :: {} ".format( houtFile ) )
-    return()
-        
-
-
-# ========================================================= #
-# === load__bpms.py                                     === #
-# ========================================================= #
-
-def load__bpms( bpms=None, step=None, \
-                start=0, stop=None, chunksize=1_000_000, dtype=np.float32 ):
-    """
-    [How to call]
-    with h5py.File("bpms.h5", "r") as bpms:
-       particles = load_bpms( bpms=bpms, step=step )
-    """
-    
-    # ------------------------------------------------- #
-    # --- [1] load HDF5 file                        --- #
-    # ------------------------------------------------- #
-    if ( not( isinstance( bpms, h5py.File ) ) ):
-        raise( TypeError( f"bpms must be str or h5py.File, got { type(bpms).__name__}" ) )
-
-    # ------------------------------------------------- #
-    # --- [2] if steps argument is given            --- #
-    # ------------------------------------------------- #
-    isteps = sorted( [ int( istep ) for istep in bpms["data"].keys() ] )
-    if ( step is None ):
-        step = int( isteps[0] )
-        
-    # ------------------------------------------------- #
-    # --- [3] load data                             --- #
-    # ------------------------------------------------- #
-    base = bpms["data"][str(step)]["particles"]["beam"]
-    d_xp = base["position"]["x"]
-    d_yp = base["position"]["y"]
-    d_tp = base["position"]["t"]
-    d_px = base["momentum"]["x"]
-    d_py = base["momentum"]["y"]
-    d_pt = base["momentum"]["t"]
-    d_wt = base["weighting"]
-        
-    npt  = int( d_xp.shape[0] )
-    if ( stop is None ) or ( stop > npt ):
-        stop = npt
-    if ( start < 0 ) or ( start > stop ):
-        raise( ValueError(f"invalid range: start={start}, stop={stop}, npt={npt}") )
-
-    for ik_s in range( start, stop, chunksize ):
-        ik_e = min( ik_s+chunksize, stop )
-            
-        xp = d_xp[ik_s:ik_e]
-        yp = d_yp[ik_s:ik_e]
-        tp = d_tp[ik_s:ik_e]
-        px = d_px[ik_s:ik_e]
-        py = d_py[ik_s:ik_e]
-        pt = d_pt[ik_s:ik_e]
-        wt = d_wt[ik_s:ik_e]
-            
-        if ( dtype is not None ):
-            xp = xp.astype( dtype, copy=False )
-            yp = yp.astype( dtype, copy=False )
-            tp = tp.astype( dtype, copy=False )
-            px = px.astype( dtype, copy=False )
-            py = py.astype( dtype, copy=False )
-            pt = pt.astype( dtype, copy=False )
-            wt = wt.astype( dtype, copy=False )
-        yield( { "xp":xp, "yp":yp, "tp":tp, "px":px, "py":py, "pt":pt, "wt":wt } )

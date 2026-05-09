@@ -2,6 +2,7 @@ import os, sys, json5, re
 import numpy          as np
 import pandas         as pd
 
+
 # ========================================================= #
 # ===  translate__track2impactx.py                      === #
 # ========================================================= #
@@ -117,7 +118,7 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
                 seq += convert_to_rfcavity( words, counts )
             
             else:
-                sys.exit( "[ERROR] undefined keyword :: {} ".format( words[1] ) )
+                raise ValueError( "[ERROR] undefined keyword :: {} ".format( words[1] ) )
 
     L_tot     = counts["at"]
     Nelements = counts["N"]
@@ -350,8 +351,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         elements = convert__MaryLie2MADX( elements=elements, phase_df=phase_df, retype=True  )
     elif ( params["translate.quad.options"]["unit"] == 0 ):
         elements = convert__MaryLie2MADX( elements=elements, phase_df=phase_df, retype=False )
-    if   ( params["translate.cavity.phase.fromfile"] ):
-        phase_df_ = pd.read_csv( params["file.adjust_phase"] )
+    if   ( params["translate.cavity.phase.fromfile"] is not None ):
+        phase_df_ = pd.read_csv( params["translate.cavity.phase.fromfile"] )
         phase_df_ = phase_df_.set_index( "name" )
         phase_df  = phase_df .set_index( "name" )
         phase_df.update( phase_df_, overwrite=True )
@@ -406,7 +407,7 @@ def adjust__driftlength( Lcav=None, elements=None, \
     # ------------------------------------------------- #
     # --- [1] load data                             --- #
     # ------------------------------------------------- #
-    if ( Lcav     is None ): sys.exit( "[adjust__driftlength] Lcav == ???" )
+    if ( Lcav     is None ): raise ValueError( "[adjust__driftlength] Lcav == ???" )
     if ( elements is None ):
         if ( inpFile is not None ):
             with open( inpFile, "r" ) as f:
@@ -454,7 +455,7 @@ def adjust__QmagnetStrength( factor =1.0 , elements=None, \
     # ------------------------------------------------- #
     if ( elements is None ):
         if ( inpFile is None ):
-            sys.exit( "[adjust__QmagnetStrength] no elements... [ERROR]" )
+            raise TypeError( "[adjust__QmagnetStrength] no elements... [ERROR]" )
         else:
             with open( inpFile, "r" ) as f:
                 elements = json5.load( f )

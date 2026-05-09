@@ -1,4 +1,4 @@
-import os, sys, re, json5
+import os, json5
 
 # ========================================================= #
 # ===  load config.json to plot settings                === #

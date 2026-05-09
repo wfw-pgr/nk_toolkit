@@ -1,9 +1,9 @@
-import os, sys, json5
+import json5, h5py
 import impactx
-import h5py
-import numpy  as np
-import pandas as pd
+import numpy         as np
+import pandas        as pd
 import amrex.space3d as amr
+
 
 # ========================================================= #
 # ===  set__beamlineComponents                          === #
@@ -19,8 +19,7 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
         with open( beamlineFile, "r" ) as f:
             elements = json5.load( f )
     if ( elements is None ):
-        print( "[impactx_toolkit.py] elements == ??? " )
-        sys.exit()
+        raise ValueError( "[impactx_toolkit.py] elements == ??? " )
     if ( nUse is not None ):
         keys     = list( elements.keys() )
         elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse ) }
@@ -64,7 +63,8 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
             bcomp = impactx.elements.Drift( **elem_ )
 
         else:
-            sys.exit( "[main_impactx.py] unknown element type :: {} ".format( elem["type"] ) )
+            raise ValueError( "[main_impactx.py] unknown element type :: {} "
+                              .format( elem["type"] ) )
 
         stack += [ bcomp ]
         if ( add_bpm ):
@@ -74,10 +74,6 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
     # --- [3] return                                --- #
     # ------------------------------------------------- #
     beamline = stack
-    # if ( logFile is not None ):
-    #     stack = { str(ik):element.to_dict() for ik,element in enumerate(beamline) }
-    #     with open( logFile, "w" ) as f:
-    #         json5.dump( stack, f, indent=4 )
     return( beamline )
 
 
@@ -122,7 +118,7 @@ def set__manualReferenceParticle( particle_container=None,  # particle_container
 
 
 # ========================================================= #
-# ===  set water distribution                           === #
+# ===  set waterbag distribution                        === #
 # ========================================================= #
 
 def set__waterbag_distribution( alpha=None, beta=None, eps_geom=None, \
@@ -178,8 +174,8 @@ def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
     # ------------------------------------------------- #
     # --- [1] arguments / calculation               --- #
     # ------------------------------------------------- #
-    if ( params is None ): sys.exit( "[save__run_records] params == ???" )
-    if ( keys is None ):
+    if ( params is None ): raise ValueError( "[save__run_records] params == ???" )
+    if ( keys   is None ):
         keys = [ "beam.charge.qe"   , "beam.charge.C"  , "beam.nparticles", \
                  "beam.u.nucleon"   , "beam.mass.amu"  , "beam.Ek.MeV/u"  , \
                  "beam.freq.Hz"     , "beam.freq.rf.Hz", "beam.harmonics" , \
@@ -212,7 +208,7 @@ def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, \
     # ------------------------------------------------- #
     if ( elements is None ):
         if ( beamlineFile is None ):
-            sys.exit( "[save__latticesStructure]  beamlineFile or elements== ???" )
+            raise ValueError( "[save__latticesStructure]  beamlineFile or elements== ???" )
         else:
             with open( beamlineFile, "r" ) as f:
                 elements = json5.load( f )
@@ -269,3 +265,5 @@ def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, \
     df.index      = range(1, len(df)+1 )
     df.index.name = "id"
     df.to_csv( labelFile, index=True )
+
+

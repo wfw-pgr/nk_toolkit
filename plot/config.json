@@ -284,7 +284,6 @@
 
     "ax2.y.log"             : false,
     "ax2.y.major.noLabel"   : false,
-    "ax2.legend.position"   : [0.65,0.75],
     
 
     // ------------------------------------------------- //
@@ -315,6 +314,7 @@
     "legend.handleLength"   : 2.0,
 
     "ax1.legend.position"   : null,
+    "ax2.legend.position"   : [0.65,0.75],
     
     // ------------------------------------------------- //
     // --- プロット用 フィルタ 設定                  --- //
