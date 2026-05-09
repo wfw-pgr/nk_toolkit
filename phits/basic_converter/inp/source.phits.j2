@@ -16,8 +16,12 @@ $$ ================================================================= $$
     r1        = {{prm["beam.FWHM"]}}
     z0        = {{prm["beam.zStart"]}}
     z1        = {{prm["beam.zEnd"]}}
-    e0        = {{prm["beam.energy"]}}
-
+    e-type    = 2
+    eg0       = {{prm["beam.energy"]}}
+    eg1       = {{prm["beam.energy.FWHM.MeV"]}}
+    eg2       = {{prm["beam.energy.cutoff.lower"]}}
+    eg3       = {{prm["beam.energy.cutoff.upper"]}}
+    $$ e0        = {{prm["beam.energy"]}}    $$ 
 
 {% endif %}
 

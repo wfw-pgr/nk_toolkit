@@ -41,7 +41,7 @@
     "Y.normalize"             : true,
     "Y.normalize.mg"          : null,         // (mg)
     "Y.normalize.Bq"          : 11.1e9,       // (Bq)
-    "Y.normalize.uA"          : 350.0,        // (uA)
+    "Y.normalize.uA"          : 300.0,        // (uA)
     "Y.ratio.B/A"             : 0.445,        // if decayed, efficiency x A/B
     //                                        // ( "product" mode is prefferable. )
     "Y.recycle.factor"        : 0.990,        // recycle factor of target material.
@@ -51,19 +51,19 @@
     // ------------------------------------------------- //
 
     "beamON.01"               : {
-	"dt"                  : [ 10, "d" ], // [ time, unit ]  
+	"dt"                  : [  5, "d" ], // [ time, unit ]  
 	"beam.relint"         :  1.0,        // relative Yield rate: Y  ==>  beam on/off = ( 1/0 )
 	"nPoints"             :  125,        // number of data samplings
 	"separation"          : false, 
     },
     "separation.01"           : {
-	"dt"                  : [ 2, "d" ],
+	"dt"                  : [ 1, "d" ],
 	"beam.relint"         : 0.0,
 	"nPoints"             : 25,
 	"separation"          : true,
     }, 
     "preparation.01"          : {
-	"dt"                  : [ 2, "d" ],  
+	"dt"                  : [ 1, "d" ],  
 	"beam.relint"         : 0.0,
 	"nPoints"             : 25,
 	"separation"          : false,

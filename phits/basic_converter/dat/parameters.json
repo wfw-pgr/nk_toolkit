@@ -4,108 +4,111 @@
     // ---  Simulation Control Settings          ---- //
     // ---------------------------------------------- //
     //
-    "sim.icntl"              :     0,    // ( 0:transport, 6:check-source, 8:check-Geometry )
-    "sim.istdev"             :     2,    // ( 0:optimal  , 1:batch-stddev, 2:history-stddev )
+    "sim.icntl"                  :     0,    // ( 0:transport, 6:check-source, 8:check-Geometry )
+    "sim.istdev"                 :     2,    // ( 0:optimal  , 1:batch-stddev, 2:history-stddev )
                                          // ( +:New, -:Continue )
-    "sim.parallel.type"      : "MPI",    // "MPI" / "OMP"
-    "sim.parallel.nProc"     :    15,
-    "sim.nParticle"          : 1.5e5,    // preferably  nProc * xxx
-    "sim.nBatch"             : "@sim.parallel.nProc*50",
-    "sim.nCascade"           : "@sim.nParticle/@sim.nBatch",
-    "sim.phits_output"       : "out/phits.out",
+    "sim.parallel.type"          : "MPI",    // "MPI" / "OMP"
+    "sim.parallel.nProc"         :    15,
+    "sim.nParticle"              : 1.5e5,    // preferably  nProc * xxx
+    "sim.nBatch"                 : "@sim.parallel.nProc*50",
+    "sim.nCascade"               : "@sim.nParticle/@sim.nBatch",
+    "sim.phits_output"           : "out/phits.out",
 
     
     // --- level7 & galleria --- //    ( 133.144.160.74 & 133.144.160.131 )
-    "sim.phits_directory"    : "/mnt/c/phits/build_phits328A/phits/",
-    "sim.phits_xsdir"        : "/mnt/c/phits/build_phits328A/phits/data/xsdir.jnd",
+    "sim.phits_directory"        : "/mnt/c/phits/build_phits328A/phits/",
+    "sim.phits_xsdir"            : "/mnt/c/phits/build_phits328A/phits/data/xsdir.jnd",
     
     // ---     rdhpc1        --- //    ( 10.225.216.10   )
-    // "sim.phits_directory" : "/common1/hpclocal/PHITS/phits321/phits/",
-    // "sim.phits_xsdir"     : "/home/users/70727338/Lib80x/xsdir.jnd",
+    // "sim.phits_directory"     : "/common1/hpclocal/PHITS/phits321/phits/",
+    // "sim.phits_xsdir"         : "/home/users/70727338/Lib80x/xsdir.jnd",
 
 
     
     // ---------------------------------------------- //
     // ---  convertor Settings                   ---- //
     // ---------------------------------------------- //
-    "converter.thick"        : "1.0 * @mm",
-    "converter.matN-dens"    : "@Ta.matN-dens", 
+    "converter.thick"            : "1.0 * @mm",
+    "converter.matN-dens"        : "@Ta.matN-dens", 
 
     
     
     // ---------------------------------------------- //
     // ---  target Settings                      ---- //
     // ---------------------------------------------- //
-    "target.distance"        : "4.0  * @mm",
-    "target.diameter"        : "10.0 * @mm",
-    "target.offset.x"        : "0.0  * @mm",
-    "target.matN-dens"       : "@RaCl2.matN-dens",
+    "target.distance"            : "4.0  * @mm",
+    "target.diameter"            : "10.0 * @mm",
+    "target.offset.x"            : "0.0  * @mm",
+    "target.matN-dens"           : "@RaCl2.matN-dens",
     //
-    "target.density"         : "@target.matN-dens[1]", 
-    "target.radius"          : "0.5  * @target.diameter",
-    "target.Area"            : "0.25 * @pi * ( @target.diameter )*( @target.diameter )",
+    "target.density"             : "@target.matN-dens[1]", 
+    "target.radius"              : "0.5  * @target.diameter",
+    "target.Area"                : "0.25 * @pi * ( @target.diameter )*( @target.diameter )",
 
     
     // -- for non-RI -- //
-    // "target.mass"         : 4.31e-3,                                                // - [g] 
-    // "target.thick"        : "@target.mass / ( abs(@target.density)*@target.Area )", // - [cm] 
+    // "target.mass"             : 4.31e-3,                                                // - [g] 
+    // "target.thick"            : "@target.mass / ( abs(@target.density)*@target.Area )", // - [cm] 
 
     
     // -- for RI     -- // 
-    "target.activity"        : 11.1e9,                        // - [Bq]    //
-    "target.halflife"        : "1600.0*365.0*24.0*3600",      // - [s]     //
-    "target.g_mol"           : 297.0,                         // - [g/mol] //
+    "target.activity"            : 11.1e9,                        // - [Bq]    //
+    "target.halflife"            : "1600.0*365.0*24.0*3600",      // - [s]     //
+    "target.g_mol"               : 297.0,                         // - [g/mol] //
     //
-    "target.QTM"             : "@target.activity * @target.halflife * @target.g_mol",
-    "target.thick"           : "@target.QTM / ( @ln2*@NAvogadro * abs(@target.density)*@target.Area )",
+    "target.QTM"                 : "@target.activity * @target.halflife * @target.g_mol",
+    "target.thick"               : "@target.QTM / ( @ln2*@NAvogadro * abs(@target.density)*@target.Area )",
     
     // -- quartz tube -- //
-    "qTube.thick"            : "1.0  * @mm",
-    "qTube.length"           : "20.0 * @mm",
+    "qTube.thick"                : "1.0  * @mm",
+    "qTube.length"               : "20.0 * @mm",
     //
-    "qTube.diameter"         : "@target.diameter + 2.0*@qTube.thick",
-    "qTube.radius"           :  "0.5 * @qTube.diameter",
-    "qAir.radius"            : "@qTube.radius - @qTube.thick",
-    "qAir.length"            : "@qTube.length - @qTube.thick*2",
+    "qTube.diameter"             : "@target.diameter + 2.0*@qTube.thick",
+    "qTube.radius"               :  "0.5 * @qTube.diameter",
+    "qAir.radius"                : "@qTube.radius - @qTube.thick",
+    "qAir.length"                : "@qTube.length - @qTube.thick*2",
 
     
     // ---------------------------------------------- //
-    // ---  source part      :: beam settings        ---- //
+    // ---  source part          :: beam settings        ---- //
     // ---------------------------------------------- //
-    "beam.type"              : "gaussian",                // [ "gaussian" ]
-    "beam.energy"            :     40.0,
-    "beam.current"           : 100.0e-6,
-    "beam.FWHM"              : "  6.00 * @mm",
-    "beam.zStart"            : "-200.0 * @mm",
-    "beam.length"            : " 10.5  * @mm",
-    //
-    "beam.totfact"           : "@beam.current / 1.602e-19", // -- unit :: [ particles / s ] -- //
-    "beam.zEnd"              : "@beam.zStart - @beam.length",
-
+     "beam.type"                 : "gaussian",                // [ "gaussian" ]
+     "beam.energy"               :     40.0,
+     "beam.energy.FWHM.%"        :      5.0,
+     "beam.current"              : 100.0e-6,
+     "beam.FWHM"                 : "  6.00 * @mm",
+     "beam.zStart"               : "-200.0 * @mm",
+     "beam.length"               : " 10.5  * @mm",
+     //
+     "beam.totfact"              : "@beam.current / 1.602e-19", // -- unit :: [ particles / s ] -- //
+     "beam.zEnd"                 : "@beam.zStart - @beam.length",
+     "beam.energy.FWHM.MeV"      : "@beam.energy * @beam.energy.FWHM.%/100.0",
+     "beam.energy.cutoff.lower"  : "@beam.energy - @beam.energy.FWHM.MeV/2.35*3", 
+     "beam.energy.cutoff.upper"  : "@beam.energy + @beam.energy.FWHM.MeV/2.35*3", 
 
     // ---------------------------------------------- //
-    // ---  geometry part    ::                     ---- //
+    // ---  geometry part        ::                     ---- //
     // ---------------------------------------------- //
 
     // --------------------------- //
     // -- convertor             -- //
     // --------------------------- //
-    "lyr.Lx"                 : "300.0 * @mm",
-    "lyr.Ly"                 : "300.0 * @mm",
-    "lyr.Ti.thick"           : "0.05  * @mm",
-    "lyr.He.thick"           : "14.0  * @mm",
-    "lyr.H2O.thick"          : "1.5   * @mm",
-    "lyr.SUS316.thick"       : "0.5   * @mm",
-    "lyr.Housing.thick"      : "0.1   * @mm",
-    "lyr.airgap1.thick"      : "38.3  * @mm",
-    "lyr.airgap2.thick"      : "0.5   * @mm",
-    "lyr.airgap3.thick"      : "@target.distance + 1.2*@qTube.length",
+    "lyr.Lx"                     : "300.0 * @mm",
+    "lyr.Ly"                     : "300.0 * @mm",
+    "lyr.Ti.thick"               : "0.05  * @mm",
+    "lyr.He.thick"               : "14.0  * @mm",
+    "lyr.H2O.thick"              : "1.5   * @mm",
+    "lyr.SUS316.thick"           : "0.5   * @mm",
+    "lyr.Housing.thick"          : "0.1   * @mm",
+    "lyr.airgap1.thick"          : "38.3  * @mm",
+    "lyr.airgap2.thick"          : "0.5   * @mm",
+    "lyr.airgap3.thick"          : "@target.distance + 1.2*@qTube.length",
     
-    "lyr.xMin"               : "(-0.5) * @lyr.Lx",
-    "lyr.xMax"               : "(+0.5) * @lyr.Lx",
-    "lyr.yMin"               : "(-0.5) * @lyr.Ly",
-    "lyr.yMax"               : "(+0.5) * @lyr.Ly",
-    "lyr.zstart"             : "-1.0*( 2.0*@lyr.Ti.thick + @lyr.He.thick + @lyr.airgap1.thick + 1.0*@lyr.SUS316.thick + 3.0*@converter.thick + 3.0*@lyr.H2O.thick )",
+    "lyr.xMin"                   : "(-0.5) * @lyr.Lx",
+    "lyr.xMax"                   : "(+0.5) * @lyr.Lx",
+    "lyr.yMin"                   : "(-0.5) * @lyr.Ly",
+    "lyr.yMax"                   : "(+0.5) * @lyr.Ly",
+    "lyr.zstart"                 : "-1.0*( 2.0*@lyr.Ti.thick + @lyr.He.thick + @lyr.airgap1.thick + 1.0*@lyr.SUS316.thick + 3.0*@converter.thick + 3.0*@lyr.H2O.thick )",
 
     // -- [01]  Ti   0.05 mm   -- //
     "lyr.01.rpp"             : [ "@lyr.xMin", "@lyr.xMax", "@lyr.yMin", "@lyr.yMax", 
@@ -195,10 +198,10 @@
     // ---------------------------------------------- //
     // ---  Constants  Settings                  ---- //
     // ---------------------------------------------- //    
-    "mm"                     : 0.1,
-    "m2cm"                   : 100.0,
-    "pi"                     : 3.14159265358,
-    "ln2"                    : 0.69314718056,
-    "NAvogadro"              : 6.02e23,
+    "mm"                        : 0.1,
+    "m2cm"                      : 100.0,
+    "pi"                        : 3.14159265358,
+    "ln2"                       : 0.69314718056,
+    "NAvogadro"                 : 6.02e23,
     
 }
