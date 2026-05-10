@@ -465,8 +465,8 @@ def write__results( Data=None, params=None, stdout="minimum" ):
     if ( params["results.jsonFile"] is not None ):
         packed   = { **params, **results }
         with open( params["results.jsonFile"], "w" ) as f:
-            json5.dump( packed, f, indent=4, \
-                        sort_keys=False, separators=(',', ': ') )
+            json.dump( packed, f, indent=4, \
+                       sort_keys=False, separators=(',', ': ') )
     
     
 # ========================================================= #

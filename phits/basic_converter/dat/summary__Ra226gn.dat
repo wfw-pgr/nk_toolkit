@@ -1,0 +1,89 @@
+
+[paramters]
+           results.summaryFile : dat/summary__Ra226gn.dat 
+              results.jsonFile : dat/results__Ra226gn.json 
+             results.yieldFile : dat/dYield_vs_energy__Ra226gn.dat 
+             results.time.unit : d 
+                  target.g/cm3 : 4.9 
+                  target.g/mol : 297.0 
+                target.mass.mg : 398.6429292480906 
+            target.activity.Bq : 11100000000.0 
+               target.halflife : {'value': 50457600000.0, 'unit': 's'} 
+              product.halflife : {'value': 1287360.0, 'unit': 's'} 
+              decayed.halflife : {'value': 855360.0, 'unit': 's'} 
+             target.thick.type : fluence-Bq 
+        target.thick.direct.mm : None 
+              target.area.type : disk 
+        target.area.direct.cm2 : None 
+       target.area.diameter.mm : 10.0 
+               integral.method : simpson 
+           integral.EAxis.mode : linear 
+            integral.EAxis.min : 0.0 
+            integral.EAxis.max : 50.0 
+            integral.EAxis.num : 501 
+          integral.EAxis.given : None 
+               photon.filetype : phits-out 
+               photon.filename : out/fluence-g-energy.dat 
+      photon.bin2point.convert : edge 
+             photon.fit.method : linear 
+                 photon.fit.p0 : None 
+       photon.beam.current.sim : 100.0 
+       photon.beam.current.use : 300.0 
+        photon.beam.duration.h : 120.0 
+             xsection.filename : xs/xs__JENDL5_Ra226gn.dat 
+             xsection.database : JENDL 
+              xsection.fit.Eth : 6.4 
+           xsection.fit.method : linear 
+               xsection.fit.p0 : None 
+                   plot.config : {'figure.pngFile': 'png/dYield_vs_energy.png', 'ax1.x.range': {'auto': False, 'min': 0.0, 'max': 60.0, 'num': 11}, 'ax1.y.range': {'auto': False, 'min': 0.0, 'max': 10.0, 'num': 11}} 
+            plot.xsection.norm : 100.0 
+              plot.photon.norm : 100000000000.0 
+              plot.dYield.norm : 10000000000.0 
+                plot.norm.auto : True 
+             target.lambda.1/s : 1.3737220568555486e-11 
+            product.lambda.1/s : 5.384252893984164e-07 
+            decayed.lambda.1/s : 8.103572537410509e-07 
+               target.area.cm2 : 0.7853981633974483 
+              target.atoms/cm3 : 9.931986531986532e+21 
+             target.tN_product : 9.931986531986532e+21 
+                  target.atoms : 8.080237151762645e+20 
+             target.volume.cm3 : 0.0813556998465491 
+               target.thick.cm : 0.10358529423423073 
+[results]
+
+   -------------------------   [  product   ]   -------------------------   
+
+                     YieldRate :  5.98180374e+10     (atoms/s)
+                     Y_product :  3.22075441e+04     (Bq/s)
+                     A_product :  1.24139945e+10     (Bq)
+                     N_product :  2.30561133e+16     (atoms)
+                 An_product_wt :  2.40282687e-01     (Bq/(mg uA s))
+                 Yn_product_wt :  2.69309882e-01     (Bq/(mg uA s))
+                 An_product_Bq :  8.62945895e-09     (Bq/(Bq uA s))
+                 Yn_product_Bq :  9.67193517e-09     (Bq/(Bq uA s))
+                    N_saturate :  1.11098120e+17     (atoms)
+                    A_saturate :  5.98180374e+10     (Bq)
+
+   -------------------------   [  decayed   ]   -------------------------   
+
+                       t_max_d :  1.74006307e+01     (d)
+                         ratio :  4.45091063e+01     (%)
+                     Y_decayed :  1.43352900e+04     (Bq/s)
+                     A_decayed :  5.52535799e+09     (Bq)
+                     N_decayed :  6.81842232e+15     (atoms)
+                 An_decayed_wt :  1.06947677e-01     (Bq/(mg uA s))
+                 Yn_decayed_wt :  1.19867422e-01     (Bq/(mg uA s))
+                 An_decayed_Bq :  3.84089505e-09     (Bq/(Bq uA s))
+                 Yn_decayed_Bq :  4.30489190e-09     (Bq/(Bq uA s))
+
+   -------------------------   [  saturate  ]   -------------------------   
+
+                    F_saturate :  2.07529284e-01     (a.u.)
+                      lambda_t :  2.32599725e-01     (a.u.)
+                    R_saturate :  8.92216376e+01     (%)
+                    N_saturate :  1.11098120e+17     (atoms)
+                    A_saturate :  5.98180374e+10     (Bq)
+
+   ----------------------------------------------------------------------
+
+
