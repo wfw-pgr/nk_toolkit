@@ -232,7 +232,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         ds     = params["translate.cavity.length"]
         freq   = params["beam.freq.Hz"] * params["beam.harmonics"]
         escale = element["volt"] / ds / Em0
-        phase  = phase_df["phi_c"].loc[ element["name"] ]
+        phase  = phase_df["phi_c"].loc[ element["name"] ]  # <= use "delay from global phase"
         ret    = { "type":element["type"], "name":element["name"], "ds":ds, "escale":escale, \
                    "freq":freq, "phase":phase, \
                    "aperture_x":element["aperture_x"], "aperture_y":element["aperture_y"] } 
@@ -246,8 +246,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         Em0    = params["beam.mass.amu"] * amu
         V      = element["volt"] / Em0
         freq   = params["beam.freq.Hz"] * params["beam.harmonics"]
-        # phase  = params["translate.cavity.phase"]
-        phase  = phase_df["phi_c"].loc[ element["name"] ]
+        phase  = params["translate.cavity.phase"]           # <= correct!! use "tobe" phase.
+        # phase  = phase_df["phi_c"].loc[ element["name"] ] # <= [Incorrect!!]  for shortRF
         ret    = { "type":"shortrf", "name":element["name"], "V":V, "freq":freq, "phase":phase } 
         return( ret )
 

@@ -41,7 +41,7 @@ def get__postprocessed( recoFile=None, statFile=None, refpFile=None,
         stat_, stat = stat_.set_index("step"), stat.set_index("step")
         common_idx  = stat_.index.intersection( stat.index )
         stat_.loc[ common_idx, cols ] = stat.loc[ common_idx, cols ]
-        stat        = stat_
+        stat        = stat_.reset_index()
         
     if ( correlation ):
         corr = calc__correlations( bpmsFile=bpmsFile )
