@@ -206,7 +206,7 @@ def compare__impactx_vs_trackv38( trackFile  ="dat/beam.dat", \
     # --- longitudinal coordinate conversion        --- #
     # ------------------------------------------------- #
     clight    = 2.99792458e8
-    freqb_Hz  = plot_conf["compare"]["settings"]["beam.freq.rf.Hz"]
+    freqb_Hz  = plot_conf["compare"]["settings"]["beam.freq.Hz"]
     m_per_deg = clight / ( 360.0 * freqb_Hz )      # ct = c * phi / (360*f)
 
     tr["mean_t"]  = df_trackv38["Zc[deg]"]       * m_per_deg
@@ -232,8 +232,29 @@ def compare__impactx_vs_trackv38( trackFile  ="dat/beam.dat", \
     tr["sigma_dW_W"] = 0.01 * df_trackv38["phi_rms[deg]"] / df_trackv38["b_z[deg/(%ofD_W/W)]"] * np.sqrt( 1.0 + df_trackv38["a_z"]**2 )
     tr["sigma_pt"] = gamma / ( gamma + 1.0 ) * tr["sigma_dW_W"]
     im["sigma_pt"] = df_impactx["sigma_pt"]
-    
 
+
+    # ------------------------------------------------- #
+    # --- sanity check  at begining                 --- #
+    # ------------------------------------------------- #
+    i   = 0
+    fac = clight / ( 360.0*freqb_Hz )
+    print( "[ t-direction sanity check at begining ]" )
+    print( "TRACK phi_rms[deg]  =", df_trackv38["phi_rms[deg]"].iloc[i]     )
+    print( "TRACK sigma_t [m]   =", df_trackv38["phi_rms[deg]"].iloc[i]*fac )
+    print( "ImpactX sigma_t [m] =", df_impactx["sigma_t"].iloc[i]           )
+    print( "ratio TRACK/ImpactX =", df_trackv38["phi_rms[deg]"].iloc[i] \
+           * fac/df_impactx["sigma_t"].iloc[i] )
+    print()
+    print( "TRACK phi_max[deg]  =", df_trackv38["phi_max[deg]"].iloc[i] )
+    print( "TRACK tmax [m]      =", df_trackv38["phi_max[deg]"].iloc[i] * fac )
+    im_tmax0 = max( abs( df_impactx["min_t"].iloc[i] - df_impactx["mean_t"].iloc[i] ),
+                    abs( df_impactx["max_t"].iloc[i] - df_impactx["mean_t"].iloc[i] ), )
+    print( "ImpactX tmax [m]    =", im_tmax0 )
+    print( "ratio TRACK/ImpactX =", df_trackv38["phi_max[deg]"].iloc[i] * fac / im_tmax0 )
+    print()
+    ## -- end -- #
+    
     df = pd.concat( [ tr.add_prefix( "tr__" ), im.add_prefix( "im__" ) ], axis=1 )
 
     # ------------------------------------------------- #

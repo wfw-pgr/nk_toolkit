@@ -182,9 +182,9 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         df[["volt","phase","ds"]] = df[["volt","phase","ds"]].fillna(0.0)
         df.loc[mask,"ds"] = params["translate.cavity.length"]
         egain       = ( df["volt"] * np.cos( df["phase"] /180.0*np.pi ) ).fillna(0)
-        Ek_in       = np.concatenate( ([0.0], np.cumsum(egain)[:-1]) ) + Ek0
-        Ek_out      = np.cumsum( egain ) + Ek0
-        df["Ek"]    = 0.5*( Ek_in + Ek_out )
+        df["Ek_i"]  = np.concatenate( ([0.0], np.cumsum(egain)[:-1]) ) + Ek0
+        df["Ek_o"]  = np.cumsum( egain ) + Ek0
+        df["Ek"]    = 0.5*( df["Ek_i"] + df["Ek_o"] )
         df["gamma"] = 1.0 + df["Ek"]/Em0
         df["beta"]  = np.sqrt( 1.0 - 1.0/df["gamma"]**2 )
         Em0_GeV     = Em0 * 1e6 / 1e9   # MeV -> GeV 
@@ -297,19 +297,34 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             # ------------------------------------------------- #
             # --- [0-5-3] r-matrix                          --- #
             # ------------------------------------------------- #            
-            #  -- my notation ( for [T, PT] ) --  #
+            #  -- validated ver. -- #
+            #   - reduced component to avoid duplication with shortRF - #
             rmat_     = np.zeros( (7,7) )
             rmat_[1,1] =   1.0
-            rmat_[2,2] = bg_i / bg_f
+            rmat_[2,2] =   1.0
             rmat_[3,3] =   1.0
-            rmat_[4,4] = bg_i / bg_f
+            rmat_[4,4] =   1.0
             rmat_[5,5] =   1.0
-            rmat_[6,6] = gamma_i / gamma_f    #  PT = dE/(p0 c)  !=  dp/p0
+            rmat_[6,6] =   1.0    #  PT = dE/(p0 c)  !=  dp/p0
             rmat_[2,1] = kx / bg_f
             rmat_[4,3] = ky / bg_f
-            rmat_[6,5] = kz / ( gamma_f ) # -1 for impactx
-            # kick6     = dW / p0c
-            rmat       = ( np.copy( rmat_[1:,1:] ) ).tolist()    # list for json5 dump
+            rmat_[6,5] =   0.0
+            rmat       = ( np.copy( rmat_[1:,1:] ) ).tolist()  # list for json5 dump
+            
+            #  -- original ver. ( all-component ) ( for [T, PT] ) --  #
+            # rmat_     = np.zeros( (7,7) )
+            # rmat_[1,1] =   1.0
+            # rmat_[2,2] = bg_i / bg_f
+            # rmat_[3,3] =   1.0
+            # rmat_[4,4] = bg_i / bg_f
+            # rmat_[5,5] =   1.0
+            # rmat_[6,6] = gamma_i / gamma_f    #  PT = dE/(p0 c)  !=  dp/p0
+            # rmat_[2,1] = kx / bg_f
+            # rmat_[4,3] = ky / bg_f
+            # rmat_[6,5] = (-1.0) * kz / ( gamma_f ) # -1 for impactx
+            # # rmat_[6,5] = kz / ( gamma_f ) # -1 for impactx
+            # # kick6     = dW / p0c
+            # rmat       = ( np.copy( rmat_[1:,1:] ) ).tolist()    # list for json5 dump
             
             # ------------------------------------------------- #
             # --- [0-5-4] return                            --- #
@@ -322,7 +337,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         name   = element["name"].replace( "rf", "gap" )
         Vg     = element["volt"]
         phi    = phase_df["phi_t"].loc[ element["name"] ]
-        Ek     = phase_df["Ek"].loc[ element["name"] ]
+        Ek     = phase_df["Ek_i"].loc[ element["name"] ]
         mass   = params["beam.mass.amu"] * amu
         charge = params["beam.charge.qe"]
         freq   = params["beam.freq.Hz"]  * params["beam.harmonics"]
@@ -360,9 +375,9 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
     elements_ = {}
     for key in elements.keys():
         if   ( elements[key]["type"].lower() in [ "rfcavity" ] ):
-            if   ( params["translate.cavity.type"] in ["rfcavity"] ):
+            if   ( params["translate.cavity.type"].lower() in ["rfcavity"] ):
                 ret            = convert__rfcavity( elements[key], params, phase_df )
-            elif ( params["translate.cavity.type"] in ["shortrf" ] ):
+            elif ( params["translate.cavity.type"].lower() in ["shortrf" ] ):
                 ret            = convert__shortrf ( elements[key], params, phase_df )
             elements_[key] = { **ret, **params["translate.cavity.options" ] }
             if   ( params["translate.cavity.rfgap"] ):
@@ -475,7 +490,85 @@ def adjust__QmagnetStrength( factor =1.0 , elements=None, \
             json5.dump( elements, f, indent=4 )
             print( "[adjust__driftlength] output :: {}".format( outFile ) )
     return( elements )
+
+
+
+
+# ========================================================= #
+# ===  Trackv38's track.dat => parameters.json          === #
+# ========================================================= #
+def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
+                                  namelists=None, ):
+
+    # # ========================================================= #
+    # # ===  calc twiss parameter from track.dat              === #
+    # # ========================================================= #
+    # @invoke.task()
+    # def calctwiss( ctx, trackFile="track/track.dat" ):
+    #     """calculate twiss parameter for impactx from track.dat"""
+    #     ret = ctk.calculate__twissFromTrackv38( trackFile=trackFile, )
+    #     print( ret )
+    #     return( ret )
+
     
+    import f90nml
+    if ( trackFile is not None ):
+        namelists = f90nml.read( trackFile )
+        namelists = namelists.get( "tran", {} )
+    if ( namelists is None ):
+        namelists = {
+            "Win"      :5.0e6    ,
+            "freqb"    :36.5e6   ,
+            "amass"    :2.0      ,
+            "epsnx"    :20.0     ,
+            "alfax"    :0.173982 ,
+            "betax"    :535.875  ,
+            "epsny"    :20.0     ,
+            "alfay"    :0.115839 ,
+            "betay"    :113.997  ,
+            "epsnz"    :5.5      ,
+            "alfaz"    :0.0      ,
+            "betaz"    :10.0     ,
+        }
+    cv    = 299792458.0
+    amu   = 931.4941024e6
+    cm    = 1.0e-2
+    cm2mm = 10.0
+
+    # ------------------------------------------------- #
+    # --- [1] calculation                           --- #
+    # ------------------------------------------------- #
+    # -- relativistic gamma, beta                   --  #
+    gamma = 1.0 + namelists["Win"] / ( amu )
+    beta  = np.sqrt( 1.0 - 1.0 / gamma**2 )
+
+    # -- TRACKv38: Normalized full [pi cm mrad] -> geometric rms [mm mrad]  -- #
+    emitx = namelists["epsnx"] / ( beta * gamma ) * full2rms * cm2mm
+    emity = namelists["epsny"] / ( beta * gamma ) * full2rms * cm2mm
+
+    # -- TRACK beta_x, beta_y: [cm/rad] -> [m/rad]  --  #
+    betax = namelists["betax"] * cm
+    betay = namelists["betay"] * cm
+
+    # -- z: phi[deg] -> t=-c dt [m], dW/W -> pt=dE/(p0 c)
+    kt    = cv / ( 360.0 * namelists["freqb"] )
+    kpt   = ( gamma - 1.0 ) / ( beta*gamma ) * 1.0e-2
+
+    betat = abs( kt / kpt ) *   namelists["betaz"]
+    emitt = abs( kt * kpt ) * ( namelists["epsnz"]*full2rms ) * 1.0e6
+    
+    alfax = namelists["alfax"]
+    alfay = namelists["alfay"]
+    alfaz = namelists["alfaz"]
+    print( f'"beam.twiss.alpha"    : [{alfax:.8g}, {alfay:.8g}, {alfaz:.8g}],')
+    print( f'"beam.twiss.beta"     : [{betax:.8g}, {betay:.8g}, {betat:.8g}],')
+    print( f'"beam.emittance.geom" : [{emitx:.8g}, {emity:.8g}, {emitt:.8g}],')
+    ret   = { "alphax": alfax, "alphay": alfay, "alphaz": alfaz,
+              "betax" : betax, "betay" : betay, "betat" : betat,
+              "emitx" : emitx, "emity" : emity, "emitt" : emitt, }
+    return( ret )
+
+
 
 
 # ========================================================= #

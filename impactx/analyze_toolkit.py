@@ -471,7 +471,7 @@ def calc__correlations( bpmsFile=None ) -> pd.DataFrame:
                        "px-py":px_py, "px-pt":px_pt, 
                        "py-pt":py_pt, 
                       }
-    stack.append( row )
+            stack.append( row )
     ret = pd.DataFrame( stack )
     return( ret )
     

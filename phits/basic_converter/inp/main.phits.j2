@@ -26,11 +26,12 @@ input file for radiation shieldings.
   file(7)   = {{prm["sim.phits_xsdir"]}}     $$ directory path of xsdir
   maxcas    = {{prm["sim.nCascade"]}}        $$ #.of particles
   maxbch    = {{prm["sim.nBatch"]}}          $$ #.of batches
-  emin(12)  = 0.1                            $$ cut-off energy of electron to be transported. (MeV)
+  emin(12)  = 1.e-1                          $$ cut-off energy of electron to be transported. (MeV)
                                              $$   ( if negs=1 ) Default :: 0.1 = 100keV
                                              $$   ( if negs=0 ) Default :: 1e9 :: No e- transport
                                              $$ if emin(12) is set, the value is prioritized.
-  emin(13)  = 0.1                            $$ cut-off energy of electron to be transported.
+  emin(13)  = 1.e-1                          $$ cut-off energy of positron to be transported.
+  emin(14)  = 1.e-3                          $$ cut-off energy of photon to be transported.
   negs      = 1                              $$ transport of photon (+1/-1), electron(+1), off(0)
   ipnint    = 1                              $$ p-n interaction ( 0:Off, 1:On, 2:w/ NRF(Full) )
   iprofr    = 0                              $$ error - handling ( exceeding desk device )

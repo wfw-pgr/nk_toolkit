@@ -206,7 +206,7 @@
 
     "compare" : {
         "settings" : {
-            "beam.freq.rf.Hz"    : 146.0e6, 
+            "beam.freq.Hz"    : 146.0e6, 
         },
         
         "default" : {
