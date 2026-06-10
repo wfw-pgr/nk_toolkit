@@ -17,9 +17,9 @@ def acquire__irradiatedAmount( A0=0.0, tH_A=None, Y0=0.0, t0=0.0, t1=0.0, unit=N
     # ------------------------------------------------- #
     # --- [1] Arguments                             --- #
     # ------------------------------------------------- #
-    if ( tH_A is None ): sys.exit( "[acquire__irradiatedAmount] tH_A is None")
-    if ( t1   <  t0   ): sys.exit( "[acquire__irradiatedAmount] t1   <= t0 " )
-    if ( unit is None ): sys.exit( "[acquire__irradiatedAmount] unit is not designated...." )
+    if ( tH_A is None ): raise TypeError ( " tH_A is None" )
+    if ( t1   <  t0   ): raise ValueError( " t1   <= t0 "  )
+    if ( unit is None ): raise ValueError( " unit is not designated...." )
 
     ld_A = convert__tHalf2lambda( tH=tH_A[time_], unit=tH_A[unit_] )
     conv = exchange__timeUnit   ( time=1., unit=unit, direction="convert" )
@@ -27,6 +27,11 @@ def acquire__irradiatedAmount( A0=0.0, tH_A=None, Y0=0.0, t0=0.0, t1=0.0, unit=N
     # ------------------------------------------------- #
     # --- [2] calculate time evolution              --- #
     # ------------------------------------------------- #
+    if ( ld_A is None ):
+        func = lambda t: A0 + Y0 * conv * (t - t0)
+        return( func(t1), func )
+
+    
     func = lambda t: A0*np.exp( -ld_A*conv*(t-t0) ) \
         + (Y0/ld_A)*( 1.0-np.exp( -ld_A*conv*(t-t0) ) )
     Arad = func( t1 )
@@ -39,7 +44,7 @@ def acquire__irradiatedAmount( A0=0.0, tH_A=None, Y0=0.0, t0=0.0, t1=0.0, unit=N
 # -- calculate amount of [B], daughter nuclei            -- #
 
 def acquire__decayedAmount( A0=0.0, B0=0.0, tH_A=None, tH_B=None, Y0=0.0, \
-                            t0=0.0, t1=0.0, unit=None ):
+                            t0=0.0, t1=0.0, unit=None, silent=False ):
 
     # ------------------------------------------------- #
     # --- [1] Arguments                             --- #
@@ -103,6 +108,22 @@ def convert__tHalf2lambda( tH=0.0, unit=None, silent=True ):
 
 
 # ========================================================= #
+# ===  get__tHalf ( including nulls )                   === #
+# ========================================================= #
+def get__tHalf(settings=None, key=None):
+    val = settings.get( key, None )
+
+    if ( val is None ): 
+        return( [ None, None ] )
+    
+    if ( isinstance( val, list ) ):
+        if val[0] is None:
+            return [ None, None ]
+        return val
+    raise ValueError(f"{key} must be [value, unit] or null")
+
+
+# ========================================================= #
 # ===  acquire__timeSeries                              === #
 # ========================================================= #
 
@@ -124,9 +145,9 @@ def acquire__timeSeries( settingsFile=None ):
     # ------------------------------------------------- #
     A0_loc     = settings["A0.init"]
     B0_loc     = settings["B0.init"]
-    tH_A       = settings["tHalf.A"]
-    tH_B       = settings["tHalf.B"]
     tunit      = settings["series.time.unit"]
+    tH_A       = get__tHalf( settings=settings, key="tHalf.A" )
+    tH_B       = get__tHalf( settings=settings, key="tHalf.B" )
     ld_A       = convert__tHalf2lambda( tH=tH_A[time_], unit=tH_A[unit_] )
     ld_B       = convert__tHalf2lambda( tH=tH_B[time_], unit=tH_B[unit_] )
     
@@ -150,10 +171,30 @@ def acquire__timeSeries( settingsFile=None ):
     if ( Ytype in [ "y_decayed", "yn_decayed_wt", "yn_decayed_bq" ] ):
         Y0 = Y0 / ( settings["Y.ratio.B/A"] )
 
+    # -- load mode -- #
+    if ( Ytype in [ "load--yn_product_bq", "load--yn_product_wt" ] ):
+        if ( isinstance( settings["Y.efficiency.value"], str ) ):
+            with open( settings["Y.efficiency.value"], "r") as f:
+                dload = json5.load(f)
+            if ( Ytype in [ "load--yn_product_bq" ] ):
+                Y0    = dload.get( "Yn_product_Bq", None )
+                if ( Y0 is None ): raise KeyError( "Yn_product_Bq is not found in loaded json." )
+                Y0    = Y0 * settings["Y.normalize.uA"] * settings["Y.normalize.Bq"]
+                tgtO  = settings["Y.normalize.Bq"]
+            if ( Ytype in [ "load--yn_product_wt" ] ):
+                Y0    = dload.get( "Yn_product_wt", None )
+                if ( Y0 is None ): raise KeyError( "Yn_product_wt is not found in loaded json." )
+                Y0    = Y0 * settings["Y.normalize.uA"] * settings["Y.normalize.mg"]
+                tgtO  = settings["Y.normalize.mg"]
+
     # -- if not YieldRate (atoms/s), then ( Bq/s )  =>   ( atoms/s )    -- #
-    if ( Ytype in [ "y_product", "yn_product_wt", "yn_product_bq",
-                    "y_decayed", "yn_decayed_wt", "yn_decayed_bq" ] ):
+    if ( Ytype in [ "y_product", "yn_product_wt", "yn_product_bq", "load--yn_product_bq", 
+                    "y_decayed", "yn_decayed_wt", "yn_decayed_bq", "load--yn_product_wt", ] ):
+        if ( ld_A is None ):
+            raise ValueError( "ld_A is None. Bq-based yield cannot be converted to atoms/s. Use YieldRate.")
         Y0 = Y0 / ( ld_A )
+
+
 
     # ------------------------------------------------- #
     # --- [4] integrate atoms                       --- #
@@ -219,11 +260,11 @@ def acquire__timeSeries( settingsFile=None ):
         # ------------------------------------------------- #
         # --- [4-4] update [B]                          --- #
         # ------------------------------------------------- #
-        if ( settings["tHalf.B"][0] is not None ):
+        if ld_B is not None:
             B0_loc_, func_B = acquire__decayedAmount( A0=A0_loc, B0=B0_loc, tH_A=tH_A, tH_B=tH_B,\
                                                       unit=tunit, Y0=Y0h, t0=t0h, t1=t1h )
         else:
-            B0_loc_, func_B = A0_loc_*0.0, None
+            B0_loc_, func_B = A0_loc_*0.0, lambda t:np.zeros_like( t )
             
         # ------------------------------------------------- #
         # --- [4-5] separation ( [B] -> 0.0 )           --- #
@@ -258,7 +299,8 @@ def acquire__timeSeries( settingsFile=None ):
         # ------------------------------------------------- #
         t_loc          = np.linspace( t0h, t1h, sched["nPoints"] )
         Anum, Bnum     = func_A( t_loc ), func_B( t_loc )
-        Aact, Bact     = ld_A*Anum, ld_B*Bnum
+        Aact           = ld_A * Anum if ld_A is not None else np.zeros_like( Anum )
+        Bact           = ld_B * Bnum if ld_B is not None else np.zeros_like( Bnum )
         if   ( sched["separation.timing"].lower() == "beginning" ):
             Bcum       = np.repeat(       obtained, sched["nPoints"] )
         elif ( sched["separation.timing"].lower() == "end" ):

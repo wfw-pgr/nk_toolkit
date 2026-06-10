@@ -542,24 +542,25 @@ def calculate__parameters( params=None ):
     # --- [4] thickness x atom density              --- #
     # ------------------------------------------------- #
     params["target.atoms/cm3"] = N_Avogadro*( params["target.g/cm3"] / params["target.g/mol"] )
+    effectiveAtoms_density     = params["target.atoms/cm3"] * params.get( "target.fraction", 1.0 )
     if   ( params["target.thick.type"].lower() == "bq" ): 
         params["target.atoms"]      = params["target.activity.Bq"] / params["target.lambda.1/s"]
         params["target.volume.cm3"] = params["target.atoms"]       / params["target.atoms/cm3"]
         params["target.thick.cm"]   = params["target.volume.cm3"]  / params["target.area.cm2"]
-        params["target.tN_product"] = params["target.atoms/cm3"]   * params["target.thick.cm"]
+        params["target.tN_product"] = effectiveAtoms_density       * params["target.thick.cm"]
         # -- just ref. -- #
         params["target.mass.mg"]    = params["target.g/cm3"] * params["target.volume.cm3"] * g2mg
         
     elif ( params["target.thick.type"].lower() == "direct" ):
         params["target.thick.cm"]   = params["target.thick.direct.mm"] * mm2cm
-        params["target.tN_product"] = params["target.atoms/cm3"]   * params["target.thick.cm"]
+        params["target.tN_product"] = effectiveAtoms_density   * params["target.thick.cm"]
         # -- just ref. -- #
         params["target.volume.cm3"] = params["target.thick.cm"]    * params["target.area.cm2"]
         params["target.atoms"]      = params["target.atoms/cm3"]   * params["target.volume.cm3"]
         params["target.mass.mg"]    = params["target.g/cm3"] * params["target.volume.cm3"] * g2mg
         
     elif ( params["target.thick.type"].lower() == "fluence-bq" ):
-        params["target.tN_product"] = params["target.atoms/cm3"]
+        params["target.tN_product"] = effectiveAtoms_density
         # -- just ref. -- #
         params["target.atoms"]      = params["target.activity.Bq"] / params["target.lambda.1/s"]
         params["target.volume.cm3"] = params["target.atoms"]       / params["target.atoms/cm3"]
@@ -567,7 +568,7 @@ def calculate__parameters( params=None ):
         params["target.mass.mg"]    = params["target.g/cm3"] * params["target.volume.cm3"] * g2mg
         
     elif ( params["target.thick.type"].lower() == "fluence-mass" ):
-        params["target.tN_product"] = params["target.atoms/cm3"]
+        params["target.tN_product"] = effectiveAtoms_density
         # -- just ref. -- #
         params["target.volume.cm3"] = ( params["target.mass.mg"]*mg2g ) / params["target.g/cm3"]
         params["target.thick.cm"]   = params["target.volume.cm3"]  / (params["target.area.cm2"])
@@ -578,9 +579,9 @@ def calculate__parameters( params=None ):
         # vol in phits's tally must be "V=1", or, flux will be devided by Volume V.
         #
     else:
-        print( "[integrate__RIprodReaction.py] target.thick.type == {} ?? [ERROR] "\
+        print()
+        raise TypeError( "[integrate__RIprodReaction.py] target.thick.type == {} ?? [ERROR] "\
                .format( params["target.thick.type"]  ) )
-        sys.exit()
     # ------------------------------------------------- #
     # --- [5] return                                --- #
     # ------------------------------------------------- #

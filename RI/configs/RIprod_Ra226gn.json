@@ -15,6 +15,7 @@
     /* ------------------------------------------------------------------- */
     "target.g/cm3"                 :     4.9,                         // Ra
     "target.g/mol"                 :   297.0,                         // RaCl2
+    "target.fraction"              :     1.0,                         // 1.0 for 100 %
     "target.mass.mg"               :    null,                         // (mg)
     "target.activity.Bq"           :  11.1e9,                         // (Bq)
     "target.halflife"              : { "value":  1600, "unit":"y" },  // (Ra-226)

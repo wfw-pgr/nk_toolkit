@@ -8,8 +8,8 @@
     "sim.istdev"                 :     2,    // ( 0:optimal  , 1:batch-stddev, 2:history-stddev )
                                          // ( +:New, -:Continue )
     "sim.parallel.type"          : "MPI",    // "MPI" / "OMP"
-    "sim.parallel.nProc"         :    15,
-    "sim.nParticle"              : 1.5e5,    // preferably  nProc * xxx
+    "sim.parallel.nProc"         :     5,
+    "sim.nParticle"              : 5.0e5,    // preferably  nProc * xxx
     "sim.nBatch"                 : "@sim.parallel.nProc*50",
     "sim.nCascade"               : "@sim.nParticle/@sim.nBatch",
     "sim.phits_output"           : "out/phits.out",
@@ -23,6 +23,9 @@
     // "sim.phits_directory"     : "/common1/hpclocal/PHITS/phits321/phits/",
     // "sim.phits_xsdir"         : "/home/users/70727338/Lib80x/xsdir.jnd",
 
+    // ---      nec          --- //  
+    // "sim.phits_directory"        : "/mnt/c/opt/phits328A/phits/",
+    // "sim.phits_xsdir"            : "/mnt/c/opt/phits328A/phits/data/xsdir.jnd",
 
     
     // ---------------------------------------------- //

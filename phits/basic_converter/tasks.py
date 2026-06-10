@@ -163,7 +163,7 @@ def post( ctx, factor=1.0, phits_mesh=False ):
     # ------------------------------------------------- #
     command1 = "for f in `ls out/*.eps`; do gs -dSAFER -dEPSCrop "\
         "-sDEVICE=pdfwrite -o ${f%.eps}_%d.pdf ${f};done"
-    command2 = "mogrify -background white -alpha off -density 400 "\
+    command2 = "magick mogrify -background white -alpha off -density 400 "\
         "-resize 50%x50% -path png -format png out/*.pdf"
     subprocess.run( command1, shell=True )
     subprocess.run( command2, shell=True )
