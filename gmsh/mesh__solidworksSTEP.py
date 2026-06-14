@@ -10,7 +10,7 @@ import nk_toolkit.phits.materials__fromJSON as mfj
 
 def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
                           mshFile="msh/model.msh", bdfFile="msh/model.bdf", phits_mesh=False, \
-                          matFile="dat/materials.json", \
+                          matFile="dat/materials.json", duplicates="", \
                           materialPhitsFile="inp/materials.phits.j2", scale_unit="mm" ):
 
     # ------------------------------------------------- #
@@ -58,21 +58,32 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
 
     dimtags = gmsh.model.occ.importShapes( stpFile )
     gmsh.model.occ.synchronize()
-    names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
-    gmsh.model.occ.removeAllDuplicates()
-    gmsh.model.occ.synchronize()
 
     if ( scale_unit != 1.0 ):
         all_ents = gmsh.model.getEntities( dim=3 )
         gmsh.model.occ.dilate( all_ents, 0,0,0, scale_unit,scale_unit,scale_unit  )
         gmsh.model.occ.synchronize()
-    dimtags = gmsh.model.getEntities( dim=3 )
-    names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
         
-    numDict = { name:[] for name in names }
-    for name,dimtag in zip( names, dimtags ):
-        numDict[name]  += [ dimtag ]
-    entities = { name:[ dimtag[1] for dimtag in numDict[name] ] for name in names }
+    # names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
+    # gmsh.model.occ.removeAllDuplicates()
+    # gmsh.model.occ.synchronize()
+    
+    if   ( duplicates in [ "cut-newer" ] ):
+        names, numDict, entities = cut__duplicatedObjects( config=config, dimtags=dimtags, priority="newer" )
+    elif ( duplicates in [ "cut-older" ] ):
+        names, numDict, entities = cut__duplicatedObjects( config=config, dimtags=dimtags, priority="older" )
+    else:
+        names, numDict, entities = collect__entitiesByName()
+        gmsh.model.occ.removeAllDuplicates()
+        gmsh.model.occ.synchronize()
+        
+    # dimtags = gmsh.model.getEntities( dim=3 )
+    # names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
+        
+    # numDict = { name:[] for name in names }
+    # for name,dimtag in zip( names, dimtags ):
+    #     numDict[name]  += [ dimtag ]
+    # entities = { name:[ dimtag[1] for dimtag in numDict[name] ] for name in names }
 
     print( "\n ================    Import    ================" )
     for key,dimtags in numDict.items():
@@ -131,6 +142,130 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
         matKeys        = [ matKeys[ ik-1 ] for ik in physNums_order ]
         mfj.materials__fromJSON( matFile=matFile, outFile=materialPhitsFile, \
                                  keys=matKeys, tetra_auto_mat=True )
+
+
+# ========================================================= #
+# ===  get entity name                                  === #
+# ========================================================= #
+def get__entityName( dimtag ):
+    dim, tag = dimtag
+    name     = gmsh.model.getEntityName( dim, tag )
+    name     = name.split("/")[-1]
+    if ( name == "" ):
+        name = "volume_{}".format( tag )
+    return( name )
+
+
+# ========================================================= #
+# ===  collect entities by name                         === #
+# ========================================================= #
+def collect__entitiesByName( dimtags=None ):
+    if ( dimtags is None ):
+        dimtags = gmsh.model.getEntities( dim=3 )
+    dimtags = [ dimtag for dimtag in dimtags if dimtag[0] == 3 ]
+
+    numDict = {}
+    for dimtag in dimtags:
+        name = get__entityName( dimtag )
+        if ( not( name in numDict ) ):
+            numDict[name] = []
+        numDict[name] += [ dimtag ]
+
+    names    = list( numDict.keys() )
+    entities = { name:[ dimtag[1] for dimtag in numDict[name] ] for name in names }
+
+    return( names, numDict, entities )
+
+
+# ========================================================= #
+# ===  cleanup verySmallVolumes                         === #
+# ========================================================= #
+def cleanup__verySmallVolumes( dimtags, volume_tol=0.0 ):
+    """
+    - 微小体積の要素を削除
+    1. try で体積計算に失敗 => 無効な dimtag  => 削除
+    2. volume_tol 以下 => 微小体積として無視 (1e-10以下など)
+    """
+    ret = []
+    for dim, tag in dimtags:
+        if ( dim != 3 ):
+            continue
+        try:
+            vol = gmsh.model.occ.getMass( dim, tag )
+        except Exception:
+            continue
+        if ( vol > volume_tol ):
+            ret += [ ( dim, tag ) ]
+    return ret
+
+
+# ========================================================= #
+# ===  cut duplicated objects                           === #
+# ========================================================= #
+def cut__duplicatedObjects( config=None, dimtags=None, volume_tol=0.0, priority="newer" ):
+    
+    # ------------------------------------------------- #
+    # --- [1] arguments check                       --- #
+    # ------------------------------------------------- #
+    if ( config is None ):
+        raise ValueError( "[cut__duplicatedObjects] config is None." )
+
+    # ------------------------------------------------- #
+    # --- [2] preparation                           --- #
+    # ------------------------------------------------- #
+    gmsh.model.occ.synchronize()
+    names0, numDict0, entities0 = collect__entitiesByName( dimtags=dimtags )
+
+    # mesh.json に書かれている順序を優先順位として使う
+    if   ( priority == "newer" ):
+        orderedNames = [ key for key in config.keys() if key in numDict0 ][::-1]
+    elif ( priority == "older" ):
+        orderedNames = [ key for key in config.keys() if key in numDict0 ]
+    else:
+        raise ValueError( "[make__solidworksSTEP.py] priority == {} ??".format( priority ) )
+        
+    # STEP にはあるが mesh.json にないもの
+    unusedNames  = [ key for key in names0 if not( key in orderedNames ) ]
+    if ( len( unusedNames ) > 0 ):
+        print( "[cut__duplicatedObjects] warning :: imported but not in config" )
+        for key in unusedNames:
+            print( "   - {}".format( key ) )
+
+
+    # ------------------------------------------------- #
+    # --- [3] loop                                  --- #
+    # ------------------------------------------------- #
+    tools   = []
+    newDict = {}
+    for name in orderedNames:
+        objects = cleanup__verySmallVolumes( numDict0[name], volume_tol=volume_tol )
+
+        if ( len( objects ) == 0 ):
+            print( "[cut__duplicatedObjects] skip empty object :: {}".format( name ) )
+            continue
+        if ( len( tools ) > 0 ):
+            outDimTags, outMap = gmsh.model.occ.cut( objects, tools, \
+                                                     removeObject=True, removeTool=False )
+            gmsh.model.occ.synchronize()
+            objects = cleanup__verySmallVolumes( outDimTags, volume_tol=volume_tol )
+
+        # Boolean 後の tag に部品名を再付与
+        for dim, tag in objects:
+            gmsh.model.setEntityName( dim, tag, name )
+        newDict[name] = objects
+
+        # 以降の part を削る tool として登録
+        tools += objects
+
+    # ------------------------------------------------- #
+    # --- [4] return                                --- #
+    # ------------------------------------------------- #
+    gmsh.model.occ.synchronize()
+    names    = list( newDict.keys() )
+    entities = { name:[ dimtag[1] for dimtag in newDict[name] ] for name in names }
+
+    return( names, newDict, entities )
+
 
         
 # ========================================================= #
