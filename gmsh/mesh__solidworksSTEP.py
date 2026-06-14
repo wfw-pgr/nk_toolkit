@@ -74,8 +74,8 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
         names, numDict, entities = cut__duplicatedObjects( config=config, dimtags=dimtags, priority="older" )
     else:
         names, numDict, entities = collect__entitiesByName()
-        gmsh.model.occ.removeAllDuplicates()
-        gmsh.model.occ.synchronize()
+    gmsh.model.occ.removeAllDuplicates()
+    gmsh.model.occ.synchronize()
         
     # dimtags = gmsh.model.getEntities( dim=3 )
     # names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
