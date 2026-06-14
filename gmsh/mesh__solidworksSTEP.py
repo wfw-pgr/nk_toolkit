@@ -74,17 +74,11 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
         names, numDict, entities = cut__duplicatedObjects( config=config, dimtags=dimtags, priority="older" )
     else:
         names, numDict, entities = collect__entitiesByName()
-    gmsh.model.occ.removeAllDuplicates()
-    gmsh.model.occ.synchronize()
+        gmsh.model.occ.removeAllDuplicates()
+        gmsh.model.occ.synchronize()
+    # gmsh.model.occ.removeAllDuplicates()
+    # gmsh.model.occ.synchronize()
         
-    # dimtags = gmsh.model.getEntities( dim=3 )
-    # names   = [ (gmsh.model.getEntityName( dim,tag ) ).split("/")[-1] for dim,tag in dimtags ]
-        
-    # numDict = { name:[] for name in names }
-    # for name,dimtag in zip( names, dimtags ):
-    #     numDict[name]  += [ dimtag ]
-    # entities = { name:[ dimtag[1] for dimtag in numDict[name] ] for name in names }
-
     print( "\n ================    Import    ================" )
     for key,dimtags in numDict.items():
         print( "   * {0} :: {1}".format( key, dimtags ) )
