@@ -39,11 +39,12 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
     gmsh.initialize()
     gmsh.option.setNumber( "General.Terminal"         , 1    )
     gmsh.option.setNumber( "Mesh.Algorithm"           , 6    )
-    gmsh.option.setNumber( "Mesh.Algorithm3D"         , 1   )
+    gmsh.option.setNumber( "Mesh.Algorithm3D"         , 1    )
     gmsh.option.setNumber( "Mesh.Optimize"            , 1    )
     gmsh.option.setNumber( "Mesh.OptimizeNetgen"      , 1    )
     gmsh.option.setNumber( "Mesh.Smoothing"           , 3    )
     gmsh.option.setNumber( "Geometry.OCCImportLabels" , 1    )
+    gmsh.option.setNumber( "Geometry.OCCBooleanPreserveNumbering", 1 )
     for key in options.keys():
         gmsh.option.setNumber( key, options[key] )
     gmsh.model.add( "model" )
