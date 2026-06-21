@@ -17,7 +17,7 @@ def track( ctx, settingsFile="dat/settings-trackRI.json" ):
 # ===  run integrate__RIprodReaction.py                 === #
 # ========================================================= #
 @invoke.task
-def integrate( ctx, settingsFile="dat/RIprod_Ra226gn.json" ):
+def integrate( ctx, settingsFile="dat/settings-RIprod.json" ):
     """Run the integrate__RIprodReaction.py"""
     irr.integrate__RIprodReaction( settingsFile=settingsFile )
 
