@@ -20,7 +20,7 @@ def integrate__RIprodReaction( settingsFile=None ):
     # --- [1] load parameters from file             --- #
     # ------------------------------------------------- #
     if ( settingsFile is None ): sys.exit( "[integrate__RIprodReaction.py] settingsFile == ???" )
-    import nkUtilities.json__formulaParser as jso
+    import nk_toolkit.legacy.json__formulaParser as jso
     params = jso.json__formulaParser( inpFile=settingsFile )
     
     # ------------------------------------------------- #
@@ -98,13 +98,13 @@ def load__photonFlux( EAxis=None, params=None ):
     # --- [1] load photon flux file                 --- #
     # ------------------------------------------------- #
     if   ( params["photon.filetype"] == "energy-fluence" ):
-        import nkUtilities.load__pointFile as lpf
+        import nk_toolkit.legacy.load__pointFile as lpf
         pf_raw = lpf.load__pointFile( inpFile=params["photon.filename"], returnType="point" )
         pf_raw[:,f_] = pf_raw[:,f_] / params["photon.beam.current.sim"]
         
     elif ( params["photon.filetype"] == "phits-out"      ):
         # -- expr_from = r"^#\s*e\-lower",  expr_to = r"^\s*$"  -- #
-        import nkUtilities.retrieveData__afterStatement as ras
+        import nk_toolkit.legacy.retrieveData__afterStatement as ras
         pf_ret = ras.retrieveData__afterStatement( inpFile  = params["photon.filename"], \
                                                    expr_from=expr_from, expr_to=expr_to )
         if   ( params["photon.bin2point.convert"] == "center" ):
@@ -141,7 +141,7 @@ def load__xsection( EAxis=None, params=None ):
     # ------------------------------------------------- #
     # --- [1] load data                             --- #
     # ------------------------------------------------- #
-    import nkUtilities.load__pointFile as lpf
+    import nk_toolkit.legacy.load__pointFile as lpf
     xs_raw     = lpf.load__pointFile( inpFile=params["xsection.filename"], returnType="point")
     if   ( params["xsection.database"].lower() in [ "jendl" ] ):
         xs_raw[:, e_] = xs_raw[:, e_] * eV2MeV
@@ -449,7 +449,7 @@ def write__results( Data=None, params=None, stdout="minimum" ):
                .format( params["results.summaryFile"] ) )
 
     if ( params["results.yieldFile"] is not None ):
-        import nkUtilities.save__pointFile as spf
+        import nk_toolkit.legacy.save__pointFile as spf
         Data_ = [ Data["EAxis"][:,np.newaxis] , Data["dYield"][:,np.newaxis],\
                   Data["pf_fit"][:,np.newaxis], Data["xs_fit"][:,np.newaxis] ]
         Data_ = np.concatenate( Data_, axis=1 )
