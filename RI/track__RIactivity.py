@@ -399,7 +399,6 @@ def draw__figure( Data=None, settings=None, settingsFile=None ):
         if ( settings["mode.cumulative"] ):
             fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_], \
                             color="C2", label=settings["figure.inv.label.C"] )
-        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="grey" )
         fig.set__axis   ()
         fig.set__legend ()
         fig.save__figure()
