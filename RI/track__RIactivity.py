@@ -382,7 +382,8 @@ def draw__figure( Data=None, settings=None, settingsFile=None ):
             fig.add__plot2( xAxis=Data[:,t_], yAxis=Data[:,CB_],\
                             color="C2", label=settings["figure.act.label.C"] )
             fig.set__axis2()
-        fig.add__cursor( xAxis=365.0, linestyle="--", linewidth=1.2, color="grey" )
+        if ( settings["figure.act.cursor.x"] ):
+            fig.add__cursor( xAxis=settings["figure.act.cursor.x"], linestyle="--", linewidth=1.2, color="grey" )
         fig.set__axis   ()
         fig.set__legend ()
         fig.save__figure()
