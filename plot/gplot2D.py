@@ -235,11 +235,11 @@ class gplot2D:
         # --- [2] set datarange / down sampling         --- #
         # ------------------------------------------------- #
         if ( self.config["vec.x.range"]["auto"] ):
-            config["vec.x.range"]["min"] = np.min( self.vect[:,x_] )
-            config["vec.x.range"]["max"] = np.max( self.vect[:,x_] )
+            self.config["vec.x.range"]["min"] = np.min( self.vect[:,x_] )
+            self.config["vec.x.range"]["max"] = np.max( self.vect[:,x_] )
         if ( self.config["vec.y.range"]["auto"] ):
-            config["vec.y.range"]["min"] = np.min( self.vect[:,y_] )
-            config["vec.y.range"]["max"] = np.max( self.vect[:,y_] )
+            self.config["vec.y.range"]["min"] = np.min( self.vect[:,y_] )
+            self.config["vec.y.range"]["max"] = np.max( self.vect[:,y_] )
         xa     = np.linspace( self.config["vec.x.range"]["min"], \
                               self.config["vec.x.range"]["max"], \
                               self.config["vec.x.range"]["num"]  )

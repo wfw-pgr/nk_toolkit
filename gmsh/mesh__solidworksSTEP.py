@@ -77,8 +77,8 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
         names, numDict, entities = collect__entitiesByName()
         gmsh.model.occ.removeAllDuplicates()
         gmsh.model.occ.synchronize()
-    # gmsh.model.occ.removeAllDuplicates()
-    # gmsh.model.occ.synchronize()
+    gmsh.model.occ.removeAllDuplicates()
+    gmsh.model.occ.synchronize()
         
     print( "\n ================    Import    ================" )
     for key,dimtags in numDict.items():
