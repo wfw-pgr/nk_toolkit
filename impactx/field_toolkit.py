@@ -277,9 +277,9 @@ def save__DTLBfield( data=None, icell=1, ksymx=0, ksymy=0, ksymz=0,
         # --- [3] flatten field map                     --- #
         # ------------------------------------------------- #
         fieldData = np.column_stack( [
-            fieldScale * Bx.ravel( order="F" ),
-            fieldScale * By.ravel( order="F" ),
-            fieldScale * Bz.ravel( order="F" ),
+            fieldScale * Bx.ravel( order="C" ),
+            fieldScale * By.ravel( order="C" ),
+            fieldScale * Bz.ravel( order="C" ),
         ] )
 
         # ------------------------------------------------- #
