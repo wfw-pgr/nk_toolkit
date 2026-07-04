@@ -98,15 +98,41 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
         return( ret )
 
     # ------------------------------------------------- #
-    # --- [5] analyze each line                     --- #
+    # --- [5] convert_to_dtl                        --- #
+    # ------------------------------------------------- #
+    def convert_to_dtl( words, counts ):
+        name      = "dtl{}".format( (counts["Ndtl"]+1) )
+        dtl_id    = int  ( words[0] )
+        ds        = float( words[2] ) * cm
+        Ra        = float( words[3] ) * cm
+        vscale    = float( words[4] )
+        harmonics = int  ( words[5] )
+        phase     = float( words[6] )
+        ncells    = int  ( words[7] )
+        nstep     = int  ( words[8] )
+        ret       = [ { "type":"dtl", "name":name, "dtl_id":dtl_id, "ds":ds, \
+                        "aperture_x":Ra, "aperture_y":Ra, "vscale":vscale, \
+                        "harmonics":harmonics, "phase":phase, "ncells":ncells, \
+                        "nstep":nstep } ]
+        counts["Ndtl"] += 1
+        counts["at"]   += ds
+        return( ret )
+
+
+    # ------------------------------------------------- #
+    # --- [6] analyze each line                     --- #
     # ------------------------------------------------- #
     seq    = []
-    counts = { "at":0.0, "N":0, "Nqm":0, "Nrf":0, "Ndr":0, }
+    counts = { "at":0.0, "N":0, "Nqm":0, "Nrf":0, "Ndr":0, "Ndtl":0, }
     for ik,line in enumerate(lines):
         line_ = re.sub( r"#.*", "", line ).strip()
         words = ( line_.split() )
         if ( not( len( words ) == 0 ) ):
             counts["N"]   += 1
+
+            if   ( words[0].lower()  in [ "stop", "#" ] ):  # '#' is not official comment mark.
+                counts["N"] -= 1
+                continue
             
             if   ( words[1].lower()  == "quad" ):
                 seq += convert_to_quad ( words, counts )
@@ -116,6 +142,13 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
                 
             elif ( words[1].lower()  == "rfgap" ):
                 seq += convert_to_rfcavity( words, counts )
+
+            elif ( words[1].lower()  == "dtl"   ):
+                seq += convert_to_dtl( words, counts )
+
+            elif ( words[1].lower()  in [ "prmtr" ] ):
+                counts["N"] -= 1
+                continue
             
             else:
                 raise ValueError( "[ERROR] undefined keyword :: {} ".format( words[1] ) )
@@ -127,7 +160,7 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
     print()
 
     # ------------------------------------------------- #
-    # --- [6] save as a json file                   --- #
+    # --- [7] save as a json file                   --- #
     # ------------------------------------------------- #
     elements = { el["name"]:el for el in seq }
     if ( outFile is not None ):
@@ -135,7 +168,7 @@ def extract__trackv38_beamline( inpFile="track/sclinac.dat", \
             json5.dump( elements, f, indent=4 )
             print( "[extract__trackv38_beamline] output :: {}".format( outFile ) )
     return( elements )
-        
+
 
 
 # ========================================================= #
@@ -345,6 +378,40 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         ret    = { "type":"rfgap", "name":name, "ds":0.0, "R":Rmat  }
         return( ret )
 
+    # ------------------------------------------------- #
+    # --- [0-6] convert DTL elements                --- #
+    # ------------------------------------------------- #
+    def convert__dtl( element, params ):
+        DTLfile    = params["translate.ebmap.DTLfilebase"].format( element["dtl_id"] )
+        with open( DTLfile, "r" ) as f:
+            names  = [ "iCell", "L", "R", "Eflvl", "E0", "Phase", "Ql-len", "Qr-len",
+                       "Ql-Bgrd", "Qr-Bgrd", "Ectr-Gctr" ]
+            DTLdf  = pd.read_csv( f, skiprows=3, sep=r"\s+", names=names )
+            DTLv   = DTLdf.iloc[0]
+        efieldfile = params["translate.ebmap.efieldfile"]
+        bfieldfile = params["translate.ebmap.bfieldfile"]
+        efactor    = float( element["vscale"] * DTLv.loc["Eflvl"] * DTLv.loc["E0"] )
+        bfactor    = float( DTLv.loc["Ql-Bgrd"] )
+        phase      = float( element["phase"]   + DTLv["Phase"] )
+        freq       = float( params["beam.freq.Hz"]  * params["beam.harmonics"] )
+        if ( not( np.isclose( DTLv["Ql-Bgrd"], DTLv["Qr-Bgrd"], rtol=1.e-7 ) ) ):
+            raise ValueError( "Ql-Bgrd ({}) != Qr-Bgrd ({}) :: "
+                              .format( DTLv["Ql-Bgrd"], DTLv["Qr-Bgrd"],  ) )
+        ret        = {
+            "type"       : "ebmap.rk",
+            "name"       : element["name"],
+            "ds"         : element["ds"],
+            "efieldfile" : efieldfile, 
+            "bfieldfile" : bfieldfile, 
+            "efactor"    : efactor,
+            "bfactor"    : bfactor,
+            "freq"       : freq,
+            "phase"      : phase,
+            "int_method" : params["translate.ebmap.int_method"], 
+        }
+        return( ret )
+
+
 
     # ========================================================= #
     # ===  Main Routine                                     === #
@@ -385,10 +452,13 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
                 elements_[ ret["name"] ] = ret      # ret's name is gapXX -> define another element
                 
         elif ( elements[key]["type"].lower() in [ "quadrupole", "quadrupole.linear" ] ):
-            elements_[key] = { **elements[key], **params["translate.quad.options" ] }
+            elements_[key] = { **elements[key], **( params.get( "translate.quad.options", {} ) ) } 
         elif ( elements[key]["type"].lower() in [ "drift", "drift.linear" ] ):
-            elements_[key] = { **elements[key], **params["translate.drift.options"] }
-
+            elements_[key] = { **elements[key], **( params.get( "translate.drift.options", {} ) ) }
+        elif ( elements[key]["type"].lower() in [ "dtl" ] ):
+            ret            = convert__dtl( elements[key], params )
+            elements_[key] = { **ret, **( params.get( "translate.ebmap.options", {} ) ) }
+            
     # ------------------------------------------------- #
     # --- [3] skip components                       --- #
     # ------------------------------------------------- #
@@ -401,6 +471,9 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
     if ( params["translate.drift.skip"] ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["drift","drift.linear"] ) }
+    if ( params["translate.ebmap.skip"] ):
+        elements_ = { k:v for k,v in elements_.items()
+                      if not( v["type"].lower() in ["ebmap.rk"] ) }
     
     # ------------------------------------------------- #
     # --- [4] save and return                       --- #
@@ -570,6 +643,101 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
 
 
 
+# ========================================================= #
+# ===  translate__TrackDTLmap2impactx                   === #
+# ========================================================= #
+
+def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
+                                    efieldFile="dat/efield.csv", bfieldFile="dat/bfield.csv" ):
+
+    cm, MV    = 1.0e-2, 1.0e6
+    G2T, kG2T = 1.0e-4, 1.0e-1
+    
+    # ========================================================= #
+    # ===  [1] load E-Field data                            === #
+    # ========================================================= #
+    
+    # ------------------------------------------------- #
+    # --- [1-1] confirm bfield map info             --- #
+    # ------------------------------------------------- #
+    print(  "\n [translate__TrackDTLmap2impactx] \n" )
+    print( f"    eh_DTL :: {eh_DTL}" )
+    with open( eh_DTL, "r" ) as f:
+        lines    = [ line.strip() for line in f.readlines() ]
+
+    pmatch1   = re.match( r"\s*(sol|quad)\s*:\s*(\d+)", lines[0], flags=re.IGNORECASE )
+    pmatch2   = re.match( r"\s*(cell)\s*:\s*(\d+)"    , lines[1], flags=re.IGNORECASE )
+    btype,bnn = pmatch1.group(1).lower(), int( pmatch1.group(2) )
+    etype,enn = pmatch2.group(1).lower(), int( pmatch2.group(2) )
+    bfactor   = 1.0
+    if not( etype == "cell" and enn == 1 ):
+        raise ValueError( "eh_DTL's format is different : not ( Cell : 1 ) : {}".format( eh_DTL ) )
+    if ( btype == "sol"  ):
+        eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_SOL.#{:02}".format( bnn ) )
+        bfactor = kG2T
+    if ( btype == "quad" ):
+        eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_PMQ.#{:02}".format( bnn ) )
+        bfactor = G2T
+    if ( eh_PMQ is None ):
+        eh_PMQ = eh_PMQ_
+    if ( eh_PMQ != eh_PMQ_ ):
+        raise ValueError( " eh_PMQ (given) is different from eh_DTL's designation..." )
+    print( f"    eh_PMQ :: {eh_PMQ}" )
+
+    # ------------------------------------------------- #
+    # --- [1-2] extract axis settings               --- #
+    # ------------------------------------------------- #
+    ksym1, ksym2     = int( lines[2] ), int( lines[3] )
+    if not( ( ksym1==2 ) and ( ksym2==2 ) ):
+        raise ValueError( "ksym1, ksym2 != 2. DTL.#nn :: check line 3-4. WARNING.." )
+    raInfo, zaInfo   = lines[4].split(), lines[5].split()
+    rMin, rMax, rNum = float( raInfo[0] )*cm, float( raInfo[1] )*cm, int( raInfo[2] )
+    zMin, zMax, zNum = float( zaInfo[0] )*cm, float( zaInfo[1] )*cm, int( zaInfo[2] )
+    nData            = rNum * zNum
+    ra               = np.linspace(  rMin, rMax,   rNum   )
+    za               = np.linspace( -zMax, zMax, 2*zNum-1 )
+    rg, zg           = np.meshgrid( ra, za, indexing="ij" )
+
+    # ------------------------------------------------- #
+    # --- [1-3] extract Efield data                 --- #
+    # ------------------------------------------------- #
+    er_,ez_,bp_ = 0, 1, 2
+    with open( eh_DTL, "r" ) as f:
+        ebf     = np.loadtxt( f, skiprows=6, max_rows=nData )
+    ebf         = np.reshape( ebf, ( rNum, zNum, 3 ) )
+    Er_full     = np.concatenate( [ -ebf[:,::-1,er_][:,:-1], ebf[:,:,er_] ], axis=1 )
+    Ez_full     = np.concatenate( [  ebf[:,::-1,ez_][:,:-1], ebf[:,:,ez_] ], axis=1 )
+    Bp_full     = np.concatenate( [  ebf[:,::-1,bp_][:,:-1], ebf[:,:,bp_] ], axis=1 )
+    df_e        = pd.DataFrame.from_dict( { "rg":rg.ravel()     , "zg":zg.ravel(), \
+                                            "Er":Er_full.ravel(), "Ez":Ez_full.ravel() } )
+    df_e.to_csv( efieldFile, index=False, float_format="%15.8e" )
+    print( f"    output :: {efieldFile}" )
+    
+    # ========================================================= #
+    # ===  [2] load eh_PMQ.#nn                              === #
+    # ========================================================= #
+    bx_, by_, bz_ = 0, 1, 2
+    with open( eh_PMQ, "r" ) as f:
+        pmq = np.loadtxt( eh_PMQ, skiprows=1 )
+    ksymx, ksymy, ksymz =   int( pmq[0,0] ),   int( pmq[0,1] ), int( pmq[0,2] )
+    xMin,  xMax,  xNum  = float( pmq[1,0] )*cm, float( pmq[1,1] )*cm, int( pmq[1,2] )
+    yMin,  yMax,  yNum  = float( pmq[2,0] )*cm, float( pmq[2,1] )*cm, int( pmq[2,2] )
+    zMin,  zMax,  zNum  = float( pmq[3,0] )*cm, float( pmq[3,1] )*cm, int( pmq[3,2] )
+    nData      = xNum * yNum * zNum
+    xa         = np.linspace(  xMin, xMax,   xNum   )
+    ya         = np.linspace(  yMin, yMax,   yNum   )
+    za         = np.linspace(  zMin, zMax,   zNum   )
+    xg, yg, zg = np.meshgrid( xa, ya, za, indexing="ij" )
+    Bx, By, Bz = pmq[4:,bx_]*bfactor, pmq[4:,by_]*bfactor, pmq[4:,bz_]*bfactor
+    df_b       = pd.DataFrame.from_dict( { "xg":xg.ravel(), "yg":yg.ravel(), "zg":zg.ravel(), \
+                                           "Bx":Bx.ravel(), "By":By.ravel(), "Bz":Bz.ravel() } )
+    df_b.to_csv( bfieldFile, index=False, float_format="%15.8e" )
+    print( f"    output :: {bfieldFile}" )
+    print()
+    return( df_e, df_b )
+
+    
+    
 
 # ========================================================= #
 # ===   Execution of Pragram                            === #

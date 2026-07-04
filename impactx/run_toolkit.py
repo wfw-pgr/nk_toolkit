@@ -22,7 +22,8 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
         raise ValueError( "[impactx_toolkit.py] elements == ??? " )
     if ( nUse is not None ):
         keys     = list( elements.keys() )
-        elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse ) }
+        nUse_    = min( nUse, len( keys ) )
+        elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse_ ) }
         
     # ------------------------------------------------- #
     # --- [2] set beam components                   --- #
@@ -61,6 +62,13 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
 
         elif ( elem["type"] in [ "drift.linear" ] ):
             bcomp = impactx.elements.Drift( **elem_ )
+
+        elif ( elem["type"] in [ "ebmap.rk" ] ):
+            import nk_toolkit.impactx.EBmapElement__RK as ebmrk
+            allowed = [ "ds", "name", "nslice", "bfieldfile", "efieldfile", "bfactor", "efactor",
+                        "freq", "phase", "int_method" ]
+            elem_   = { k:v for k,v in elem_.items() if ( k in allowed ) }
+            bcomp   = ebmrk.EBmapElement__RK( **elem_ )
 
         else:
             raise ValueError( "[main_impactx.py] unknown element type :: {} "
@@ -214,7 +222,8 @@ def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, \
                 elements = json5.load( f )
     if ( nUse is not None ):
         keys     = list( elements.keys() )
-        elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse ) }
+        nUse_    = min( nUse, len( keys ) )
+        elements = { keys[ik]:elements[keys[ik]] for ik in range( nUse_ ) }
         
     # ------------------------------------------------- #
     # --- [2] expand elements by nslice             --- #

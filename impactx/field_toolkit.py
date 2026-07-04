@@ -60,13 +60,13 @@ def save__DTLBfield( data=None, icell=1, ksymx=0, ksymy=0, ksymz=0,
     -----
     Field rows are written in this order:
 
-        ix fastest, then iy, then iz
+        iz fastest, then iy, then ix
 
     Equivalent loop:
 
-        for iz in range( Nz ):
+        for ix in range( Nx ):
             for iy in range( Ny ):
-                for ix in range( Nx ):
+                for iz in range( Nz ):
                     write( Bx[ix,iy,iz], By[ix,iy,iz], Bz[ix,iy,iz] )
     """
 
@@ -281,6 +281,11 @@ def save__DTLBfield( data=None, icell=1, ksymx=0, ksymy=0, ksymz=0,
             fieldScale * By.ravel( order="C" ),
             fieldScale * Bz.ravel( order="C" ),
         ] )
+        # fieldData = np.column_stack( [
+        #     fieldScale * Bx.ravel( order="F" ),
+        #     fieldScale * By.ravel( order="F" ),
+        #     fieldScale * Bz.ravel( order="F" ),
+        # ] )
 
         # ------------------------------------------------- #
         # --- [4] write field map                       --- #
