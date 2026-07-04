@@ -649,7 +649,7 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
 # ===  translate__TrackDTLmap2impactx                   === #
 # ========================================================= #
 
-def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
+def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, axisymm_bb=True, \
                                     efieldFile="dat/efield.csv", bfieldFile="dat/bfield.csv" ):
 
     cm, MV          = 1.0e-2, 1.0e6
@@ -701,10 +701,10 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
     rg, zg           = np.meshgrid( ra, za, indexing="ij" )
     print( "\n" + "-"*60 + "\n" )
     print(  "    --  E(r,z), Bp(r,z)  -- " )
-    print( f"    r-Range :: ( {rMin:10.3E}, {rMax:10.3E} )  [m]" )
-    print( f"    z-Range :: ( {zMin:10.3E}, {zMax:10.3E} )  [m]" )
-    print( f"    nData   :: ( {rNum} x {zNum} = {nData} )" )
-    
+    print( f"    r-Range    :: ( {rMin:10.3E}, {rMax:10.3E} )  [m]" )
+    print( f"    z-Range    :: ( {zMin:10.3E}, {zMax:10.3E} )  [m]" )
+    print( f"    nData      :: ( {rNum} x {zNum} = {nData} )" )
+
     # ------------------------------------------------- #
     # --- [1-3] extract Efield data                 --- #
     # ------------------------------------------------- #
@@ -715,6 +715,8 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
     Er_full     = np.concatenate( [ -ebf[:,::-1,er_][:,:-1], ebf[:,:,er_] ], axis=1 )
     Ez_full     = np.concatenate( [  ebf[:,::-1,ez_][:,:-1], ebf[:,:,ez_] ], axis=1 )
     Bp_full     = np.concatenate( [  ebf[:,::-1,bp_][:,:-1], ebf[:,:,bp_] ], axis=1 )
+    if ( axisymm_bb ) and ( np.isclose( ra[0], 0.0 ) ):
+        Er_full[0,:] = 0.0
     df_e        = pd.DataFrame.from_dict( { "rg[m]":rg.ravel()       , "zg[m]":zg.ravel(), \
                                             "Er[V/m]":Er_full.ravel(), "Ez[V/m]":Ez_full.ravel() })
     Er_min, Er_max = np.min( Er_full ), np.max( Er_full )
@@ -722,10 +724,11 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
     Bp_min, Bp_max = np.min( Bp_full ), np.max( Bp_full )
     df_e.to_csv( efieldFile, index=False, float_format="%15.8e" )
     print()
-    print( f"    Er      :: ( {Er_min:10.3E} - {Er_max:10.3E} )  [V/m]" )
-    print( f"    Ez      :: ( {Ez_min:10.3E} - {Ez_max:10.3E} )  [V/m]" )
-    print( f"    Bp      :: ( {Bp_min:10.3E} - {Bp_max:10.3E} )  [V/m]" )
-    print( f"    output :: {efieldFile}" )
+    print( f"    Er         :: ( {Er_min:10.3E} - {Er_max:10.3E} )  [V/m]" )
+    print( f"    Ez         :: ( {Ez_min:10.3E} - {Ez_max:10.3E} )  [V/m]" )
+    print( f"    Bp         :: ( {Bp_min:10.3E} - {Bp_max:10.3E} )  [V/m]" )
+    print( f"    axisymm_bb :: {axisymm_bb}"  )
+    print( f"    output     :: {efieldFile}" )
     
     # ========================================================= #
     # ===  [2] load eh_PMQ.#nn                              === #
@@ -742,7 +745,14 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
     ya                  = np.linspace(  yMin, yMax,   yNum   )
     za                  = np.linspace(  zMin, zMax,   zNum   )
     xg, yg, zg          = np.meshgrid( xa, ya, za, indexing="ij" )
-    Bx, By, Bz          = pmq[4:,bx_]*bfactor, pmq[4:,by_]*bfactor, pmq[4:,bz_]*bfactor
+    Bx                  = np.reshape( pmq[4:,bx_]*bfactor, (xNum,yNum,zNum) )
+    By                  = np.reshape( pmq[4:,by_]*bfactor, (xNum,yNum,zNum) )
+    Bz                  = np.reshape( pmq[4:,bz_]*bfactor, (xNum,yNum,zNum) )
+    ix0                 = int( np.argmin( np.abs( xa ) ) )
+    iy0                 = int( np.argmin( np.abs( ya ) ) )
+    if ( ( axisymm_bb ) and ( np.isclose( xa[ix0], 0.0 ) and np.isclose( ya[iy0], 0.0 ) ) ):
+        Bx  -= Bx[ ix0, iy0, : ][None,None,:]
+        By  -= By[ ix0, iy0, : ][None,None,:]
     df_b  = pd.DataFrame.from_dict( { "xg[m]":xg.ravel(), "yg[m]":yg.ravel(), "zg[m]":zg.ravel(), \
                                       "Bx[T]":Bx.ravel(), "By[T]":By.ravel(), "Bz[T]":Bz.ravel() })
     df_b.to_csv( bfieldFile, index=False, float_format="%15.8e" )
@@ -751,20 +761,19 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, \
     Bz_min, Bz_max      = np.min( Bz ), np.max( Bz )
     print( "\n" + "-"*60 + "\n" )
     print(  "    --  B(x,y,z) -- " )
-    print( f"    x-Range :: ( {xMin:10.3E}, {xMax:10.3E} )  [m]" )
-    print( f"    y-Range :: ( {yMin:10.3E}, {yMax:10.3E} )  [m]" )
-    print( f"    z-Range :: ( {zMin:10.3E}, {zMax:10.3E} )  [m]" )
-    print( f"    nData   :: ( {xNum} x {yNum} x {zNum} = {nData} )" )
+    print( f"    x-Range    :: ( {xMin:10.3E}, {xMax:10.3E} )  [m]" )
+    print( f"    y-Range    :: ( {yMin:10.3E}, {yMax:10.3E} )  [m]" )
+    print( f"    z-Range    :: ( {zMin:10.3E}, {zMax:10.3E} )  [m]" )
+    print( f"    nData      :: ( {xNum} x {yNum} x {zNum} = {nData} )" )
     print()
-    print( f"    Bx      :: ( {Bx_min:10.3E} - {Bx_max:10.3E} )  [T]" )
-    print( f"    By      :: ( {By_min:10.3E} - {By_max:10.3E} )  [T]" )
-    print( f"    Bz      :: ( {Bz_min:10.3E} - {Bz_max:10.3E} )  [T]" )
+    print( f"    Bx         :: ( {Bx_min:10.3E} - {Bx_max:10.3E} )  [T]" )
+    print( f"    By         :: ( {By_min:10.3E} - {By_max:10.3E} )  [T]" )
+    print( f"    Bz         :: ( {Bz_min:10.3E} - {Bz_max:10.3E} )  [T]" )
+    print( f"    axisymm_bb :: {axisymm_bb}"  )
     print()
-    print( f"    output  :: {bfieldFile}" )
+    print( f"    output     :: {bfieldFile}" )
     print( "\n" + "-"*60 + "\n" )
     return( df_e, df_b )
-
-    
     
 
 # ========================================================= #

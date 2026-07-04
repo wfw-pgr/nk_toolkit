@@ -1,0 +1,86 @@
+{
+
+    
+    // ---------------------------- //
+    // --- [1] constants        --- //
+    // ---------------------------- //
+    "beam.charge.qe"      :  +1.0      , // for 1-particle, unit=[-qe]: -1 for e, +1 for p
+    "beam.charge.C"       : 2.73972e-8 , // for bunch, unit=[C]
+    "beam.nparticles"     :   1e4      , // #. of super-particles 
+    "beam.u.nucleon"      :   2.0      , // #. of nucleon / particle
+    "beam.mass.amu"       : 2.014      , // mass [amu] :  2.014 for D, 1.0 for p, 
+    "beam.Ek.MeV/u"       :   0.1      , // kinetic energy [MeV/u]
+    "beam.freq.Hz"        : 36.5e6     , // [Hz]
+    "beam.harmonics"      : 1          , // int   rf.freq = h * beam.freq
+
+    "beam.twiss.alpha"    : [-0, -0, -0.06],
+    "beam.twiss.beta"     : [0.05, 0.05, 186.85008],
+    "beam.emittance.geom" : [639.78592, 639.78592, 7.8560907],
+    // "beam.twiss.alpha"    : [     0.0,     0.0,     0.0 ], 
+    // "beam.twiss.beta"     : [  5.4877, 0.77481,  440.55 ], // [m/rad] or [m]
+    // "beam.emittance.geom" : [  253.22,  253.22,   8.099 ], // [mm mrad] - RMS, geometric
+
+    "sim.max_level"       : 1,           // AMR level
+    "sim.n_cell"          : [16,16,16],  // cell size for poisson eq.
+    "sim.blocking_factor" : [8],         // blocking factor, list ( size = max_level )
+
+    "sim.nUse.elements"   : 8,        // null for all, limit n for int n
+
+    
+    // ---------------------------- //
+    // --- [2] main's settings  --- //
+    // ---------------------------- //
+    "mode.linear"         : false,       // linear calc.
+    "mode.space_charge"   : false,       // false or "3D" or "2D" 
+
+    
+    // ---------------------------- //
+    // --- [3] translate        --- //
+    // ---------------------------- //
+    "translate.quad.skip"             : false,       // skip Q-magnet
+    "translate.drift.skip"            : false,       // skip Drift
+    "translate.cavity.skip"           : false,       // skip Cavity
+    "translate.ebmap.skip"            : false,       // skip ebmap
+    
+    "translate.cavity.type"           : "shortrf",   // [ rfcavity, shortrf ]
+    "translate.cavity.rfgap"          : true,        // Trace3D like RFgap ( vertical kick )
+    "translate.cavity.length"         : 1.e-5,       // finite length for rfcavity
+    "translate.cavity.phase"          : -45.0,       // target phase of the cavity.
+    "translate.cavity.phase.fromfile" : null,        // set phase manually, null or filename
+    //                                               // "dat/adjust_phase.csv" etc.
+    
+    "translate.cavity.options"        : {
+    },                                               // for "shortrf"
+    // "translate.cavity.options"      : {
+    //     "cos_coefficients" : [ 2.0,  0.0 ],
+    //     "sin_coefficients" : [ 0.0,  0.0 ],
+    //     "nslice"           : 1,
+    //     "aperture_x"       : 0.1,
+    //     "aperture_y"       : 0.1,
+    // },                                                        // for "rfcavity"
+
+    "translate.ebmap.DTLfilebase"     : "track/lb/DTL.#{:02d}", 
+    "translate.ebmap.efieldfile"      : "../dat/efield.csv",     // from impactx/ dir
+    "translate.ebmap.bfieldfile"      : "../dat/bfield.csv",     // 
+    "translate.ebmap.int_method"      : "RK4",                   // # "ExplicitEuler", "RK2", "RK4"
+    "translate.ebmap.options"         : { "nslice": 50,
+                                          "aperture_x" : 0.10, 
+                                          "aperture_y" : 0.10,
+                                          "efactor"    : 0.0, 
+                                        },
+    
+    
+    "translate.quad.factor"           : 1.0, 
+    "translate.quad.options"          : {
+        "unit"      :  1,  // unit=0: MADX, unit=1: MaryLie 
+        "nslice"    :  1,
+        "aperture_x":0.1, 
+        "aperture_y":0.1,
+    },
+    "translate.drift.options"         : {
+        "nslice"    :  1, 
+        "aperture_x":0.1, 
+        "aperture_y":0.1,  // 0.2
+    },
+    
+}

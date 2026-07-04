@@ -38,6 +38,10 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                   freq       =0.0     , # (float) [Hz]
                   phase      =0.0     , # (float) [deg.]
                   int_method = "RK4"  , # (str) [ "ExplicitEuler", "RK2", "RK4" ]
+                  aperture_x =0.0     , # (float) ellipse half-aperture [m]
+                  aperture_y =0.0     , # (float) ellipse half-aperture [m]
+                  aperture_cx=0.0     , # (float) aperture center x in map frame [m]
+                  aperture_cy=0.0     , # (float) aperture center y in map frame [m]
                  ):
         super().__init__( ds=ds, name=name, nslice=nslice )
 
@@ -53,7 +57,18 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         self.freq            = float( freq  )
         self.phase           = float( phase )
         self.int_method      = int_method
+        self.aperture_x      = float( aperture_x  )
+        self.aperture_y      = float( aperture_y  )
+        self.aperture_cx     = float( aperture_cx )
+        self.aperture_cy     = float( aperture_cy )
 
+        # -- aperture : particle lost を適用するためのマスク値 -- #
+        #      AMReX ParticleIDWrapper::make_invalid() 相当
+        self._idcpu_valid_mask = np.uint64( 0x7FFF_FFFF_FFFF_FFFF )
+
+        # 各 slice での除算を避けるため、事前計算
+        self._aperture_inv_x2 = 1.0 / ( self.aperture_x * self.aperture_x )
+        self._aperture_inv_y2 = 1.0 / ( self.aperture_y * self.aperture_y )
         
         # containers for field maps / interpolators
         self.bmap            = None
@@ -69,7 +84,6 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         self._load__ebfieldfile()
         self._construct__interpolator()
 
-        # assign programmable push
         self.push = self._push__fromfield
 
 
@@ -499,6 +513,9 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                 px       = np.array( r_array[3], copy=False )
                 py       = np.array( r_array[4], copy=False )
                 pt       = np.array( r_array[5], copy=False )
+                # idcpu    = soa.get_idcpu_data().to_numpy( copy=False )     # out
+                idcpu    = np.array( soa.get_idcpu_data(), copy=False )      # in
+                
                 if (len(xp) == 0):
                     continue
 
@@ -595,8 +612,37 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                 px[:]     =   ( px_abs_f - refpart.px ) / ref_bg_f
                 py[:]     =   ( py_abs_f - refpart.py ) / ref_bg_f
                 pt[:]     =   ( pt_abs_f - refpart.pt ) / ref_bg_f
-        
 
+                # ------------------------------------------------- #
+                # --- [2-6] aperture loss at end of this slice  --- #
+                # ------------------------------------------------- #
+                self._apply__elliptic_aperture( xp_map=xp, yp_map=yp, idcpu=idcpu )
+
+                
+    # ========================================================= #
+    # ===  elliptic aperture loss                           === #
+    # ========================================================= #
+    def _apply__elliptic_aperture( self, xp_map, yp_map, idcpu ):
+        """
+        Elliptic aperture loss.
+        xp_map, yp_map : transverse coordinates [m]
+        idcpu          : writable AMReX uint64 particle-id array
+        """
+
+        # ------------------------------------------------- #
+        # --- [1] elliptical aperture condition         --- #
+        # ------------------------------------------------- #
+        rho2  = ( xp_map - self.aperture_cx )**2 * self._aperture_inv_x2
+        rho2 += ( yp_map - self.aperture_cy )**2 * self._aperture_inv_y2
+        lost  = ( rho2 > 1.0 )
+
+        # ------------------------------------------------- #
+        # --- [2] invalidate lost particles             --- #
+        # ------------------------------------------------- #
+        if np.any( lost ):
+            idcpu[lost] &= self._idcpu_valid_mask
+
+            
     # ========================================================= #
     # ===  total particle pusher from eb-field              === #
     # ========================================================= #

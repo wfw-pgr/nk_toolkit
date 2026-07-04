@@ -3,6 +3,7 @@ import impactx
 import numpy         as np
 import pandas        as pd
 import amrex.space3d as amr
+import nk_toolkit.impactx.EBmapElement__RK as ebmrk
 
 
 # ========================================================= #
@@ -10,8 +11,58 @@ import amrex.space3d as amr
 # ========================================================= #
 
 def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx.json",
-                            add_bpm=True , nUse=None, logFile="beamline_log.json" ):
+                            add_bpm=True , nUse=None, logFile="beamline_log.json", \
+                            params ={}, ):
 
+    # ------------------------------------------------- #
+    # --- [0] lattice element specifications        --- #
+    # ------------------------------------------------- #
+    elementSpecifications = {
+        "rfcavity" : {
+            "class"   : impactx.elements.RFCavity,
+            "allowed" : [ "ds", "escale", "freq", "phase", "cos_coefficients", "sin_coefficients",
+                          "z", "field_on_axis", "ncoef", "dx", "dy", "rotation",
+                          "aperture_x", "aperture_y", "mapsteps", "nslice", "name", ], 
+            "options" : "translate.cavity.options",
+        }, 
+        "shortrf" : {
+            "class"   : impactx.elements.ShortRF,
+            "allowed" : [ "V", "freq", "phase", "dx", "dy", "rotation", "name" ], 
+            "options" : "translate.cavity.options",
+        }, 
+        "quadrupole" : {
+            "class"   : impactx.elements.ChrQuad,
+            "allowed" : [ "ds", "k", "unit", "dx", "dy", "rotation",
+                          "aperture_x", "aperture_y", "name", "nslice", ],  
+            "options" : "translate.quad.options",
+        }, 
+        "quadrupole.linear" : {
+            "class"   : impactx.elements.Quad,
+            "allowed" : [ "ds", "k", "dx", "dy", "rotation",
+                          "aperture_x", "aperture_y", "name", "nslice", ],  
+            "options" : "translate.quad.options",
+        }, 
+        "drift" : {
+            "class"   : impactx.elements.ExactDrift,
+            "allowed" : [ "ds", "dx", "dy", "rotation",
+                          "aperture_x", "aperture_y", "name", "nslice", ],
+            "options" : "translate.drift.options",
+        }, 
+        "drift.linear" : {
+            "class"   : impactx.elements.Drift,
+            "allowed" : [ "ds", "dx", "dy", "rotation",
+                          "aperture_x", "aperture_y", "name", "nslice", ],
+            "options" : "translate.drift.options",
+        },
+        "ebmap.rk" : {
+            "class"   : ebmrk.EBmapElement__RK, 
+            "allowed" : [ "ds", "name", "nslice", "bfieldfile", "efieldfile", "bfactor", "efactor",
+                          "freq", "phase", "int_method", "aperture_x", "aperture_y",
+                          "aperture_cx", "aperture_cy", ],
+            "options" : "translate.ebmap.options",
+        },
+    }
+    
     # ------------------------------------------------- #
     # --- [1] load json file                        --- #
     # ------------------------------------------------- #
@@ -32,47 +83,28 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
     if ( add_bpm ):
         bpm    = impactx.elements.BeamMonitor( "bpm", backend="h5" )
         stack += [ bpm ]
-    for key,elem in elements.items():
-        elem_ = { key:val for key,val in elem.items() if ( key != "type" ) }
         
-        if   ( elem["type"] in [ "rfcavity" ]   ):
-            bcomp = impactx.elements.RFCavity  ( **elem_ )
+    for key,elem in elements.items():
 
-        elif ( elem["type"] in [ "shortrf"  ]   ):
-            bcomp = impactx.elements.ShortRF   ( **elem_ )
-
+        if   ( elem["type"] in elementSpecifications ):
+            specs  = elementSpecifications[ elem["type"] ]
+            elem_  = { k:v for k,v in elem.items() if ( k in specs["allowed"] ) }
+            elem_  = { **elem_, **( params.get( specs["options"], {} ) ), }
+            bcomp  = specs["class"]( **elem_ )
+        
         elif ( elem["type"] in [ "rfgap" ] ):
             Rmat = impactx.Map6x6.identity()
             for ii in range(6):
                 for ij in range(6):
-                    Rmat[ii+1,ij+1] = elem_["R"][ii][ij]
+                    Rmat[ii+1,ij+1] = elem["R"][ii][ij]
+            allowed    = [ "R", "dx", "dy", "rotation", "name" ]
+            elem_      = { k:v for k,v in elem.items() if ( k in allowed ) }
             elem_["R"] = Rmat
-            bcomp = impactx.elements.LinearMap ( **elem_ )
-            
-        elif ( elem["type"] in [ "quadrupole" ]   ):
-            # bcomp = impactx.elements.ExactQuad ( **elem_ )
-            bcomp = impactx.elements.ChrQuad ( **elem_ )
-
-        elif ( elem["type"] in [ "drift" ]        ):
-            bcomp = impactx.elements.ExactDrift( **elem_ )
-            
-        elif ( elem["type"] in [ "quadrupole.linear" ]  ):
-            elem_ = { k:v for k,v in elem_.items() if k not in ["int_order", "mapsteps", "unit"] }
-            bcomp = impactx.elements.Quad ( **elem_ )
-
-        elif ( elem["type"] in [ "drift.linear" ] ):
-            bcomp = impactx.elements.Drift( **elem_ )
-
-        elif ( elem["type"] in [ "ebmap.rk" ] ):
-            import nk_toolkit.impactx.EBmapElement__RK as ebmrk
-            allowed = [ "ds", "name", "nslice", "bfieldfile", "efieldfile", "bfactor", "efactor",
-                        "freq", "phase", "int_method" ]
-            elem_   = { k:v for k,v in elem_.items() if ( k in allowed ) }
-            bcomp   = ebmrk.EBmapElement__RK( **elem_ )
+            bcomp      = impactx.elements.LinearMap ( **elem_ )
 
         else:
-            raise ValueError( "[main_impactx.py] unknown element type :: {} "
-                              .format( elem["type"] ) )
+            raise ValueError( "[set__latticeComponent]\n" +\
+                              "    unknown element type :: {}".format( elem["type"] ) )
 
         stack += [ bcomp ]
         if ( add_bpm ):

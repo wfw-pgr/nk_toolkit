@@ -1,0 +1,651 @@
+{
+    "files"      : {
+        "stat"   : "impactx/diags/reduced_beam_characteristics.0", 
+        "refp"   : "impactx/diags/ref_particle.0",  
+        "record" : "impactx/diags/records.json",
+        "bpms"   : "impactx/diags/openPMD/bpm.h5", 
+        "label"  : "impactx/diags/lattice_label.csv",
+        "post"   : "impactx/diags/posts.csv", 
+    }, 
+    
+    "refp"     : {
+        "settings" : {},
+        "default"  : {
+            "figure.size"        : [ 9.0, 3.0 ],
+            "figure.position"    : [ 0.11, 0.16, 0.96, 0.92 ],
+            "ax1.x.range"        : { "auto":true, "min": 0.0, "max":1.0, "num":11 },
+            "ax1.y.range"        : { "auto":true, "min": 0.0, "max":1.0, "num":11 },
+            "ax1.x.label"        : "s (m)",
+            "ax1.x.minor.nticks" : 1, 
+            "plot.marker"        : "o",
+            "plot.markersize"    : 2.0,
+            "legend.fontsize"    : 8.0,
+        },
+
+        "s-beta": {
+            "config": {
+                "ax1.y.label"    : "$\\beta$",
+                "ax1.y.normalize": 1.0,
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"beta", "label":"beta" },
+            ],
+            "option": {},
+        },
+
+        "s-gamma": {
+            "config": {
+                "ax1.y.label"    : "$\\gamma$",
+                "ax1.y.normalize": 1.0,
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"gamma", "label":"gamma" },
+            ],
+            "option": {},
+        },
+
+        "s-beta_gamma": {
+            "config": {
+                "ax1.y.label"    : "$\\beta \\gamma$",
+                "ax1.y.normalize": 1.0,
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"beta_gamma", "label":"beta gamma" },
+            ],
+            "option": {},
+        },
+
+        "s-x": {
+            "config": {
+                "ax1.y.label"    : "$x\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"x", "label":"x" },
+            ],
+            "option": {},
+        },
+
+        "s-y": {
+            "config": {
+                "ax1.y.label"    : "$y\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"y", "label":"y" },
+            ],
+            "option": {},
+        },
+
+        "s-z": {
+            "config": {
+                "ax1.y.label"    : "$z\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"z", "label":"z" },
+            ],
+            "option": {},
+        },
+
+        "s-t": {
+            "config": {
+                "ax1.y.label"    : "$ct\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"t", "label":"ct" },
+            ],
+            "option": {},
+        },
+
+        "s-px": {
+            "config": {
+                "ax1.y.label"    : "$p_x\\ \\mathrm{(mrad)}$",
+                "ax1.y.normalize": 1.0e-3,   // [rad] -> [mrad]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"px", "label":"px" },
+            ],
+            "option": {},
+        },
+
+        "s-py": {
+            "config": {
+                "ax1.y.label"    : "$p_y\\ \\mathrm{(mrad)}$",
+                "ax1.y.normalize": 1.0e-3,   // [rad] -> [mrad]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"py", "label":"py" },
+            ],
+            "option": {},
+        },
+
+        "s-pz": {
+            "config": {
+                "ax1.y.label"    : "$p_z\\ \\mathrm{(mrad)}$",
+                "ax1.y.normalize": 1.0e-3,   // [rad] -> [mrad]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"pz", "label":"pz" },
+            ],
+            "option": {},
+        },
+
+        "s-pt": {
+            "config": {
+                "ax1.y.label"    : "$p_t\\ \\mathrm{(mrad)}$",
+                "ax1.y.normalize": 1.0e-3,   // [rad] -> [mrad]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"pt", "label":"pt" },
+            ],
+            "option": {},
+        },
+    }, 
+
+    
+    "stat"     : {
+        "settings": {},
+        
+        "default" : {
+            "figure.size"        : [ 9.0, 3.0 ],
+            "figure.position"    : [ 0.11, 0.16, 0.96, 0.92 ],
+            "ax1.x.range"        : { "auto":true, "min":  0.0, "max": 1.0, "num":8 },
+            "ax1.y.range"        : { "auto":true, "min":  0.0, "max": 1.0, "num":6 },
+            "ax1.x.label"        : "s (m)",
+            "ax1.x.minor.nticks" : 1, 
+            "plot.marker"        : "o",
+            "plot.markersize"    : 2.0,
+            "legend.fontsize"    : 8.0,
+        },
+
+        "s-xyEnvelope": {
+            "config": {
+                "ax1.y.label"    : "$x, y, \\sigma_x, \\sigma_y \\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"max_x",  "label":"max(x)",
+                  "color":"C0", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"s", "yAxis":"max_y",  "label":"max(y)",
+                  "color":"C1", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"s", "yAxis":"sigma_x", "label":"$\\sigma_x$",
+                  "color":"C0", "linestyle":"-", "marker":"none" },
+                { "xAxis":"s", "yAxis":"sigma_y", "label":"$\\sigma_y$",
+                  "color":"C1", "linestyle":"-", "marker":"none" },
+            ],
+            "option": {},
+        },
+        
+        "s-xRange": {
+            "config": {
+                "ax1.y.label"    : "$x\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"min_x",  "label":"min(x)"  },
+                { "xAxis":"s", "yAxis":"max_x",  "label":"max(x)"  },
+                { "xAxis":"s", "yAxis":"mean_x", "label":"avg(x)"  },
+            ],
+            "option": {},
+        },
+
+        "s-yRange": {
+            "config": {
+                "ax1.y.label"    : "$y\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"min_y",  "label":"min(y)"  },
+                { "xAxis":"s", "yAxis":"max_y",  "label":"max(y)"  },
+                { "xAxis":"s", "yAxis":"mean_y", "label":"avg(y)"  },
+            ],
+            "option": {},
+        },
+
+        "s-tRange": {
+            "config": {
+                "ax1.y.label"    : "$t\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"min_t",  "label":"min(t)"  },
+                { "xAxis":"s", "yAxis":"max_t",  "label":"max(t)"  },
+                { "xAxis":"s", "yAxis":"mean_t", "label":"avg(t)"  },
+            ],
+            "option": {},
+        },
+
+        "s-sigma_xy": {
+            "config": {
+                "ax1.y.label"    : "$\\sigma\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"sigma_x", "label":"$\\sigma_x$" },
+                { "xAxis":"s", "yAxis":"sigma_y", "label":"$\\sigma_y$" },
+            ],
+            "option": {},
+        },
+
+        "s-sigma_t": {
+            "config": {
+                "ax1.y.label"    : "$\\sigma\\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"sigma_t", "label":"$\\sigma_t$" },
+            ],
+            "option": {},
+        },
+
+        "s-emit_xyt": {
+            "config": {
+                "ax1.y.label"    : "$\\epsilon\\ \\mathrm{(mm\\ mrad)}$",
+                "ax1.y.normalize": 1.0e-6,   // [m rad] -> [mm mrad]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"emittance_x", "label":"$\\epsilon_x$" },
+                { "xAxis":"s", "yAxis":"emittance_y", "label":"$\\epsilon_y$" },
+                { "xAxis":"s", "yAxis":"emittance_t", "label":"$\\epsilon_t$" },
+            ],
+            "option": {},
+        },
+
+        "s-emit_xytn": {
+            "config": {
+                "ax1.y.label"    : "$\\epsilon^{norm}\\ \\mathrm{(mm\\ mrad)}$",
+                "ax1.y.normalize": 1.0e-6,   // [m rad] -> [mm mrad]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"emittance_xn", "label":"$\\epsilon_x^{norm}$" },
+                { "xAxis":"s", "yAxis":"emittance_yn", "label":"$\\epsilon_y^{norm}$" },
+                { "xAxis":"s", "yAxis":"emittance_tn", "label":"$\\epsilon_t^{norm}$" },
+            ],
+            "option": {},
+        },
+
+        "s-beta_xy": {
+            "config": {
+                "ax1.y.label"    : "$\\beta\\ \\mathrm{(m)}$",
+                "ax1.y.normalize": 1.0,
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"beta_x", "label":"$\\beta_x$" },
+                { "xAxis":"s", "yAxis":"beta_y", "label":"$\\beta_y$" },
+            ],
+            "option": {},
+        },
+
+        "s-beta_t": {
+            "config": {
+                "ax1.y.label"    : "$\\beta\\ \\mathrm{(m)}$",
+                "ax1.y.normalize": 1.0,
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"beta_t", "label":"$\\beta_t$" },
+            ],
+            "option": {},
+        },
+
+        "s-alpha_xyt": {
+            "config": {
+                "ax1.y.label"    : "$\\alpha$",
+                "ax1.y.normalize": 1.0,
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"alpha_x", "label":"$\\alpha_x$" },
+                { "xAxis":"s", "yAxis":"alpha_y", "label":"$\\alpha_y$" },
+                { "xAxis":"s", "yAxis":"alpha_t", "label":"$\\alpha_t$" },
+            ],
+            "option": {},
+        },
+        
+    },
+
+    
+    "poincare" : {
+        "settings" : {
+            "nPoincare" : 5, 
+        },
+        
+        "default" : {
+            "figure.size"        : [4.5,4.5],
+            "figure.position"    : [ 0.18, 0.18, 0.92, 0.92 ],
+            "ax1.x.minor.nticks" : 1,
+            "ax1.x.range"        : { "auto":false, "min": -1.0, "max":1.0, "num":11 },
+            "ax1.y.range"        : { "auto":false, "min": -1.0, "max":1.0, "num":11 },
+            "plot.linestyle"     : "none",
+            "plot.marker"        : "o",
+            "plot.markersize"    : 0.2,
+            "legend.fontsize"    : 9.0,
+        },
+        
+        "xp-px": {
+            "config" : {
+                "ax1.x.label"    : "x (mm)",
+                "ax1.y.label"    : "x' (mrad)",
+                "ax1.x.range"    : { "auto":false, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.y.range"    : { "auto":false, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.x.normalize": 1.e-3, // [m]   -> [mm]
+                "ax1.y.normalize": 1.e-3, // [rad] -> [mrad]
+            },
+            "plots"  : [ { "xAxis":"xp", "yAxis":"px" }, ],
+            "option" : { "density":true  }, 
+        },
+        
+        "yp-py": {
+            "config" : {
+                "ax1.x.label"    : "y (mm)",
+                "ax1.y.label"    : "y' (mrad)",
+                "ax1.x.range"    : { "auto":false, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.y.range"    : { "auto":false, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.x.normalize": 1.e-3, // [m]   -> [mm]
+                "ax1.y.normalize": 1.e-3, // [rad] -> [mrad]
+            },
+            "plots"  : [ { "xAxis":"yp", "yAxis":"py", }, ],
+            "option" : { "density":true },
+        },
+        
+        "dt-dE": {
+            "config" : {
+                "ax1.x.label"    : "dt (ns)",
+                "ax1.y.label"    : "dE (MeV)",
+                "ax1.x.range"    : { "auto":false, "min": -5.0, "max": 5.0, "num":11 },
+                "ax1.y.range"    : { "auto":false, "min": -5.0, "max": 5.0, "num":11 },
+                "ax1.x.normalize": 1.e-9, // [s] -> [ns]
+                "ax1.y.normalize": 1.e0,  // 
+            },
+            "plots"  : [ { "xAxis":"dt", "yAxis":"dEk" }, ],
+            "option" : { "density":true,  },
+        }, 
+        
+    }, 
+
+    post: {
+        
+        "default"  : {
+            "figure.size"        : [ 9.0, 3.0 ],
+            "figure.position"    : [ 0.10, 0.15, 0.97, 0.93 ],
+            "ax1.x.range"        : { "auto": true, "min": 0.0, "max": 1.0, "num": 8 },
+            "ax1.y.range"        : { "auto": true, "min": 0.0, "max": 1.0, "num": 6 },
+            "ax1.x.label"        : "s (m)",
+            "ax1.x.minor.nticks" : 1,
+            "plot.marker"        : "o",
+            "plot.markersize"    : 2.0,
+            "legend.fontsize"    : 8.0
+        },
+        
+        "settings" : {},
+
+        "s-Ek_ref": {
+            config: {
+                "ax1.y.label": "Energy (MeV)"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"Ek_ref", "label":"kinetic" }
+            ],
+            option: {}
+        },
+
+        "s-Ek": {
+            config: {
+                "ax1.y.label": "Energy (MeV)"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"Ek_min", "label":"$min(E_k)$" },
+                { "xAxis":"s", "yAxis":"Ek_avg", "label":"$avg(E_k)$" },
+                { "xAxis":"s", "yAxis":"Ek_max", "label":"$max(E_k)$" }
+            ],
+            option: {}
+        },
+
+        "s-dphiEnvelope": {
+            config: {
+                "ax1.y.label": "$\\Delta \\phi, \\sigma_{\\Delta \\phi} \\ \\mathrm{(deg)}$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dphi_min", "label":"min.",
+                  "linestyle":"--", "marker":"none" },
+                { "xAxis":"s", "yAxis":"dphi_max", "label":"max.",
+                  "linestyle":"--", "marker":"none" },
+                { "xAxis":"s", "yAxis":"dphi_avg", "label":"avg.",
+                  "linestyle":"-", "marker":"none"  },
+                { "xAxis":"s", "yAxis":"dphi_rms", "label":"$\\sigma_{\\Delta \\phi}$",
+                  "linestyle":"-", "marker":"none" }
+            ],
+            option: {}
+        },
+
+
+        "s-dphi": {
+            config: {
+                "ax1.y.label": "$\\Delta \\phi \\mathrm{(deg)}$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dphi_min", "label":"min." },
+                { "xAxis":"s", "yAxis":"dphi_max", "label":"max." }, 
+                { "xAxis":"s", "yAxis":"dphi_avg", "label":"avg." },
+            ],
+            option: {}
+        },
+
+        "s-dp_p0": {
+            config: {
+                "ax1.y.label": "$\\Delta p/p \\ \\mathrm{(\\%)}$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dp/p_min", "label":"min." },
+                { "xAxis":"s", "yAxis":"dp/p_avg", "label":"avg." },
+                { "xAxis":"s", "yAxis":"dp/p_max", "label":"max." },
+            ],
+            option: {}
+        },
+
+        "s-dE_E0": {
+            config: {
+                "ax1.y.label": "$\\Delta E/E \\ \\mathrm{(\\%)}$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dE/E_min", "label":"min." },
+                { "xAxis":"s", "yAxis":"dE/E_avg", "label":"avg." },
+                { "xAxis":"s", "yAxis":"dE/E_max", "label":"max." }, 
+            ],
+            option: {}
+        },
+
+        "s-sigma_phi": {
+            config: {
+                "ax1.y.label": "$\\sigma_{\\phi} \\ \\mathrm{(deg)}$", 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dphi_rms", "label":"RMS" }, 
+            ],
+            option: {}
+        },
+
+        "s-sigma_dp_p": {
+            config: {
+                "ax1.y.label": "$\\sigma_{\\Delta p/p} \\ \\mathrm{(\\%)}$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dp/p_rms", "label":"RMS" }
+            ],
+            option: {}
+        },
+
+        "s-sigma_dE_E0": {
+            config: {
+                "ax1.y.label": "$\\sigma_{\\Delta E/E} \\ \\mathrm{(\\%)}$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"dE/E_rms", "label":"RMS" }
+            ],
+            option: {}
+        },
+
+        "s-transmission": {
+            config: {
+                "ax1.y.label": "Transmission (%)",
+                "ax1.y.range": { "auto": false, "min": 0.0, "max": 120.0, "num": 7 }
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"transmission", "label":"Transmission" }
+            ],
+            option: {}
+        },
+
+        "s-max_sigma_xy": {
+            config: {
+                "ax1.y.label": "$max(|x|)/\\sigma_x, max(|y|)/\\sigma_y$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"max/sigma_x", "label":"x" },
+                { "xAxis":"s", "yAxis":"max/sigma_y", "label":"y" }
+            ],
+            option: {}
+        },
+
+        "s-max_sigma_t": {
+            config: {
+                "ax1.y.label": "$max(|t|)/\\sigma_t$"
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"max/sigma_t", "label":"t" }
+            ],
+            option: {}
+        },
+
+        "s-max_sigma_dphi": {
+            config: {
+                "ax1.y.label": "$max(|\\Delta \\phi|)/\\sigma_{\\Delta \\phi}$", 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"max/sigma_dphi", "label":"$\\Delta \\phi$" }
+            ],
+            option: {}
+        },
+
+        "s-corr__xp-yp": {
+            config: {
+                "ax1.y.label"     : "$cov(x,y)/\\sigma_x \\sigma_y \\ (\\%)$", 
+                "ax1.y.normalize" : 1.0e+2, 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"xp-yp", "label":"$<x,y>$" }
+            ],
+            option: {}
+        },
+
+        "s-corr__xp-tp": {
+            config: {
+                "ax1.y.label"     : "$cov(x,t)/\\sigma_x \\sigma_t \\ (\\%)$", 
+                "ax1.y.normalize" : 1.0e+2, 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"xp-tp", "label":"$<x,t>$" }
+            ],
+            option: {}
+        },
+
+        "s-corr__xp-px": {
+            config: {
+                "ax1.y.label"     : "$cov(x,p_x)/\\sigma_x \\sigma_{p_x} \\ (\\%)$", 
+                "ax1.y.normalize" : 1.0e+2, 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"xp-px", "label":"$<x,p_x>$" }
+            ],
+            option: {}
+        },
+
+        "s-corr__xp-py": {
+            config: {
+                "ax1.y.label"     : "$cov(x,p_y)/\\sigma_x \\sigma_{p_y} \\ (\\%)$", 
+                "ax1.y.normalize" : 1.0e+2, 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"xp-py", "label":"$<x,p_y>$" }
+            ],
+            option: {}
+        },
+
+        "s-corr__xp-pt": {
+            config: {
+                "ax1.y.label"     : "$cov(x,p_t)/\\sigma_x \\sigma_{p_t} \\ (\\%)$", 
+                "ax1.y.normalize" : 1.0e+2, 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"xp-pt", "label":"$<x,p_t>$" }
+            ],
+            option: {}
+        },
+
+        "s-corr__tp-pt": {
+            config: {
+                "ax1.y.label"     : "$cov(t,p_t)/\\sigma_t \\sigma_{p_t} \\ (\\%)$", 
+                "ax1.y.normalize" : 1.0e+2, 
+            },
+            plots: [
+                { "xAxis":"s", "yAxis":"tp-pt", "label":"$<t,p_t>$" }
+            ],
+            option: {}
+        },
+    },
+
+    "trajectory":{
+
+        "settings"     : {
+            "cmap"     : "jet",
+            "nColors"  : 128,
+            "nRandoms" : 500, 
+        },
+
+        "default"  : {
+            "figure.size"        : [ 9.0, 3.0 ],
+            "figure.position"    : [ 0.11, 0.16, 0.96, 0.92 ],
+            "ax1.x.range"        : { "auto":true, "min": 0.0, "max":1.0, "num":11 },
+            "ax1.y.range"        : { "auto":true, "min": 0.0, "max":1.0, "num":11 },
+            "ax1.x.label"        : "s (m)",
+            "ax1.x.minor.nticks" : 1, 
+            "plot.marker"        : "o",
+            "plot.markersize"    : 0.2,
+        },
+
+        "s-xp" : {
+            config: {
+                "ax1.y.label"     : "$x \\, \\mathrm{(mm)}$", 
+                "ax1.y.normalize" : 1.0e-3, 
+            },
+            plots: [
+                { "xAxis":"ref_s", "yAxis":"xp" }, 
+            ],
+            option: {}, 
+        },
+        
+        "s-yp" : {
+            config: {
+                "ax1.y.label"     : "$y \\, \\mathrm{(mm)}$", 
+                "ax1.y.normalize" : 1.0e-3, 
+            },
+            plots: [
+                { "xAxis":"ref_s", "yAxis":"yp" }, 
+            ],
+            option: {}, 
+        },
+
+        "s-tp" : {
+            config: {
+                "ax1.y.label"     : "$t \\, \\mathrm{(mm)}$", 
+                "ax1.y.normalize" : 1.0e-3, 
+            },
+            plots: [
+                { "xAxis":"ref_s", "yAxis":"tp" }, 
+            ],
+            option: {}, 
+        },
+        
+    }
+
+}
