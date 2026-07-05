@@ -441,10 +441,12 @@ def generate__QMField( L_qm =1.0, G_qm=1.0, L_fringe=None, zc=0.0,
     data_ = { "xg": xg.ravel(), "yg": yg.ravel(), "zg": zg.ravel(), \
               "Bx": Bx.ravel(), "By": By.ravel(), "Bz": Bz.ravel(), }
     df    = pd.DataFrame.from_dict( data_ )
+    os.makedirs( os.path.dirname( csvFile ), exist_ok=True )
     df.to_csv( csvFile )
     
     data  = { "xg": xg, "yg": yg, "zg": zg, \
               "Bx": Bx, "By": By, "Bz": Bz, }
+    os.makedirs( os.path.dirname( vtiFile ), exist_ok=True )
     ret = wtk.write__vtkImageData( data=data.copy(), vtiFile=vtiFile )
 
     # ------------------------------------------------- #
