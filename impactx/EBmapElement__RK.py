@@ -119,7 +119,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             dz         = zAxis[-1]        # dz must be self.ds
             
             if not( np.isclose( dz, self.ds, rtol=1.e-8 ) ):
-                raise ValueError( "[ERROR] ds and loaded b-field dz=zMax-zMin has different size..." )
+                raise ValueError( "[ERROR] ds and loaded B-field-map z span are inconsistent." )
             
             if ( nx*ny*nz != len(bdat) ):
                 raise ValueError( "[ERROR] B-field map size is inconsistent with structured grid." )
@@ -151,7 +151,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             dz         = zAxis[-1]        # dz must be self.ds
             
             if not( np.isclose( dz, self.ds, rtol=1.e-8 ) ):
-                raise ValueError( "[ERROR] ds and loaded b-field dz=zMax-zMin has different size..." )
+                raise ValueError( "[ERROR] ds and loaded B-field-map z span are inconsistent." )
             if ( nr*nz != len(edat) ):
                 raise ValueError( "[ERROR] E-field map size is inconsistent with structured grid." )
 
