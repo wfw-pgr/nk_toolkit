@@ -336,7 +336,7 @@ def save__DTLBfield( data=None, icell=1, ksymx=0, ksymy=0, ksymz=0,
         )
         print( f"  coordScale  = {coordScale:.8E}" )
         print( f"  fieldScale  = {fieldScale:.8E}" )
-        print( "  data order  = ix fastest, then iy, then iz" )
+        print( "  data order  = iz fastest, then iy, then ix" )
         print( "  status      = success" )
 
         return( outFile )

@@ -238,8 +238,12 @@ def compare__impactx_vs_trackv38( trackFile  ="dat/beam.dat", \
     # --- sanity check  at begining                 --- #
     # ------------------------------------------------- #
     i   = 0
+    
     fac = clight / ( 360.0*freqb_Hz )
     print( "[ t-direction sanity check at begining ]" )
+    print( "frequency is set to = ", freqb_Hz )
+    print()
+    print( "[TRACK / ImpactX]" )
     print( "TRACK phi_rms[deg]  =", df_trackv38["phi_rms[deg]"].iloc[i]     )
     print( "TRACK sigma_t [m]   =", df_trackv38["phi_rms[deg]"].iloc[i]*fac )
     print( "ImpactX sigma_t [m] =", df_impactx["sigma_t"].iloc[i]           )

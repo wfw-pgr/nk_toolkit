@@ -20,7 +20,26 @@
             "plot.markersize"    : 2.0,
             "legend.fontsize"    : 8.0,
         }, 
+
+        "s-xyEnvelope": {
+            "config": {
+                "ax1.y.label"    : "$x, y, \\sigma_x, \\sigma_y \\ \\mathrm{(mm)}$",
+                "ax1.y.normalize": 1.0e-3,   // [m] -> [mm]
+            },
+            "plots": [
+                { "xAxis":"s", "yAxis":"max_x",  "label":"max(x)",
+                  "color":"C0", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"s", "yAxis":"max_y",  "label":"max(y)",
+                  "color":"C1", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"s", "yAxis":"sigma_x", "label":"$\\sigma_x$",
+                  "color":"C0", "linestyle":"-", "marker":"none" },
+                { "xAxis":"s", "yAxis":"sigma_y", "label":"$\\sigma_y$",
+                  "color":"C1", "linestyle":"-", "marker":"none" },
+            ],
+            "option": {},
+        },
         
+
         "s-xRange": {
             "config": {
                 "ax1.y.label"    : "$x\\ \\mathrm{[mm]}$",
@@ -220,7 +239,48 @@
             "plot.markersize"    : 2.0,
             "legend.fontsize"    : 8.0,
         }, 
+
+        "s-xEnvelope": {
+            "config": {
+                "ax1.y.label"    : "$x, \\ \\sigma_x, \\ \\mathrm{(mm)}$",
+                "ax1.x.range"    : { "auto":true, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.y.range"    : { "auto":true, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.y.normalize": 1.e-3, // [m]   -> [mm]
+            },
+            "plots": [
+                { "xAxis":"tr__s", "yAxis":"tr__xmax",  "label":"TRACKv39 max(x)",
+                  "color":"C0", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"tr__s", "yAxis":"tr__sigma_x", "label":"TRACKv39 $\\sigma_x$",
+                  "color":"C0", "linestyle":"-", "marker":"none" },
+                { "xAxis":"im__s", "yAxis":"im__xmax",  "label":"ImpactX max(x)",
+                  "color":"C1", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"im__s", "yAxis":"im__sigma_x", "label":"ImpactX $\\sigma_x$",
+                  "color":"C1", "linestyle":"-", "marker":"none" },
+            ],
+            "option": {},
+        },
         
+        "s-yEnvelope": {
+            "config": {
+                "ax1.y.label"    : "$y, \\ \\sigma_y, \\ \\mathrm{(mm)}$",
+                "ax1.x.range"    : { "auto":true, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.y.range"    : { "auto":true, "min":-100.0, "max":100.0, "num":11 },
+                "ax1.y.normalize": 1.e-3, // [m]   -> [mm]
+            },
+            "plots": [
+                { "xAxis":"tr__s", "yAxis":"tr__ymax",  "label":"TRACKv39 max(y)",
+                  "color":"C0", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"tr__s", "yAxis":"tr__sigma_y", "label":"TRACKv39 $\\sigma_y$",
+                  "color":"C0", "linestyle":"-", "marker":"none" },
+                { "xAxis":"im__s", "yAxis":"im__ymax",  "label":"ImpactX max(y)",
+                  "color":"C1", "linestyle":"--", "marker":"none"  },
+                { "xAxis":"im__s", "yAxis":"im__sigma_y", "label":"ImpactX $\\sigma_y$",
+                  "color":"C1", "linestyle":"-", "marker":"none" },
+            ],
+            "option": {},
+        },
+        
+
         "s-sigma_x": {
             "config": {
                 "ax1.y.label"    : "$\\sigma_x$ [m]",
