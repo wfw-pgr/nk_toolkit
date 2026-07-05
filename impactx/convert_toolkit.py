@@ -583,14 +583,17 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
     #     print( ret )
     #     return( ret )
 
-    
+    # [CAUTION] use small case for fortran namelists
     import f90nml
     if ( trackFile is not None ):
         namelists = f90nml.read( trackFile )
-        namelists = namelists.get( "tran", {} )
+        tran_nml  = namelists.get(  "tran", {} )
+        index_nml = namelists.get( "index", {} )
+        namelists = { **tran_nml, **index_nml }
+        print( namelists )
     if ( namelists is None ):
         namelists = {
-            "Win"      :5.0e6    ,
+            "win"      :5.0e6    ,
             "freqb"    :36.5e6   ,
             "amass"    :2.0      ,
             "epsnx"    :20.0     ,
@@ -603,6 +606,13 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
             "alfaz"    :0.0      ,
             "betaz"    :10.0     ,
         }
+    if ( "iflag_dis" in namelists ):
+        if   ( namelists["iflag_dis"] == 0 ):
+            full2rms = 1./6.
+        elif ( namelists["iflag_dis"] == 1 ):
+            full2rms = 1./8.
+        else:
+            raise ValueError( f' iflag_dis == {namelists["iflag_dis"]} ??  ERROR' )
     cv    = 299792458.0
     amu   = 931.4941024e6
     cm    = 1.0e-2
@@ -612,7 +622,7 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
     # --- [1] calculation                           --- #
     # ------------------------------------------------- #
     # -- relativistic gamma, beta                   --  #
-    gamma = 1.0 + namelists["Win"] / ( amu )
+    gamma = 1.0 + namelists["win"] / ( amu )
     beta  = np.sqrt( 1.0 - 1.0 / gamma**2 )
 
     # -- TRACKv38: Normalized full [pi cm mrad] -> geometric rms [mm mrad]  -- #
