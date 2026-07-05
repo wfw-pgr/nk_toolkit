@@ -113,6 +113,13 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             yAxis      = np.unique( bdat[:,1] )
             zAxis      = np.unique( bdat[:,2] )
             nx, ny, nz = len(xAxis), len(yAxis), len(zAxis)
+
+            zMin       = zAxis[0]
+            zAxis      = zAxis - zMin     # z-coord :: [ zMin - zMax] => [ 0.0 - (zMax-zMin) ]
+            dz         = zAxis[-1]        # dz must be self.ds
+            
+            if not( np.isclose( dz, self.ds, rtol=1.e-8 ) ):
+                raise ValueError( "[ERROR] ds and loaded b-field dz=zMax-zMin has different size..." )
             
             if ( nx*ny*nz != len(bdat) ):
                 raise ValueError( "[ERROR] B-field map size is inconsistent with structured grid." )
@@ -138,6 +145,13 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             rAxis      = np.unique( edat[:,0] )
             zAxis      = np.unique( edat[:,1] )
             nr, nz     = len(rAxis), len(zAxis)
+
+            zMin       = zAxis[0]
+            zAxis      = zAxis - zMin     # z-coord :: [ zMin - zMax] => [ 0.0 - (zMax-zMin) ]
+            dz         = zAxis[-1]        # dz must be self.ds
+            
+            if not( np.isclose( dz, self.ds, rtol=1.e-8 ) ):
+                raise ValueError( "[ERROR] ds and loaded b-field dz=zMax-zMin has different size..." )
             if ( nr*nz != len(edat) ):
                 raise ValueError( "[ERROR] E-field map size is inconsistent with structured grid." )
 
@@ -513,8 +527,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                 px       = np.array( r_array[3], copy=False )
                 py       = np.array( r_array[4], copy=False )
                 pt       = np.array( r_array[5], copy=False )
-                # idcpu    = soa.get_idcpu_data().to_numpy( copy=False )     # out
-                idcpu    = np.array( soa.get_idcpu_data(), copy=False )      # in
+                idcpu    = np.array( soa.get_idcpu_data(), copy=False )
                 
                 if (len(xp) == 0):
                     continue
