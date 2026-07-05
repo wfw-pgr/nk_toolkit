@@ -689,7 +689,7 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
         bfactor = G2T
     if ( btype == "quad" ):
         eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_PMQ.#{:02}".format( bnn ) )
-        bfactor = mG2T
+        bfactor = G2T    # mG2T ??? for CUI-based trackv39  ??? かもしれないが、数値的にはG2Tのはず。要検証段階。
     if ( eh_PMQ is None ):
         eh_PMQ = eh_PMQ_
     if ( eh_PMQ != eh_PMQ_ ):
