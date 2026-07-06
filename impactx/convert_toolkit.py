@@ -664,6 +664,8 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
 
     cm, MV          = 1.0e-2, 1.0e6
     mG2T, G2T, kG2T = 1.0e-7, 1.0e-4, 1.0e-1
+    G_to_T          = 1.0e-4
+    V_cm_to_V_m     = 100.0                      # eh_DTL.#00 :: E in V/cm, impactx :: E in V/m
     
     # ========================================================= #
     # ===  [1] load E-Field data                            === #
@@ -686,10 +688,10 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
         raise ValueError( "eh_DTL's format is different : not ( Cell : 1 ) : {}".format( eh_DTL ) )
     if ( btype == "sol"  ):
         eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_SOL.#{:02}".format( bnn ) )
-        bfactor = G2T
+        bfactor = G_to_T
     if ( btype == "quad" ):
         eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_PMQ.#{:02}".format( bnn ) )
-        bfactor = G2T    # mG2T ??? for CUI-based trackv39  ??? かもしれないが、数値的にはG2Tのはず。要検証段階。
+        bfactor = G_to_T    # mG2T for CUI-based trackv39  ??? かもしれないが、数値的にはG2Tのはず。要検証段階。
     if ( eh_PMQ is None ):
         eh_PMQ = eh_PMQ_
     if ( eh_PMQ != eh_PMQ_ ):
@@ -722,8 +724,8 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
     with open( eh_DTL, "r" ) as f:
         ebf     = np.loadtxt( f, skiprows=6, max_rows=nData )
     ebf         = np.reshape( ebf, ( rNum, zNum, 3 ) )
-    Er_full     = np.concatenate( [ -ebf[:,::-1,er_][:,:-1], ebf[:,:,er_] ], axis=1 )
-    Ez_full     = np.concatenate( [  ebf[:,::-1,ez_][:,:-1], ebf[:,:,ez_] ], axis=1 )
+    Er_full     = np.concatenate( [ -ebf[:,::-1,er_][:,:-1], ebf[:,:,er_] ], axis=1 ) * V_cm_to_V_m
+    Ez_full     = np.concatenate( [  ebf[:,::-1,ez_][:,:-1], ebf[:,:,ez_] ], axis=1 ) * V_cm_to_V_m
     Bp_full     = np.concatenate( [  ebf[:,::-1,bp_][:,:-1], ebf[:,:,bp_] ], axis=1 )
     if ( axisymm_bb ) and ( np.isclose( ra[0], 0.0 ) ):
         Er_full[0,:] = 0.0
@@ -755,9 +757,9 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
     ya                  = np.linspace(  yMin, yMax,   yNum   )
     za                  = np.linspace(  zMin, zMax,   zNum   )
     xg, yg, zg          = np.meshgrid( xa, ya, za, indexing="ij" )
-    Bx                  = np.reshape( pmq[4:,bx_]*bfactor, (xNum,yNum,zNum) )
-    By                  = np.reshape( pmq[4:,by_]*bfactor, (xNum,yNum,zNum) )
-    Bz                  = np.reshape( pmq[4:,bz_]*bfactor, (xNum,yNum,zNum) )
+    Bx                  = np.reshape( pmq[4:,bx_], (xNum,yNum,zNum) ) * bfactor
+    By                  = np.reshape( pmq[4:,by_], (xNum,yNum,zNum) ) * bfactor
+    Bz                  = np.reshape( pmq[4:,bz_], (xNum,yNum,zNum) ) * bfactor
     ix0                 = int( np.argmin( np.abs( xa ) ) )
     iy0                 = int( np.argmin( np.abs( ya ) ) )
     if ( ( axisymm_bb ) and ( np.isclose( xa[ix0], 0.0 ) and np.isclose( ya[iy0], 0.0 ) ) ):
