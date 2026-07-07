@@ -665,7 +665,7 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
 
     cm, MV          = 1.0e-2, 1.0e6
     mG2T, G2T, kG2T = 1.0e-7, 1.0e-4, 1.0e-1
-    G_to_T          = 1.0e-4
+    G_to_T, mG_to_T = 1.0e-4, 1.0e-7
     V_cm_to_V_m     = 100.0                      # eh_DTL.#00 :: E in V/cm, impactx :: E in V/m
     
     # ========================================================= #
@@ -692,7 +692,7 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
         bfactor = G_to_T
     if ( btype == "quad" ):
         eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_PMQ.#{:02}".format( bnn ) )
-        bfactor = G_to_T    # mG2T for CUI-based trackv39  ??? かもしれないが、数値的にはG2Tのはず。要検証段階。
+        bfactor = mG_to_T    # mG_to_T for CUI-based trackv39 ???   数値的には mG2T のはず。要検証段階。
     if ( eh_PMQ is None ):
         eh_PMQ = eh_PMQ_
     if ( eh_PMQ != eh_PMQ_ ):
