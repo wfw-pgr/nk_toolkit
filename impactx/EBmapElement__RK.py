@@ -222,6 +222,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             tphase = tp
         elif ( self.phase_sync.lower() == "sync" ):
             #  tphase = tp - tref     under construction.
+            raise ValueError( "[_evaluate_fields]  under construction. error. " )
         elif ( self.phase_sync.lower() == "forced" ):
             tphase = 0.0
         else:
