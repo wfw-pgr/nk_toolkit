@@ -62,6 +62,8 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         self.freq            = float( freq  )
         self.phase           = float( phase )
         self.phase_sync      = phase_sync
+        self.t_entry         = t_entry
+        self.map_sedge       = None
         self.int_method      = int_method
         self.aperture_x      = float( aperture_x  )
         self.aperture_y      = float( aperture_y  )
@@ -686,11 +688,14 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             step    ( int ) : required by programmable element
             period  ( ) : required by programmable element
         """
-        refpart      = pc.ref_particle()
-        self.t_entry = refpart.t
-        ref_old      = { "x"  :refpart.x,  "y" :refpart.y,  "z" :refpart.z,  "t" :refpart.t,
-                         "px" :refpart.px, "py":refpart.py, "pz":refpart.pz, "pt":refpart.pt,
-                         "s"  :refpart.s,  "sedge":refpart.sedge }
+        refpart = pc.ref_particle()
+        if ( self.map_sedge is None ) or \
+           ( not( np.isclose( self.map_sedge, refpart.sedge, rtol=1.e-12, atol=1.e-15 ) ) ):
+            self.t_entry   = refpart.t
+            self.map_sedge = refpart.sedge
+        ref_old = { "x"  :refpart.x,  "y" :refpart.y,  "z" :refpart.z,  "t" :refpart.t,
+                    "px" :refpart.px, "py":refpart.py, "pz":refpart.pz, "pt":refpart.pt,
+                    "s"  :refpart.s,  "sedge":refpart.sedge }
         self._push__refp_fromfield( refpart )
         self._push__beam_fromfield( pc, refpart, ref_old )
                         
