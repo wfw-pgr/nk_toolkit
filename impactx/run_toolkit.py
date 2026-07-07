@@ -57,7 +57,7 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
         "ebmap.rk" : {
             "class"   : ebmrk.EBmapElement__RK, 
             "allowed" : [ "ds", "name", "nslice", "bfieldfile", "efieldfile", "bfactor", "efactor",
-                          "freq", "phase", "int_method", "aperture_x", "aperture_y",
+                          "freq", "phase", "phase_sync", "int_method", "aperture_x", "aperture_y",
                           "aperture_cx", "aperture_cy", ],
             "options" : "translate.ebmap.options",
         },
