@@ -44,9 +44,10 @@ $ eom png/refp/*.png
 
 ## パス設定
 
-- 画面を閉じない限り、動作の前に一度だけ実行で良い。
-- pythonで使用している nk_toolkit (可視化ツール) について、PYTHONPATHにパスを設定するだけ。
+- 画面を閉じない限り、動作の前に一度だけ実行で良い。また、デフォルト設定環境では、~/.python/lib/nk_toolkit/以下にパスを通し済み。
+- pythonで使用している nk_toolkit (可視化ツール) について、PYTHONPATHにパスを設定するのと、出力拡張子の設定 ( .0 / .0.0 etc. )
 - 固定パス( e.g.) ~/.python/lib/nk_toolkit ) にnk_toolkitをおいて、~/.zshrc などに export PYTHONPATTH=$HOME/.python/lib:$PYTHONPATH として、省略可能。	
+- 通常、~/.python/lib/nk_toolkit/ 以下に格納されており、デフォルト設定を通している。ローカルでの書き換え時に、setvars.sh を読み込めば、local lib/ 以下が優先され、書き換え時にライブラリを汚さない。
 
 ```terminal
 $ source lib/setvars.sh
@@ -72,6 +73,14 @@ $ source lib/setvars.sh
 
 ```terminal
   $ invoke track2impactx
+```
+
+## DTL要素を含む際
+
+### コマンド
+
+```terminal
+  $ invoke convertDTLmap
 ```
 
 

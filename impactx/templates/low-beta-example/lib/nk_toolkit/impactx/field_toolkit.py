@@ -336,7 +336,7 @@ def save__DTLBfield( data=None, icell=1, ksymx=0, ksymy=0, ksymz=0,
         )
         print( f"  coordScale  = {coordScale:.8E}" )
         print( f"  fieldScale  = {fieldScale:.8E}" )
-        print( "  data order  = ix fastest, then iy, then iz" )
+        print( "  data order  = iz fastest, then iy, then ix" )
         print( "  status      = success" )
 
         return( outFile )
@@ -441,10 +441,12 @@ def generate__QMField( L_qm =1.0, G_qm=1.0, L_fringe=None, zc=0.0,
     data_ = { "xg": xg.ravel(), "yg": yg.ravel(), "zg": zg.ravel(), \
               "Bx": Bx.ravel(), "By": By.ravel(), "Bz": Bz.ravel(), }
     df    = pd.DataFrame.from_dict( data_ )
+    os.makedirs( os.path.dirname( csvFile ), exist_ok=True )
     df.to_csv( csvFile )
     
     data  = { "xg": xg, "yg": yg, "zg": zg, \
               "Bx": Bx, "By": By, "Bz": Bz, }
+    os.makedirs( os.path.dirname( vtiFile ), exist_ok=True )
     ret = wtk.write__vtkImageData( data=data.copy(), vtiFile=vtiFile )
 
     # ------------------------------------------------- #

@@ -1,6 +1,0 @@
-{
-    "Win"   : 100.0e3, "A"     : 2.0    , "freqb" : 36.5e6 , "mass_amu" : 2.014,
-    "epsnx" : 7.5    , "alfax" : 0      , "betax" : 5    ,
-    "epsny" : 7.5    , "alfay" : 0      , "betay" : 5    ,
-    "epsnz" : 37.6   , "alfaz" : -0.06  , "betaz" : 0.6  ,
-}

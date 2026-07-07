@@ -37,7 +37,8 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                   efactor    =1.0     , # (float)
                   freq       =0.0     , # (float) [Hz]
                   phase      =0.0     , # (float) [deg.]
-                  int_method = "RK4"  , # (str) [ "ExplicitEuler", "RK2", "RK4" ]
+                  phase_sync ="none"  , # (str) [ "none", "sync", "forced" ] 
+                  int_method ="RK4"   , # (str) [ "ExplicitEuler", "RK2", "RK4" ]
                   aperture_x =0.0     , # (float) ellipse half-aperture [m]
                   aperture_y =0.0     , # (float) ellipse half-aperture [m]
                   aperture_cx=0.0     , # (float) aperture center x in map frame [m]
@@ -56,6 +57,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         self.efactor         = float( efactor )
         self.freq            = float( freq  )
         self.phase           = float( phase )
+        self.phase_sync      = phase_sync
         self.int_method      = int_method
         self.aperture_x      = float( aperture_x  )
         self.aperture_y      = float( aperture_y  )
@@ -113,6 +115,13 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             yAxis      = np.unique( bdat[:,1] )
             zAxis      = np.unique( bdat[:,2] )
             nx, ny, nz = len(xAxis), len(yAxis), len(zAxis)
+
+            zMin       = zAxis[0]
+            zAxis      = zAxis - zMin     # z-coord :: [ zMin - zMax] => [ 0.0 - (zMax-zMin) ]
+            dz         = zAxis[-1]        # dz must be self.ds
+            
+            if not( np.isclose( dz, self.ds, rtol=1.e-8 ) ):
+                raise ValueError( "[ERROR] ds and loaded B-field-map z span are inconsistent." )
             
             if ( nx*ny*nz != len(bdat) ):
                 raise ValueError( "[ERROR] B-field map size is inconsistent with structured grid." )
@@ -138,6 +147,13 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             rAxis      = np.unique( edat[:,0] )
             zAxis      = np.unique( edat[:,1] )
             nr, nz     = len(rAxis), len(zAxis)
+
+            zMin       = zAxis[0]
+            zAxis      = zAxis - zMin     # z-coord :: [ zMin - zMax] => [ 0.0 - (zMax-zMin) ]
+            dz         = zAxis[-1]        # dz must be self.ds
+            
+            if not( np.isclose( dz, self.ds, rtol=1.e-8 ) ):
+                raise ValueError( "[ERROR] ds and loaded B-field-map z span are inconsistent." )
             if ( nr*nz != len(edat) ):
                 raise ValueError( "[ERROR] E-field map size is inconsistent with structured grid." )
 
@@ -179,13 +195,13 @@ class EBmapElement__RK( impactx.elements.Programmable ):
     # ===================================================== #
     # === _evaluate_fields                              === #
     # ===================================================== #
-    def _evaluate_fields( self, xp, yp, zp, tp=0.0 ):
+    def _evaluate_fields( self, xp, yp, zp, tp, ):
         """ Evaluate E and B at particle positions.
         
         Args:
             xp, yp, zp (ndarray) : x-, y-, s- positions  [size = npart]
             tp         (ndarray) : time coordinate for RF modulation.
-                                   Relative to reference particle. ( optional )
+                                   Relative to reference particle.
         Returns:
             Ex,Ey,Ez,Bx,By,Bz (ndarray) : 
         """
@@ -202,6 +218,17 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         By    = np.zeros( npart )
         Bz    = np.zeros( npart )
 
+        if   ( self.phase_sync.lower() == "none" ):
+            tphase = tp
+        elif ( self.phase_sync.lower() == "sync" ):
+            #  tphase = tp - tref     under construction.
+            raise ValueError( "[_evaluate_fields]  under construction. error. " )
+        elif ( self.phase_sync.lower() == "forced" ):
+            tphase = 0.0
+        else:
+            raise ValueError( "[_evaluate_fields]  unknown self.phase_sync argument : {}"
+                              .format( self.phase_sync ) )
+        
         # ------------------------------------------------- #
         # --- [2] B-Field                               --- #
         # ------------------------------------------------- #
@@ -217,7 +244,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         if ( self.Er_interpolator is not None ):
             rp       = np.sqrt( xp**2 + yp**2 )
             pts2     = np.column_stack( [rp, zp] )
-            phi      = np.deg2rad( self.phase ) + ( 2.0*np.pi*self.freq * tp/cv )
+            phi      = np.deg2rad( self.phase ) + ( 2.0*np.pi*self.freq * tphase/cv )
             phaseMod = np.cos( phi )
 
             Er       = self.Er_interpolator( pts2 ) * phaseMod
@@ -262,7 +289,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             Fx, Fy, Fz     ( ndarray ) : rhs of d(beta gamma)/dt = F/c, 
         """
         cv                = 2.99792458e8
-        Ex,Ey,Ez,Bx,By,Bz = self._evaluate_fields( xp,yp,sp,tp=tp )
+        Ex,Ey,Ez,Bx,By,Bz = self._evaluate_fields( xp,yp,sp,tp )
         gammaInv          = 1.0 / np.sqrt( 1.0 + px**2 + py**2 + pz**2 )
         betax             = px * gammaInv
         betay             = py * gammaInv
@@ -284,15 +311,15 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         Return:
             dxds,dyds,dtds,dpxds,dpyds,dpzds ( ndarray ) :
         """
-        cv                = 2.99792458e8
-        vx,vy,vz          = self._compute__rhs_velocity    (              px,py,pz       )
-        Fx,Fy,Fz          = self._compute__rhs_LorentzForce( xp,yp,tp,sp, px,py,pz, q_mc )
-        dxds              = vx / vz
-        dyds              = vy / vz
-        dtds              = cv / vz
-        dpxds             = Fx / vz
-        dpyds             = Fy / vz
-        dpzds             = Fz / vz
+        cv       = 2.99792458e8
+        vx,vy,vz = self._compute__rhs_velocity    (                   px,py,pz       )
+        Fx,Fy,Fz = self._compute__rhs_LorentzForce( xp,yp,tp,sp, px,py,pz, q_mc )
+        dxds     = vx / vz
+        dyds     = vy / vz
+        dtds     = cv / vz
+        dpxds    = Fx / vz
+        dpyds    = Fy / vz
+        dpzds    = Fz / vz
         return( dxds,dyds,dtds, dpxds,dpyds,dpzds )
 
 
@@ -307,47 +334,47 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         # --- [1] k1                                    --- #
         # ------------------------------------------------- #
         k1x,k1y,k1t, k1px,k1py,k1pz = self._compute__rhs_s(
-            xp,yp,tp,sp, px,py,pz, q_mc )
+            xp,yp,tp, sp, px,py,pz, q_mc )
 
         # ------------------------------------------------- #
         # --- [2] k2                                    --- #
         # ------------------------------------------------- #
         h2       = 0.5 * ds_sliced
-        xp2      = xp + h2 * k1x
-        yp2      = yp + h2 * k1y
-        tp2      = tp + h2 * k1t
-        sp2      = sp + h2
-        px2      = px + h2 * k1px
-        py2      = py + h2 * k1py
-        pz2      = pz + h2 * k1pz
+        xp2      = xp   + h2 * k1x
+        yp2      = yp   + h2 * k1y
+        tp2      = tp   + h2 * k1t
+        sp2      = sp   + h2
+        px2      = px   + h2 * k1px
+        py2      = py   + h2 * k1py
+        pz2      = pz   + h2 * k1pz
         k2x,k2y,k2t, k2px,k2py,k2pz = self._compute__rhs_s(
             xp2,yp2,tp2,sp2, px2,py2,pz2, q_mc )
 
         # ------------------------------------------------- #
         # --- [3] k3                                    --- #
         # ------------------------------------------------- #
-        xp3      = xp + h2 * k2x
-        yp3      = yp + h2 * k2y
-        tp3      = tp + h2 * k2t
-        sp3      = sp + h2
-        px3      = px + h2 * k2px
-        py3      = py + h2 * k2py
-        pz3      = pz + h2 * k2pz
+        xp3      = xp   + h2 * k2x
+        yp3      = yp   + h2 * k2y
+        tp3      = tp   + h2 * k2t
+        sp3      = sp   + h2
+        px3      = px   + h2 * k2px
+        py3      = py   + h2 * k2py
+        pz3      = pz   + h2 * k2pz
         k3x,k3y,k3t, k3px,k3py,k3pz = self._compute__rhs_s(
-            xp3,yp3,tp3,sp3, px3,py3,pz3, q_mc )
+            xp3,yp3,tp3, sp3, px3,py3,pz3, q_mc )
 
         # ------------------------------------------------- #
         # --- [4] k4                                    --- #
         # ------------------------------------------------- #
-        xp4      = xp + ds_sliced * k3x
-        yp4      = yp + ds_sliced * k3y
-        tp4      = tp + ds_sliced * k3t
-        sp4      = sp + ds_sliced
-        px4      = px + ds_sliced * k3px
-        py4      = py + ds_sliced * k3py
-        pz4      = pz + ds_sliced * k3pz
+        xp4      = xp   + ds_sliced * k3x
+        yp4      = yp   + ds_sliced * k3y
+        tp4      = tp   + ds_sliced * k3t
+        sp4      = sp   + ds_sliced
+        px4      = px   + ds_sliced * k3px
+        py4      = py   + ds_sliced * k3py
+        pz4      = pz   + ds_sliced * k3pz
         k4x,k4y,k4t, k4px,k4py,k4pz = self._compute__rhs_s(
-            xp4,yp4,tp4,sp4, px4,py4,pz4, q_mc )
+            xp4,yp4,tp4, sp4, px4,py4,pz4, q_mc )
 
         # ------------------------------------------------- #
         # --- [5] weighted sum                          --- #
@@ -359,7 +386,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
         px_f      = px + coef * ( k1px + 2.0*k2px + 2.0*k3px + k4px )
         py_f      = py + coef * ( k1py + 2.0*k2py + 2.0*k3py + k4py )
         pz_f      = pz + coef * ( k1pz + 2.0*k2pz + 2.0*k3pz + k4pz )
-        return( xp_f,yp_f,tp_f, px_f,py_f,pz_f )
+        return( xp_f,yp_f,tp_f, px_f,py_f,pz_f  )
 
 
     # ========================================================= #
@@ -513,8 +540,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                 px       = np.array( r_array[3], copy=False )
                 py       = np.array( r_array[4], copy=False )
                 pt       = np.array( r_array[5], copy=False )
-                # idcpu    = soa.get_idcpu_data().to_numpy( copy=False )     # out
-                idcpu    = np.array( soa.get_idcpu_data(), copy=False )      # in
+                idcpu    = np.array( soa.get_idcpu_data(), copy=False )
                 
                 if (len(xp) == 0):
                     continue
@@ -524,7 +550,7 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                 # ------------------------------------------------- #
                 xp_abs_i = ref_old["x"]  + xp
                 yp_abs_i = ref_old["y"]  + yp
-                tp_abs_i = ref_old["t"]  + tp
+                tp_abs_i = ref_old["t"]  + tp                # --  global-time
                 px_abs_i = ref_old["px"] + ref_bg_i * px
                 py_abs_i = ref_old["py"] + ref_bg_i * py
                 

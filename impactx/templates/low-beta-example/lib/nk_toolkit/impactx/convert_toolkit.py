@@ -392,7 +392,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         bfieldfile = params["translate.ebmap.bfieldfile"]
         efactor    = float( element["vscale"] * DTLv.loc["Eflvl"] * DTLv.loc["E0"] )
         bfactor    = float( DTLv.loc["Ql-Bgrd"] )
-        phase      = float( element["phase"]   + DTLv["Phase"] )
+        phase      = float( element["phase"] )
         freq       = float( params["beam.freq.Hz"]  * params["beam.harmonics"] )
         if ( not( np.isclose( DTLv["Ql-Bgrd"], DTLv["Qr-Bgrd"], rtol=1.e-7 ) ) ):
             raise ValueError( "Ql-Bgrd ({}) != Qr-Bgrd ({}) :: "
@@ -407,7 +407,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             "bfactor"    : bfactor,
             "freq"       : freq,
             "phase"      : phase,
-            "int_method" : params["translate.ebmap.int_method"], 
+            "int_method" : params.get( "translate.ebmap.int_method", "RK4"  ),
+            "phase_sync" : params.get( "translate.ebmap.phase_sync", "none" ), 
         }
         return( ret )
 
@@ -583,14 +584,17 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
     #     print( ret )
     #     return( ret )
 
-    
+    # [CAUTION] use small case for fortran namelists
     import f90nml
     if ( trackFile is not None ):
         namelists = f90nml.read( trackFile )
-        namelists = namelists.get( "tran", {} )
+        tran_nml  = namelists.get(  "tran", {} )
+        index_nml = namelists.get( "index", {} )
+        namelists = { **tran_nml, **index_nml }
+        print( namelists )
     if ( namelists is None ):
         namelists = {
-            "Win"      :5.0e6    ,
+            "win"      :5.0e6    ,
             "freqb"    :36.5e6   ,
             "amass"    :2.0      ,
             "epsnx"    :20.0     ,
@@ -603,6 +607,13 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
             "alfaz"    :0.0      ,
             "betaz"    :10.0     ,
         }
+    if ( "iflag_dis" in namelists ):
+        if   ( namelists["iflag_dis"] == 0 ):
+            full2rms = 1./6.
+        elif ( namelists["iflag_dis"] == 1 ):
+            full2rms = 1./8.
+        else:
+            raise ValueError( f' iflag_dis == {namelists["iflag_dis"]} ??  ERROR' )
     cv    = 299792458.0
     amu   = 931.4941024e6
     cm    = 1.0e-2
@@ -612,7 +623,7 @@ def calculate__twissFromTrackv38( trackFile=None, full2rms=1.0/8.0,
     # --- [1] calculation                           --- #
     # ------------------------------------------------- #
     # -- relativistic gamma, beta                   --  #
-    gamma = 1.0 + namelists["Win"] / ( amu )
+    gamma = 1.0 + namelists["win"] / ( amu )
     beta  = np.sqrt( 1.0 - 1.0 / gamma**2 )
 
     # -- TRACKv38: Normalized full [pi cm mrad] -> geometric rms [mm mrad]  -- #
@@ -654,6 +665,8 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
 
     cm, MV          = 1.0e-2, 1.0e6
     mG2T, G2T, kG2T = 1.0e-7, 1.0e-4, 1.0e-1
+    G_to_T          = 1.0e-4
+    V_cm_to_V_m     = 100.0                      # eh_DTL.#00 :: E in V/cm, impactx :: E in V/m
     
     # ========================================================= #
     # ===  [1] load E-Field data                            === #
@@ -676,10 +689,10 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
         raise ValueError( "eh_DTL's format is different : not ( Cell : 1 ) : {}".format( eh_DTL ) )
     if ( btype == "sol"  ):
         eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_SOL.#{:02}".format( bnn ) )
-        bfactor = G2T
+        bfactor = G_to_T
     if ( btype == "quad" ):
         eh_PMQ_ = os.path.join( os.path.dirname( eh_DTL ), "eh_PMQ.#{:02}".format( bnn ) )
-        bfactor = mG2T
+        bfactor = G_to_T    # mG2T for CUI-based trackv39  ??? かもしれないが、数値的にはG2Tのはず。要検証段階。
     if ( eh_PMQ is None ):
         eh_PMQ = eh_PMQ_
     if ( eh_PMQ != eh_PMQ_ ):
@@ -712,8 +725,8 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
     with open( eh_DTL, "r" ) as f:
         ebf     = np.loadtxt( f, skiprows=6, max_rows=nData )
     ebf         = np.reshape( ebf, ( rNum, zNum, 3 ) )
-    Er_full     = np.concatenate( [ -ebf[:,::-1,er_][:,:-1], ebf[:,:,er_] ], axis=1 )
-    Ez_full     = np.concatenate( [  ebf[:,::-1,ez_][:,:-1], ebf[:,:,ez_] ], axis=1 )
+    Er_full     = np.concatenate( [ -ebf[:,::-1,er_][:,:-1], ebf[:,:,er_] ], axis=1 ) * V_cm_to_V_m
+    Ez_full     = np.concatenate( [  ebf[:,::-1,ez_][:,:-1], ebf[:,:,ez_] ], axis=1 ) * V_cm_to_V_m
     Bp_full     = np.concatenate( [  ebf[:,::-1,bp_][:,:-1], ebf[:,:,bp_] ], axis=1 )
     if ( axisymm_bb ) and ( np.isclose( ra[0], 0.0 ) ):
         Er_full[0,:] = 0.0
@@ -745,9 +758,9 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
     ya                  = np.linspace(  yMin, yMax,   yNum   )
     za                  = np.linspace(  zMin, zMax,   zNum   )
     xg, yg, zg          = np.meshgrid( xa, ya, za, indexing="ij" )
-    Bx                  = np.reshape( pmq[4:,bx_]*bfactor, (xNum,yNum,zNum) )
-    By                  = np.reshape( pmq[4:,by_]*bfactor, (xNum,yNum,zNum) )
-    Bz                  = np.reshape( pmq[4:,bz_]*bfactor, (xNum,yNum,zNum) )
+    Bx                  = np.reshape( pmq[4:,bx_], (xNum,yNum,zNum) ) * bfactor
+    By                  = np.reshape( pmq[4:,by_], (xNum,yNum,zNum) ) * bfactor
+    Bz                  = np.reshape( pmq[4:,bz_], (xNum,yNum,zNum) ) * bfactor
     ix0                 = int( np.argmin( np.abs( xa ) ) )
     iy0                 = int( np.argmin( np.abs( ya ) ) )
     if ( ( axisymm_bb ) and ( np.isclose( xa[ix0], 0.0 ) and np.isclose( ya[iy0], 0.0 ) ) ):

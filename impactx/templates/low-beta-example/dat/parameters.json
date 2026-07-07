@@ -15,11 +15,8 @@
 
     "beam.twiss.alpha"    : [-0, -0, -0.06],
     "beam.twiss.beta"     : [0.05, 0.05, 186.85008],
-    "beam.emittance.geom" : [639.78592, 639.78592, 7.8560907],
-    // "beam.twiss.alpha"    : [     0.0,     0.0,     0.0 ], 
-    // "beam.twiss.beta"     : [  5.4877, 0.77481,  440.55 ], // [m/rad] or [m]
-    // "beam.emittance.geom" : [  253.22,  253.22,   8.099 ], // [mm mrad] - RMS, geometric
-
+    "beam.emittance.geom" : [853.04789, 853.04789, 10.474788],
+    
     "sim.max_level"       : 1,           // AMR level
     "sim.n_cell"          : [16,16,16],  // cell size for poisson eq.
     "sim.blocking_factor" : [8],         // blocking factor, list ( size = max_level )
@@ -61,26 +58,26 @@
 
     "translate.ebmap.DTLfilebase"     : "track/lb/DTL.#{:02d}", 
     "translate.ebmap.efieldfile"      : "../dat/efield.csv",     // from impactx/ dir
-    "translate.ebmap.bfieldfile"      : "../dat/bfield.csv",     // 
-    "translate.ebmap.int_method"      : "RK4",                   // # "ExplicitEuler", "RK2", "RK4"
-    "translate.ebmap.options"         : { "nslice": 50,
+    "translate.ebmap.bfieldfile"      : "../dat/bfield.csv",     //
+    "translate.ebmap.phase_sync"      : "none"                   // [ "none", "forced" ]
+    "translate.ebmap.int_method"      : "RK4",                   // [ "ExplicitEuler", "RK2", "RK4" ]
+    "translate.ebmap.options"         : { "nslice":  50,
                                           "aperture_x" : 0.10, 
                                           "aperture_y" : 0.10,
-                                          "efactor"    : 0.0, 
                                         },
     
     
     "translate.quad.factor"           : 1.0, 
     "translate.quad.options"          : {
-        "unit"      :  1,  // unit=0: MADX, unit=1: MaryLie 
-        "nslice"    :  1,
-        "aperture_x":0.1, 
-        "aperture_y":0.1,
+        "unit"       :   1,  // unit=0: MADX, unit=1: MaryLie 
+        "nslice"     :  50,
+        "aperture_x" :0.10, 
+        "aperture_y" :0.10,
     },
     "translate.drift.options"         : {
-        "nslice"    :  1, 
-        "aperture_x":0.1, 
-        "aperture_y":0.1,  // 0.2
+        "nslice"    :   50, 
+        "aperture_x": 0.10,
+        "aperture_y": 0.10,
     },
     
 }
