@@ -20,6 +20,9 @@ import scipy.interpolate as itp
 #      -- tp > 0 => delayed  arrival to ref.
 #      -- tp < 0 => advanced arrival to ref.
 #
+#    - for TRACKv39's DTL element, use phase_sync = local mode
+#      -- DTL's sclinac.dat 's phase == RF phase at entry timing.
+#
 # --------------------------------------------------------- #
 
 class EBmapElement__RK( impactx.elements.Programmable ):
@@ -37,7 +40,8 @@ class EBmapElement__RK( impactx.elements.Programmable ):
                   efactor    =1.0     , # (float)
                   freq       =0.0     , # (float) [Hz]
                   phase      =0.0     , # (float) [deg.]
-                  phase_sync ="none"  , # (str) [ "none", "sync", "forced" ] 
+                  phase_sync ="none"  , # (str) [ "none", "sync", "forced", "local" ]
+                  t_entry    =0.0     , # (float) entry time of refpart into this element ( ct [m] )
                   int_method ="RK4"   , # (str) [ "ExplicitEuler", "RK2", "RK4" ]
                   aperture_x =0.0     , # (float) ellipse half-aperture [m]
                   aperture_y =0.0     , # (float) ellipse half-aperture [m]
@@ -220,6 +224,8 @@ class EBmapElement__RK( impactx.elements.Programmable ):
 
         if   ( self.phase_sync.lower() == "none" ):
             tphase = tp
+        elif ( self.phase_sync.lower() == "local" ):
+            tphase = tp - self.t_entry
         elif ( self.phase_sync.lower() == "sync" ):
             #  tphase = tp - tref     under construction.
             raise ValueError( "[_evaluate_fields]  under construction. error. " )
@@ -680,10 +686,11 @@ class EBmapElement__RK( impactx.elements.Programmable ):
             step    ( int ) : required by programmable element
             period  ( ) : required by programmable element
         """
-        refpart = pc.ref_particle()
-        ref_old = { "x"  :refpart.x,  "y" :refpart.y,  "z" :refpart.z,  "t" :refpart.t,
-                    "px" :refpart.px, "py":refpart.py, "pz":refpart.pz, "pt":refpart.pt,
-                    "s"  :refpart.s,  "sedge":refpart.sedge }
+        refpart      = pc.ref_particle()
+        self.t_entry = refpart.t
+        ref_old      = { "x"  :refpart.x,  "y" :refpart.y,  "z" :refpart.z,  "t" :refpart.t,
+                         "px" :refpart.px, "py":refpart.py, "pz":refpart.pz, "pt":refpart.pt,
+                         "s"  :refpart.s,  "sedge":refpart.sedge }
         self._push__refp_fromfield( refpart )
         self._push__beam_fromfield( pc, refpart, ref_old )
                         
