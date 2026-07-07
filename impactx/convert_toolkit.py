@@ -392,7 +392,7 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         bfieldfile = params["translate.ebmap.bfieldfile"]
         efactor    = float( element["vscale"] * DTLv.loc["Eflvl"] * DTLv.loc["E0"] )
         bfactor    = float( DTLv.loc["Ql-Bgrd"] )
-        phase      = float( element["phase"]   + DTLv["Phase"] )
+        phase      = float( element["phase"] )
         freq       = float( params["beam.freq.Hz"]  * params["beam.harmonics"] )
         if ( not( np.isclose( DTLv["Ql-Bgrd"], DTLv["Qr-Bgrd"], rtol=1.e-7 ) ) ):
             raise ValueError( "Ql-Bgrd ({}) != Qr-Bgrd ({}) :: "
@@ -407,7 +407,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             "bfactor"    : bfactor,
             "freq"       : freq,
             "phase"      : phase,
-            "int_method" : params["translate.ebmap.int_method"], 
+            "int_method" : params.get( ["translate.ebmap.int_method"], "RK4"  ),
+            "phase_sync" : params.get( ["translate.ebmap.phase_sync"], "none" ), 
         }
         return( ret )
 
