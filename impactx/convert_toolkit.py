@@ -407,8 +407,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
             "bfactor"    : bfactor,
             "freq"       : freq,
             "phase"      : phase,
-            "int_method" : params.get( ["translate.ebmap.int_method"], "RK4"  ),
-            "phase_sync" : params.get( ["translate.ebmap.phase_sync"], "none" ), 
+            "int_method" : params.get( "translate.ebmap.int_method", "RK4"  ),
+            "phase_sync" : params.get( "translate.ebmap.phase_sync", "none" ), 
         }
         return( ret )
 
