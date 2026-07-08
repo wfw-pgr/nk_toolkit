@@ -194,6 +194,50 @@ def cleanup__verySmallVolumes( dimtags, volume_tol=0.0 ):
     return ret
 
 
+
+# ========================================================= #
+# ===  重なるツールのみ選択、返却                       === #
+# ========================================================= #
+def select__overlappingTools( objects, tools, bbox_cache=None, tol=1.0e-6 ):
+    """
+    objects と bounding box が重なる tools のみ抽出。
+    """
+    # ------------------------------------------------- #
+    # --- [1] functions                             --- #
+    # ------------------------------------------------- #
+    def _get__bbox( dimTags ):
+        bbs  = [ gmsh.model.occ.getBoundingBox(dim, tag) for dim, tag in dimTags ]
+        xmin = min(bb[0] for bb in bbs)
+        ymin = min(bb[1] for bb in bbs)
+        zmin = min(bb[2] for bb in bbs)
+        xmax = max(bb[3] for bb in bbs)
+        ymax = max(bb[4] for bb in bbs)
+        zmax = max(bb[5] for bb in bbs)
+        return( xmin, ymin, zmin, xmax, ymax, zmax )
+
+    def _is__bboxOverlap( bb1, bb2, tol=1.0e-6 ):
+        return( ( bb1[0] <= bb2[3] + tol ) and ( bb2[0] <= bb1[3] + tol ) and
+                ( bb1[1] <= bb2[4] + tol ) and ( bb2[1] <= bb1[4] + tol ) and
+                ( bb1[2] <= bb2[5] + tol ) and ( bb2[2] <= bb1[5] + tol ) )
+
+    # ------------------------------------------------- #
+    # --- [2] select                                --- #
+    # ------------------------------------------------- #
+    if ( bbox_cache is None ):
+        bbox_cache = {}
+        
+    obj_bb   = _get__bbox( objects )
+    selected = []
+    for tool in tools:
+        
+        if ( tool not in bbox_cache ):
+            bbox_cache[tool] = _get__bbox( [tool] )
+        tool_bb = bbox_cache[tool]
+        if ( _is__bboxOverlap( obj_bb, tool_bb, tol=tol ) ):
+            selected.append( tool )
+    return( selected )
+
+
 # ========================================================= #
 # ===  cut duplicated objects                           === #
 # ========================================================= #
@@ -227,11 +271,38 @@ def cut__duplicatedObjects( config=None, dimtags=None, volume_tol=0.0, priority=
             print( "   - {}".format( key ) )
 
 
+    # # ------------------------------------------------- #
+    # # --- [3] loop                                  --- #
+    # # ------------------------------------------------- #
+    # tools   = []
+    # newDict = {}
+    # for name in orderedNames:
+    #     objects = cleanup__verySmallVolumes( numDict0[name], volume_tol=volume_tol )
+
+    #     if ( len( objects ) == 0 ):
+    #         print( "[cut__duplicatedObjects] skip empty object :: {}".format( name ) )
+    #         continue
+    #     if ( len( tools ) > 0 ):
+    #         outDimTags, outMap = gmsh.model.occ.cut( objects, tools, \
+    #                                                  removeObject=True, removeTool=False )
+    #         gmsh.model.occ.synchronize()
+    #         objects = cleanup__verySmallVolumes( outDimTags, volume_tol=volume_tol )
+
+    #     # Boolean 後の tag に部品名を再付与
+    #     for dim, tag in objects:
+    #         gmsh.model.setEntityName( dim, tag, name )
+    #     newDict[name] = objects
+
+    #     # 以降の part を削る tool として登録
+    #     tools += objects
+
+
     # ------------------------------------------------- #
     # --- [3] loop                                  --- #
     # ------------------------------------------------- #
-    tools   = []
-    newDict = {}
+    tools      = []
+    newDict    = {}
+    bbox_cache = {}
     for name in orderedNames:
         objects = cleanup__verySmallVolumes( numDict0[name], volume_tol=volume_tol )
 
@@ -239,18 +310,26 @@ def cut__duplicatedObjects( config=None, dimtags=None, volume_tol=0.0, priority=
             print( "[cut__duplicatedObjects] skip empty object :: {}".format( name ) )
             continue
         if ( len( tools ) > 0 ):
-            outDimTags, outMap = gmsh.model.occ.cut( objects, tools, \
-                                                     removeObject=True, removeTool=False )
-            gmsh.model.occ.synchronize()
-            objects = cleanup__verySmallVolumes( outDimTags, volume_tol=volume_tol )
+            activeTools = select__overlappingTools( objects   =objects, tools = tools,
+                                                    bbox_cache=bbox_cache, tol= 1.0e-5 )
+            print( "[cut__duplicatedObjects] {} :: tools {} -> {}"\
+                   .format( name, len(tools), len(activeTools) ) )
 
-        # Boolean 後の tag に部品名を再付与
-        for dim, tag in objects:
-            gmsh.model.setEntityName( dim, tag, name )
+            if ( len(activeTools) > 0 ):
+                outDimTags, outMap = gmsh.model.occ.cut( objects, activeTools,
+                                                         removeObject= True, removeTool=False )
+                objects = cleanup__verySmallVolumes( outDimTags, volume_tol=volume_tol )
         newDict[name] = objects
-
-        # 以降の part を削る tool として登録
+        # -- 以降の part を削る tool として登録 -- #
         tools += objects
+
+    # -- Boolean 後にまとめて synchronize -- #
+    gmsh.model.occ.synchronize()
+                
+    # -- Boolean 後の tag に部品名を再付与 -- #
+    for name, objects in newDict.items():
+        for dim, tag in objects:
+            gmsh.model.setEntityName(dim, tag, name)
 
     # ------------------------------------------------- #
     # --- [4] return                                --- #
