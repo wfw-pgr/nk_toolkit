@@ -5,56 +5,23 @@ $$ ================================================================= $$
 
 [Source]
 
-{% if params["beam.type"] == "gaussian" %}
+{% if prm["beam.type"] == "gaussian" %}
     $$ ----------------------------------------------------------------- $$
     $$ ---         Gaussian beam ( Gaussian distribution )           --- $$
     $$ ----------------------------------------------------------------- $$
     s-type    =   13                    $$ ( 13:gaussian-xy )
-    totfact   = {{params["beam.totfact"]}}
+    totfact   = {{prm["beam.totfact"]}}
     proj      = electron
     dir       =  1.0
-    r1        = {{params["beam.FWHM"]}}
-    z0        = {{params["beam.zStart"]}}
-    z1        = {{params["beam.zEnd"]}}
-    e0        = {{params["beam.energy"]}}
+    r1        = {{prm["beam.FWHM"]}}
+    z1        = {{prm["beam.zStart"]}}
+    z0        = {{prm["beam.zEnd"]}}
+    e-type    = 2
+    eg0       = {{prm["beam.energy"]}}
+    eg1       = {{prm["beam.energy.FWHM.MeV"]}}
+    eg2       = {{prm["beam.energy.cutoff.lower"]}}
+    eg3       = {{prm["beam.energy.cutoff.upper"]}}
+    $$ e0        = {{prm["beam.energy"]}}    $$
+    
 
-{% elif params["beam.type"] == "pencil" %}
-    $$ ----------------------------------------------------------------- $$
-    $$ ---             pencil beam ( cylinder shape )                --- $$
-    $$ ----------------------------------------------------------------- $$
-    s-type    =    1                    $$ ( 1:cylinder( pencil beam ) )
-    totfact   = {{params["beam.totfact"]}}
-    proj      = electron
-    dir       =  1.0
-    r0        = {{params["beam.HWHM"]}}
-    z0        = {{params["beam.zStart"]}}
-    z1        = {{params["beam.zEnd"]}}
-    e0        = {{params["beam.energy"]}}
-
-
-{% elif params["beam.type"] == "emittance" %}
-    $$ ----------------------------------------------------------------- $$
-    $$ ---         Beam profile ( beam emittance )                   --- $$
-    $$ ----------------------------------------------------------------- $$
-    s-type    =   11                    $$ ( 11: beam-profile-xy )
-    totfact   = {{params["beam.totfact"]}}
-    proj      = electron
-    dir       =  1.0
-    z0        = {{params["beam.zStart"]}}
-    z1        = {{params["beam.zEnd"]}}
-    rx        = 0.0
-    ry        = 0.0
-    wem       = 0.0
-    x1        = {{params["beam.HWHM"]}}
-    y1        = {{params["beam.HWHM"]}}
-    xmrad1    = 0.0
-    ymrad1    = 0.0
-    x2        = 0.0    
-    y2        = 0.0    
-    xmrad2    = 0.0
-    ymrad2    = 0.0
-    e0        = {{params["beam.energy"]}}
-
-{% else %}
-   {{ raise_("Invalid beam.type: " ~ params["beam.type"]) }}
 {% endif %}

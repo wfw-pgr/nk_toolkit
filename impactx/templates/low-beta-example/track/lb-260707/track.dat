@@ -1,0 +1,46 @@
+&TRAN
+
+  Win =100.0d03, atp =2.0
+  freqb =365.0D05,   part = 0.995
+
+  nqtot=1
+  qq=1 
+  amass= 2.0
+  npat= 5000
+  current= 1000.
+
+  Qavr=+1
+  Qdesign=+1,Adesign=2.0, db_b=0.00005,df_4D=180. 
+
+  epsnx = 7.5,  alfax = -0.0,  betax = 5
+  epsny = 7.5,  alfay = -0.0,  betay = 5
+  epsnz = 37.6,  alfaz =-0.06,  betaz =  0.6
+
+  phmax=90., dwwmax=0.05
+  
+  dWWacc=0.05
+  x00=0., xp00=0., y00=0., yp00=0., 
+  ph00=-0., dww00=0.,phi0=-0.
+
+&END
+
+&INDEX
+  
+  NRZ=1, igraph=1, iaccep=0, iflag_dis=0, iflag2D=1, iflag_qq=1,
+  iflag_rms=1,  iint=100,     nstep_cav=50
+  iflag_env=1,  iflag_cav=1,  iflag_ell=1,  iflag_fenv=1
+  iflag_halo=0, iflag_lev=0,  isrf=100,     iflag_bc=1
+  iread_dis=0,  iwrite_dis=1, iflag_corr=0, iflag_match=0 
+
+&END
+
+&MATCH
+
+  match_typ=1, fit_typ=1, fit_opt=1, min_opt=1, man_max=1000, fit_bnd=1
+  bnd_fac=10., fit_err=.01
+
+&END
+
+! x <-> y
+  epsnx = 0.1741,  alphx =-1.022, betx = 29.00  
+  epsny = 0.1848,  alphy = 2.372, bety = 96.57 

@@ -1,0 +1,773 @@
+  Task begin at  Jul 07,2026,16:23:54     
+  I.D. generation random number seed=          100
+  Wtmp=    100.00000000000000     
+  Phmax, dWWmax=    90.000000000000000        5.0000000000000003E-002
+  Phmax, dWWmax, pstat_q =    360.00000000000000        1.0000000000000000        5001.0000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000     
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           1   30.000000000000000        15.000000000000000        1.8620047584566046E-002   1.0000000000000000        3.1607912753617313                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#01
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    0.0000000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           2   30.000000000000000        15.000000000000000        1.9905493624825986E-002   1.0000000000000000        3.3196162372932152                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#02
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    30.000000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           3   30.000000000000000        15.000000000000000        2.0891851063108129E-002   1.0000000000000000        3.4208453339088858                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#03
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    60.000000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           4   30.000000000000000        15.000000000000000        2.1723388848660388E-002   1.0000000000000000        3.5220744305245573                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#04
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    90.000000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           5   30.000000000000000        15.000000000000000        2.2455988344366778E-002   1.0000000000000000        3.6233035271402287                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#05
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    120.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           6   30.000000000000000        15.000000000000000        2.3118308915226579E-002   1.0000000000000000        3.7227872945039051                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#06
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    150.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           7   30.000000000000000        15.000000000000000        2.3727375538630156E-002   1.0000000000000000        3.8222710618675824                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#07
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    180.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           8   30.000000000000000        15.000000000000000        2.4294280929180269E-002   1.0000000000000000        3.9217548292312587                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#08
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    210.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+           9   30.000000000000000        15.000000000000000        2.4826730112754731E-002   1.0000000000000000        4.0194932673429413                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#09
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    240.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          10   30.000000000000000        15.000000000000000        2.5330333071795941E-002   1.0000000000000000        4.1172317054546239                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#10
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    270.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          11   30.000000000000000        15.000000000000000        2.5809324889899864E-002   1.0000000000000000        4.2149701435663056                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#11
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    300.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          12   30.000000000000000        15.000000000000000        2.6266995805744556E-002   1.0000000000000000        4.3109632524259949                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#12
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    330.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          13   30.000000000000000        15.000000000000000        2.6705962373427088E-002   1.0000000000000000        4.4069563612856824                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#13
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    360.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          14   30.000000000000000        15.000000000000000        2.7128346084950683E-002   1.0000000000000000        4.5012041408933765                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#14
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    390.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          15   30.000000000000000        15.000000000000000        2.7535895353907366E-002   1.0000000000000000        4.5971972497530640                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#15
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    420.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          16   30.000000000000000        15.000000000000000        2.7930071376849074E-002   1.0000000000000000        4.6914450293607581                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#16
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    450.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          17   30.000000000000000        15.000000000000000        2.8312110144670510E-002   1.0000000000000000        4.7856928089684523                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#17
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    480.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          18   30.000000000000000        15.000000000000000        2.8683068233534559E-002   1.0000000000000000        4.8781952593241513                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#18
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    510.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          19   30.000000000000000        15.000000000000000        2.9043857277978716E-002   1.0000000000000000        4.9706977096798504                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#19
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    540.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          20   30.000000000000000        15.000000000000000        2.9395270368261856E-002   1.0000000000000000        5.0632001600355503                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#20
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    570.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          21   30.000000000000000        15.000000000000000        2.9738002570463967E-002   1.0000000000000000        5.1557026103912502                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#21
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    600.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          22   30.000000000000000        15.000000000000000        3.0072667093690171E-002   1.0000000000000000        5.2464597314949550                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#22
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    630.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          23   30.000000000000000        15.000000000000000        3.0399808182412495E-002   1.0000000000000000        5.3372168525986599                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#23
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    660.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          24   30.000000000000000        15.000000000000000        3.0719911509981452E-002   1.0000000000000000        5.4279739737023647                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#24
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    690.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          25   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.5187310948060704                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#25
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    720.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          26   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.5536376798459575                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#26
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    750.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          27   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.5867989356338494                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#27
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    780.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          28   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.6199601914217414                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#28
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    810.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          29   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.6531214472096334                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#29
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    840.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          30   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.6845373737455320                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#30
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    870.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          31   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.7159533002814289                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#31
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    900.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          32   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.7491145560693209                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#32
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    930.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          33   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.7787851533532253                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#33
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    960.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          34   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.8102010798891230                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#34
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    990.00000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          35   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.8416170064250217                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#35
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1020.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          36   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.9044488594968172                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#36
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1050.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          37   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        5.9690260418206069                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#37
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1080.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          38   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.0336032241443966                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#38
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1110.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          39   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.0981804064681882                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#39
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1140.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          40   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.1627575887919779                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#40
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1170.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          41   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.2273347711157676                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#41
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1200.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          42   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.2919119534395582                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#42
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1230.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          43   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.3564891357633480                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#43
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1260.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          44   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.4210663180871386                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#44
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1290.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          45   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.4856435004109292                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#45
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1320.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          46   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.5484753534827247                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#46
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1350.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          47   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.6130525358065153                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#47
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1380.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          48   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.6758843888783108                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#48
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1410.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          49   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.7387162419501072                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#49
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1440.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          50   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.8015480950219027                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#50
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1470.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          51   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.8643799480936982                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#51
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1500.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          52   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.9272118011654946                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#52
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1530.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          53   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        6.9882983249852959                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#53
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1560.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          54   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        7.0493848488050981                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#54
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1590.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          55   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        7.1104713726248994                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#55
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1620.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          56   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        7.1698125671927055                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#56
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1650.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          57   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        7.2291537617605135                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#57
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1680.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          58   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        7.2884949563283206                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#58
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1710.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+  The Real DTL length is:    30.000000000000000     
+  nfileDTL, d_DTL, R0DTL, V0DTL, harm, DTL_ph0, nDTL, nstep: 
+          59   30.000000000000000        15.000000000000000        3.1033412640943416E-002   1.0000000000000000        7.3478361508961276                1          50
+  iDTL, d_elem=            1   30.000000000000000     
+  DTL file: eh_DTL.#59
+  DTL: Reading new Left Quad
+  DTL: Reading new Cell Field
+  DTL: Reading new Right Quad
+  DTL: End of DTL_Fields
+  z_entry=    1740.0000000000000     
+  Before elem_init 
+  Before RefPartSet 
+  Before stat_new 
+    Task end at  Jul 07,2026,16:25:02     

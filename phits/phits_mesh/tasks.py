@@ -1,18 +1,15 @@
+import os, sys, subprocess, time, glob, json5, shutil
 import invoke
-import os, sys, subprocess, time, json5
-import meshio
-import numpy as np
-import datetime                              as dt
-import nkUtilities.show__section             as sct
-import nkUtilities.precompile__parameterFile as ppf
-import nkUtilities.command__postProcess      as cpp
-import nk_toolkit.phits.materials__fromJSON  as mfj
-
-import os, sys, json5, jinja2, pathlib, invoke
-import nkUtilities.show__section as sct
-import nk_toolkit.phits.materials__fromJSON  as mfj
-import nk_toolkit.phits.tetra_toolkit as ttk
-
+import meshio, jinja2
+import numpy                                   as np
+import datetime                                as dt
+import nk_toolkit.io.make__sectionTitle        as mst
+import nk_toolkit.phits.materials__fromJSON    as mfj
+import nk_toolkit.phits.tetra_toolkit          as ttk
+import nk_toolkit.gmsh.mesh__solidworksSTEP    as mss
+import nk_toolkit.legacy.json__formulaParser   as jso
+import nk_toolkit.RI.track__RIactivity         as tri
+import nk_toolkit.RI.integrate__RIprodReaction as irr
 
 # ========================================================= #
 # ===  meshing STEP file from solidworks output         === #
@@ -34,7 +31,7 @@ def mesh( context, stpFile="msh/model.stp", \
     """
     import nk_toolkit.gmsh.mesh__solidworksSTEP as mss
     mss.mesh__solidworksSTEP( stpFile=stpFile, configFile=configFile, matFile=matFile, \
-                              mshFile=mshFile, bdfFile=bdfFile, \
+                              mshFile=mshFile, bdfFile=bdfFile, duplicates="cut-older", \
                               materialPhitsFile=materialPhitsFile, phits_mesh=phits_mesh )
 
 
@@ -77,7 +74,7 @@ def build( ctx, \
     # ------------------------------------------------- #
     # --- [2] precompile PHITS input files          --- #
     # ------------------------------------------------- #
-    sct.show__section( "Conversion :: .phits.j2  >> .phits.inp file.", length=71 )
+    mst.make__sectionTitle( "Conversion :: .phits.j2  >> .phits.inp file.", length=71 )
     if ( phits_mesh ):
         with open( meshFile, "r" ) as f:
             meshconfig = json5.load( f )
@@ -98,9 +95,8 @@ def build( ctx, \
     # ------------------------------------------------- #
     # --- [3] load json                             --- #
     # ------------------------------------------------- #
-    import nkUtilities.json__formulaParser as jso
-    params = jso.json__formulaParser( inpFile=paramsFile, table=material_dn, \
-                                      variable_mark="@" )
+    prm = jso.json__formulaParser( inpFile=paramsFile, table=material_dn, \
+                                   variable_mark="@" )
     
     # ------------------------------------------------- #
     # --- [4] jinja2 rendering                      --- #
@@ -109,7 +105,7 @@ def build( ctx, \
                                    undefined=jinja2.StrictUndefined,  # 未定義変数は即エラー
                                    autoescape=False, keep_trailing_newline=True )
     template = environ.get_template( targetFile )
-    rendered = template.render( params=params )
+    rendered = template.render( prm=prm )
 
     # ------------------------------------------------- #
     # --- [5] save as execute file                  --- #
@@ -141,7 +137,7 @@ def run( ctx, phits_cmd="phits.sh", exeFile="inp/execute.phits.inp" ):
     # ------------------------------------------------- #
     # --- [2] run PHITS calculation                 --- #
     # ------------------------------------------------- #
-    sct.show__section( "PHITS calculation Begin", length=71 )
+    mst.make__sectionTitle( "PHITS calculation Begin", length=71 )
     stime   = time.time()
     ret     = subprocess.run( phits_cmd, shell=True )
     etime   = time.time()

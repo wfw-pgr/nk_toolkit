@@ -14,7 +14,7 @@
     "figure.mathfont"       : "stix",
     "figure.font.size"      : 18,
     "figure.axes.linewidth" : 2.0,
-    "figure.dpi"            : 400,
+    "figure.dpi"            : 200,
     
     // ------------------------------------------------- //
     // --- 一般 描画設定                             --- //

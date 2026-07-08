@@ -1,0 +1,92 @@
+
+{% if params["tally.fluence.sw"] %}
+$$ ---------------------------------------------------------- $$
+$$ --- tally for fluence on tetra                         --- $$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  tet          $$ mesh    :: [ xyz, r-z, reg, tet ]
+    reg =  101          $$ region number ::
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e3
+   part =  photon
+   unit =    2           $$ unit is [1/cm^2/MeV/source]
+   axis =  tet
+   file =  out/fluence_tet.dat
+ foamout=    2
+
+$$ ---------------------------------------------------------- $$
+$$ --- tally for fluence x-z (2d)                         --- $$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  xyz          $$ mesh    :: [ xyz, r-z, reg, tet ]
+ x-type =    2          $$ x-type  :: [ 1: (nx,data[nx+1]), 2:(nx,xmin,xmax), 3:logarithmic ]
+     nx =   100
+   xmin =  -16
+   xmax =  +16
+ y-type =    2
+     ny =    1
+   ymin =  -8
+   ymax =  +8
+ z-type =    2
+     nz =   100
+   zmin =  -2
+   zmax =  +2
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e3
+   axis =   xz
+   part =  all
+   file =  out/fluence_xz.dat
+  title =  fluence in xz plane
+  gshow =    1
+ epsout =    1
+{% endif %}
+
+
+{% if params["tally.deposit.sw"] %}
+$$ ---------------------------------------------------------- $$
+$$ --- tally for heat deposit on tetra                    --- $$
+$$ ---------------------------------------------------------- $$
+[T-Deposit]
+    file = out/heatload.out
+    mesh = tet
+    reg  = 101    $$ region of tetra is defined.
+    unit = 5      $$ [J/m3/soruce] ( output=dose only )
+                  $$ ( J/m2 in manual7.5, but J/m3 in PHITs-Fluent )
+    axis = tet
+  output = dose
+ foamout = 2      $$ out:: .csv ( i_tet, x0,y0,z0, vol, value, stddev )
+{% endif %}
+
+
+{% if params["tally.check-geometry.sw"] %}
+$$ ---------------------------------------------------------- $$
+$$ --- tally for geometry check ( target region )          ---$$
+$$ ---------------------------------------------------------- $$
+[T-Track]
+   mesh =  xyz          $$ mesh    :: [ xyz, r-z, reg, tet ]
+ x-type =    2          $$ x-type  :: [ 1: (nx,data[nx+1]), 2:(nx,xmin,xmax), 3:logarithmic ]
+     nx =   800
+   xmin =  {{params["bb.phits.xMin"]}}
+   xmax =  {{params["bb.phits.xMax"]}}
+ y-type =    2
+     ny =    1
+   ymin =  {{params["bb.phits.yMin"]}}
+   ymax =  {{params["bb.phits.yMax"]}}
+ z-type =    2
+     nz =  1200
+   zmin =  {{params["bb.phits.zMin"]}}
+   zmax =  {{params["bb.phits.zMax"]}}
+ e-type =    2
+     ne =    1
+   emin =  0.0
+   emax =  1.0e3
+   axis =   xz
+   file =  out/check_geometry.dat
+  title =  geometry of target region
+  gshow =    1
+ epsout =    1
+{% endif %}

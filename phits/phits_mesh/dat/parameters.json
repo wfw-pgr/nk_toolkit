@@ -6,24 +6,28 @@
     //
     "sim.icntl"          :     0,    // ( 0:transport, 6:check-source, 8:check-Geometry )
     "sim.istdev"         :     2,    // ( 0:optimal  , 1:batch-stddev, 2:history-stddev ) ( +:New, -:Continue )
-    "sim.parallel.type"  : "OMP",    // "MPI" / "OMP"
+    "sim.parallel.type"  : "MPI",    // "MPI" / "OMP"
     "sim.parallel.nProc" :     4,
-    "sim.nParticle"      : 1.0e5,    // preferably  nProc * xxx
-    "sim.nBatch"         : "@sim.parallel.nProc*10",
+    "sim.nParticle"      : 1.0e7,    // preferably  nProc * xxx
+    "sim.nBatch"         : "@sim.parallel.nProc*50",
     "sim.nCascade"       : "@sim.nParticle/@sim.nBatch",
     "sim.phits_output"   : "out/phits.out",
 
     // --- level7 & galleria --- //    ( 133.144.160.74 & 133.144.160.131 )
-    "sim.phits_directory": "/common1/hpclocal/PHITS/phits321/phits/",
-    "sim.phits_xsdir"    : "/home/users/70727338/Lib80x/xsdir.jnd",
+    // "sim.phits_directory": "/common1/hpclocal/PHITS/phits321/phits/",
+    // "sim.phits_xsdir"    : "/home/users/70727338/Lib80x/xsdir.jnd",
     
-    "sim.phits_directory": "/mnt/c/phits/build_phits328A/phits/",
-    "sim.phits_xsdir"    : "/mnt/c/phits/build_phits328A/phits/data/xsdir.jnd",
+    // "sim.phits_directory": "/mnt/c/phits/build_phits328A/phits/",
+    // "sim.phits_xsdir"    : "/mnt/c/phits/build_phits328A/phits/data/xsdir.jnd",
     
     // ---     rdhpc1        --- //    ( 10.225.216.10   )
     // "sim.phits_directory": "/common1/hpclocal/PHITS/phits321/phits/",
     // "sim.phits_xsdir"    : "/home/users/70727338/Lib80x/xsdir.jnd",
-    
+
+    // ---      nec          --- //  
+    "sim.phits_directory"        : "/mnt/c/opt/phits328A/phits/",
+    "sim.phits_xsdir"            : "/mnt/c/opt/phits328A/phits/data/xsdir.jnd",
+
     // ---------------------------------------------- //
     // ---  Constants  Settings                  ---- //
     // ---------------------------------------------- //    
@@ -44,15 +48,19 @@
     // ---------------------------------------------- //
     "beam.type"          : "gaussian",                  // [ "gaussian", "pencil", "emittance" ]
     "beam.energy"        :     40.0,
+    "beam.energy.FWHM.%" :      5.0,
     "beam.current"       : 100.0e-6,
     "beam.FWHM"          : "  6.00 * @mm",
     "beam.zStart"        : "-200.0 * @mm",
     "beam.length"        : "  10.0 * @mm",
 
     "beam.totfact"       : "@beam.current / 1.602e-19", // -- unit :: [ particles / s ] -- //
-    "beam.HWHM"          : "0.5 * @beam.FWHM",
+    // "beam.HWHM"          : "0.5 * @beam.FWHM",
     "beam.zEnd"          : "@beam.zStart - @beam.length",
-
+    "beam.energy.FWHM.MeV"      : "@beam.energy * @beam.energy.FWHM.%/100.0",
+    "beam.energy.cutoff.lower"  : "@beam.energy - @beam.energy.FWHM.MeV/2.35*3", 
+    "beam.energy.cutoff.upper"  : "@beam.energy + @beam.energy.FWHM.MeV/2.35*3", 
+    
     // ---------------------------------------------- //
     // ---  geometry part ::                     ---- //
     // ---------------------------------------------- //
@@ -63,12 +71,12 @@
     //   unit :: mm  -- //
     // ---------------- //
     "bb.buff"           :  10.0,
-    "bb.mesh.mm.xMin"   : -160.0,  // actual (xMin,xMax) of CAD or Mesh.
-    "bb.mesh.mm.xMax"   : +160.0,
-    "bb.mesh.mm.yMin"   : -80.0,
-    "bb.mesh.mm.yMax"   : +80.0,
-    "bb.mesh.mm.zMin"   : -10.0,
-    "bb.mesh.mm.zMax"   : +10.0,
+    "bb.mesh.mm.xMin"   : -50.0,  // actual (xMin,xMax) of CAD or Mesh.
+    "bb.mesh.mm.xMax"   : +50.0,
+    "bb.mesh.mm.yMin"   : -50.0,
+    "bb.mesh.mm.yMax"   : +50.0,
+    "bb.mesh.mm.zMin"   : -21.15,
+    "bb.mesh.mm.zMax"   : +34.25,
 
     "bb.fill.xMin"      : "@bb.mesh.mm.xMin * @mm",   // 
     "bb.fill.xMax"      : "@bb.mesh.mm.xMax * @mm",
@@ -99,11 +107,32 @@
     "bb.phits.zMax"     : "@bb.phits.mm.zMax * @mm",
 
 
+    // --------------------------- //
+    // -- buffer air / bb       -- //
+    // --------------------------- //
+    "buff.margin"            : "50.0 * @mm",
+    "buff.rpp"               : [ "@lyr.xMin     -@buff.margin", "@lyr.xMax     +@buff.margin",
+                                 "@lyr.yMin     -@buff.margin", "@lyr.yMax     +@buff.margin",
+                                 "@lyr.01.rpp[4]-@buff.margin", "@lyr.16.rpp[5]+@buff.margin", ],
+    "bb.rpp"                 : [ "-500.0*@mm", "+500.0*@mm",
+                                 "-500.0*@mm", "+500.0*@mm",
+                                 "-500.0*@mm", "+500.0*@mm", ], 
+
+    "closeup.margin"         : "10.0 * @mm", 
+    "closeup.rpp"            : [ "-20*@mm", "20*@mm", "-20*@mm", "20*@mm",
+                                 "@lyr.05.rpp[4]-@closeup.margin",
+                                 "@lyr.16.rpp[5]+@closeup.margin", ],
+
+
     // ---------------------------------------------- //
-    // ---  tally part  :: tally settings        ---- //
+    // ---  tally part       :: tally settings   ---- //
     // ---------------------------------------------- //
-    "tally.fluence.sw"        : true,
-    "tally.deposit.sw"        : true,
-    "tally.check-geometry.sw" : true,    
+    "tally.fluence-g-energy.sw" : true,
+    "tally.fluence-g-xz.sw"     : true,
+    "tally.geometry-xz.sw"      : true,
+    "tally.fluence-n-energy.sw" : true,
+    "tally.fluence-n-xz.sw"     : true,
+
+
     
 }

@@ -1,0 +1,59 @@
+$$
+$$ ================================================================ $$
+$$ ===  PHITS input file   ( main_phits.inp )                   === $$
+$$ ================================================================ $$
+$$
+
+$$ ---   [NOTE]    --------------------------------------------------------------  $$
+$$ *                                                                            *  $$
+$$ * ( space >= 6 ): 継続行 となることに注意!! (空白行が多いとエラーとなり得る) *  $$
+$$ *                                                                            *  $$
+$$ ------------------------------------------------------------------------------  $$
+
+$$ ---   [Parallelization]    ---------------------------------------------------  $$
+$$ -- use $MPI=... / $OMP=...  -- $$
+${{params["sim.parallel.type"]}}={{params["sim.parallel.nProc"]}}
+$$ ------------------------------------------------------------------------------  $$
+
+[Title]
+input file for radiation shieldings.
+
+[Parameters]
+  icntl     = {{params["sim.icntl"]}}           $$ ( 0:transport, 6:check-source, 8:check-Geometry )
+  istdev    = {{params["sim.istdev"]}}          $$ ( 0:optimal  , 1:batch-stddev, 2:history-stddev ) ( +:New, -:Continue )
+  file(1)   = {{params["sim.phits_directory"]}} $$
+  file(6)   = {{params["sim.phits_output"]}}    $$ File Name of output
+  file(7)   = {{params["sim.phits_xsdir"]}}     $$ directory path of xsdir
+  maxcas    = {{params["sim.nCascade"]}}        $$ #.of particles
+  maxbch    = {{params["sim.nBatch"]}}          $$ #.of batches
+  emin(12)  = 0.1                               $$ cut-off energy of electron to be transported. (MeV)
+                                                $$   ( if negs=1 ) Default :: 0.1 = 100keV
+                                                $$   ( if negs=0 ) Default :: 1e9 :: No e- transport
+                                                $$ if emin(12) is set, the value is prioritized.
+  emin(13)  = 0.1                               $$ cut-off energy of electron to be transported.
+  negs      = 1                                 $$ transport of photon (+1/-1), electron(+1), off(0)
+  ipnint    = 1                                 $$ p-n interaction ( 0:Off, 1:On, 2:w/ NRF(Full) )
+  iprofr    = 0                                 $$ error - handling ( exceeding desk device )
+  itimrand  = 1                                 $$ randomize by date-time ( random seed varies, run-by-run )
+
+  itetauto  = 1                                 $$ for auto numbering of material in Nastran Mesh
+
+{% include "inp/source.phits.j2" %}
+{% include "inp/geometry.phits.j2" %}
+{% include "inp/materials.phits.j2" %}
+{% include "inp/tally.phits.j2" %}
+
+[End]
+
+
+$$ ---   [NOTE]    --------------------------------------------------------------  $$
+$$ nucdata   =  1                       $$ nuetron's nuclear data library => 0:Off, 1:On
+$$ negs      =  1                       $$ transports of electron, photon, position ( default:-1 )
+                                        $$  -1: PHITS's original library ( photon )
+                                        $$   0: No Transport
+                                        $$  +1: EGS5 Library             ( photon, electron )
+$$ emcpf     = 20.0                     $$ upper limit of the detailed photon model
+$$ emin(12)  = 0.1     $ ==  1(keV)     $$ upr-limit of transport :: electron (MeV)
+$$ emin(13)  = 0.1     $ ==  1(keV)     $$ upr-limit of transport :: positron (MeV)
+$$ dmax(12)  = 1000.0                   $$ use of nuclear data ( emin(12) < energy < dmax(12) )
+$$ ------------------------------------------------------------------------------  $$

@@ -12,20 +12,20 @@ $$ -----------------------------------------------------------------------------
 
 $$ ---   [Parallelization]    ---------------------------------------------------  $$
 $$ -- use $MPI=... / $OMP=...  -- $$
-${{params["sim.parallel.type"]}}={{params["sim.parallel.nProc"]}}
+${{prm["sim.parallel.type"]}}={{prm["sim.parallel.nProc"]}}
 $$ ------------------------------------------------------------------------------  $$
 
 [Title]
 input file for radiation shieldings.
 
 [Parameters]
-  icntl     = {{params["sim.icntl"]}}           $$ ( 0:transport, 6:check-source, 8:check-Geometry )
-  istdev    = {{params["sim.istdev"]}}          $$ ( 0:optimal  , 1:batch-stddev, 2:history-stddev ) ( +:New, -:Continue )
-  file(1)   = {{params["sim.phits_directory"]}} $$
-  file(6)   = {{params["sim.phits_output"]}}    $$ File Name of output
-  file(7)   = {{params["sim.phits_xsdir"]}}     $$ directory path of xsdir
-  maxcas    = {{params["sim.nCascade"]}}        $$ #.of particles
-  maxbch    = {{params["sim.nBatch"]}}          $$ #.of batches
+  icntl     = {{prm["sim.icntl"]}}           $$ ( 0:transport, 6:check-source, 8:check-Geometry )
+  istdev    = {{prm["sim.istdev"]}}          $$ ( 0:optimal  , 1:batch-stddev, 2:history-stddev ) ( +:New, -:Continue )
+  file(1)   = {{prm["sim.phits_directory"]}} $$
+  file(6)   = {{prm["sim.phits_output"]}}    $$ File Name of output
+  file(7)   = {{prm["sim.phits_xsdir"]}}     $$ directory path of xsdir
+  maxcas    = {{prm["sim.nCascade"]}}        $$ #.of particles
+  maxbch    = {{prm["sim.nBatch"]}}          $$ #.of batches
   emin(12)  = 0.1                               $$ cut-off energy of electron to be transported. (MeV)
                                                 $$   ( if negs=1 ) Default :: 0.1 = 100keV
                                                 $$   ( if negs=0 ) Default :: 1e9 :: No e- transport

@@ -3,49 +3,74 @@
     "options" : {
         "Mesh.Algorithm"      : 1,
         "Mesh.Algorithm3D"    : 1,
-        "Mesh.Optimize"       : false, 
-        "Mesh.OptimizeNetgen" : false, 
+        "Mesh.Optimize"       : true, 
+        "Mesh.OptimizeNetgen" : true, 
         "Mesh.Smoothing"      : 1,
-    }, 
+        "Geometry.OCCFixDegenerated" : 0, 
+        "Geometry.OCCFixSmallEdges"  : 0, 
+        "Geometry.OCCFixSmallFaces"  : 0,
+        "Geometry.OCCSewFaces"       : 0,
+    },
+
+    "ICF114 固定64穴あきタップフランジ_Cosmotec26836_2606": {
+        "meshsize" : 6.0e-3, 
+        "material" : "SUS316",
+    },
+    
+    "ICF114 固定64穴あき通し穴Φ8.4フランジ_Cosmotec26836": {
+        "meshsize" : 6.0e-3, 
+        "material" : "SUS316",
+    },
+    
+    "ICF114_アルミガスケット_20011-ICF114GAL_2606_放射化": {
+        "meshsize" : 2.5e-3, 
+        "material" : "SUS316",
+    },
    
-    "全溶接コンバータ_筐体": {
-        "meshsize" : 5.0e-3,
+    "窓枠部_上通し穴側": {
+        "meshsize" : 6.0e-3,
         "material" : "SUS316", 
     }, 
 
-    "全溶接コンバータ_タンタルプレート": {
-        "meshsize" : 1.0e-3, 
-        "material" : "Ta", 
+    "窓枠部_下タップ側_2606": {
+        "meshsize" : 6.0e-3,
+        "material" : "SUS316", 
+    }, 
+
+    "ハーバーフォイル窓_D40mm_2606": {
+        "meshsize" : 2.5e-3, 
+        "material" : "SUS316", 
     },
     
-    "全溶接コンバータ_プレーㇳホルダー_ハーフ内": {
-        "meshsize" : 5.0e-3,
-        "material" : "Pt",
-    },
-    
-    "全溶接コンバータ_プレートホルダー_ハーフ外": {
-        "meshsize" : 5.0e-3, 
-        "material" : "SUS316",
-    },
-    
-    "全溶接コンバータ_SUSビーム窓枠": {
-        "meshsize" : 2.0e-3, 
-        "material" : "SUS316",
-    },
-    
-    "全溶接コンバータ_SUSビーム窓": {
-        "meshsize" : 1.0e-3, 
+    "ターゲットカプセルホルダ_円筒パイプ_2606_放射化": {
+        "meshsize" : 2.5e-3,
+        "material" : "SUS316", 
+    }, 
+
+    "ターゲットカプセルホルダ_チタンケース上_抑え用_2606_放射化": {
+        "meshsize" : 2.5e-3,
         "material" : "SUS316",
     },
 
-    "全溶接コンバータ_側面配管接続": {
-        "meshsize" : 5.0e-3, 
+    "六角穴付きボルト_M8L30mm_SCB8-30_2606_放射化": {
+        "meshsize" :  2.5e-3, 
         "material" : "SUS316",
     },
-   
-    "Part2^全溶接コンバータ_全体アセンブリ": {
-        "meshsize" : 1.5e-3, 
+    
+
+    "シンプルコンバータ_SUS316板": {
+        "meshsize" : 2.5e-3, 
+        "material" : "SUS316",
+    },
+    
+    "シンプルコンバータ_H2O板": {
+        "meshsize" : 2.5e-3, 
         "material" : "H2O",
     },
-
+    
+    "シンプルコンバータ_タンタル板": {
+        "meshsize" : 2.5e-3, 
+        "material" : "Ta",
+    },
+    
 }
