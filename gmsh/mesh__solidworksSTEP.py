@@ -117,7 +117,8 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json", \
                 if ( "material" in item ):
                     if ( item["material"] in materials ):
                         g_cm3_to_kg_m3  = 1.0e3
-                        item["density"] = abs( materials[ item["material"] ]["Density"] ) * g_cm3_to_kg_m3
+                        # item["density"] = abs( materials[ item["material"] ]["Density"] ) * g_cm3_to_kg_m3
+                        item["density"] = materials[ item["material"] ]["Density"]
                     else:
                         raise KeyError( "[mesh__solidworksSTTEP.py] Cannot find key :: {}"\
                                         .format(item["material"] ) )
