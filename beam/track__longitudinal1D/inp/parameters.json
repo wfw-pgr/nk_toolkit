@@ -1,0 +1,68 @@
+{
+    
+    "particle" : {
+        "massNumber"               : 2,
+        "mass_amu"                 : 2.01355,
+        "chargeNumber"             : 1,
+        "injectionEnergy_MeV_u"    : 0.1,
+        "targetEnergy_MeV_u"       : 5.0, 
+    },
+    
+    "rf" : {
+        "frequency_MHz"            : 36.5,
+        "periodLength_m"           : 0.3,
+        "voltageBunch_MV"          : 0.010,
+        "voltageAccel_MV"          : 0.300,
+        "phaseSync_deg"            : 45.0, 
+        "voltagePow"               : 6.0,
+        "phasePow"                 : 1.00, 
+    },
+    
+    "lattice" : {
+        "numBunchingCells"         : 10,
+        "numTransitionCells"       : 20,
+        "numTotalAccelCells"       : 300,
+        "apertureRadius_m"         : 0.050, 
+    },
+    
+    "space_charge" : {
+        "enabled"                  : false,
+        "averageCurrent_A"         : 1.0e-3,
+        "beamRadius_m"             : 0.010,
+        "pipeRadius_m"             : 0.050,
+        "numBesselTerms"           : 80, 
+    },
+    
+    "ttf" : {
+        "mode"                     : "csv",      // [ "csv" / "constant" ]
+        "constant_value"           : 1.0,
+        "csvFile"                  : "inp/ttf_table.csv",
+    },
+    
+    "tracking" : {
+        "initialPhase_MinMaxStep"  : [ -180.0, +180.0, 1.0 ],   // deg 
+        "minEnergy_MeV_u"          : 1.0e-6,
+    },
+    
+    "output" : {
+        "cellDataFile"             : "out/cellData.csv",
+        "phaseSpaceFile"           : "out/phaseSpace.csv",
+        
+        "snapshot.cellNums"        : null,   // e.g. [ 1, 10, 100, ]  cell list,  null for all.
+        "snapshot.pngPrefix"       : "png/snapshots/cell",
+        "snapshot.ylim"            : null,
+        "snapshot.gifFile"         : "png/snapshot.gif", 
+
+        "energyRange.pngPrefix"    : "png/energyRange/energyRange",
+        "energyRange.ranges_MeV_u" : [
+            [ 0.1, 1.0 ],
+            [ 0.1, 5.0 ], 
+        ],
+    }, 
+
+    "ttf-analysis" : {
+        "efieldFile"               : "inp/eh_DTL.#01",
+        "summaryFile"              : "out/ttf_summary.json",
+        "csvFile"                  : "out/ttf_table.csv",
+    }, 
+}
