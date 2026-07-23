@@ -1,6 +1,6 @@
 import os, sys, json5, re
-import numpy          as np
-import pandas         as pd
+import numpy   as np
+import pandas  as pd
 
 
 # ========================================================= #
@@ -412,6 +412,50 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         }
         return( ret )
 
+    
+    # ------------------------------------------------- #
+    # --- [0-7] compress split half-quad  magnet    --- #
+    # ------------------------------------------------- #
+    def _compress__splitQuadrupoles( elements=None ):
+
+        # ------------------------------------------------- #
+        # --- [1] just add ds if successive quradrupole --- #
+        # ------------------------------------------------- #
+        compressed = []
+        for elemKey, element in elements.items():
+            element_ = dict( element )
+
+            if ( len( compressed ) > 0 ):       # - e1==quad & e2==quad
+                prevKey, prevElement = compressed[-1]
+
+                prevQuad = prevElement["type"].lower() == "quadrupole"
+                currQuad = element_   ["type"].lower() == "quadrupole"
+
+                if ( prevQuad and currQuad ):   # - k1==k2, ax1==ax2, ay1==ay2 
+                    sameK  = np.isclose( prevElement["k"],          element_["k"]          )
+                    sameAx = np.isclose( prevElement["aperture_x"], element_["aperture_x"] )
+                    sameAy = np.isclose( prevElement["aperture_y"], element_["aperture_y"] )
+
+                    if ( sameK and sameAx and sameAy ):
+                        prevElement["ds"] += element_["ds"]   # - ds = ds1 + ds2 
+                        continue
+            # else just append the element
+            compressed.append( [ elemKey, element_ ] )
+
+        # ------------------------------------------------- #
+        # --- [2] rename qmXX by compression            --- #
+        # ------------------------------------------------- #
+        ret     = {}
+        qmCount = 0
+        for elemKey, element in compressed:
+            if ( element["type"].lower() == "quadrupole" ):
+                qmCount += 1
+                elemKey         = "qm{}".format( qmCount )
+                element["name"] = elemKey
+            ret[elemKey] = element
+
+        return( ret )
+    
 
 
     # ========================================================= #
@@ -425,6 +469,8 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
         params   = json5.load( f )
     with open( inpFile   , "r" ) as f:
         elements = json5.load( f )
+
+    elements = _compress__splitQuadrupoles( elements=elements )
 
     # ------------------------------------------------- #
     # --- [2] call converter                        --- #
@@ -463,16 +509,16 @@ def translate__impactxElements( paramsFile="dat/parameters.json", \
     # ------------------------------------------------- #
     # --- [3] skip components                       --- #
     # ------------------------------------------------- #
-    if ( params["translate.cavity.skip"] ):
+    if ( params.get( "translate.cavity.skip", False ) ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["rfcavity","rfgap","shortrf"] ) }
-    if ( params["translate.quad.skip"] ):
+    if ( params.get( "translate.quad.skip"  , False ) ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["quadrupole","quadrupole.linear"] ) }
-    if ( params["translate.drift.skip"] ):
+    if ( params.get( "translate.drift.skip" , False ) ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["drift","drift.linear"] ) }
-    if ( params["translate.ebmap.skip"] ):
+    if ( params.get( "translate.ebmap.skip" , False ) ):
         elements_ = { k:v for k,v in elements_.items()
                       if not( v["type"].lower() in ["ebmap.rk"] ) }
     

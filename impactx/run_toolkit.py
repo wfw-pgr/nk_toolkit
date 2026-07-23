@@ -162,7 +162,7 @@ def set__manualReferenceParticle( particle_container=None,  # particle_container
 # ========================================================= #
 
 def set__waterbag_distribution( alpha=None, beta=None, eps_geom=None, \
-                                mm_mrad=True, full_emittance=False ):
+                                mm_mrad=True, full_emittance=False, verbose=True ):
     
     x_, y_, t_   = 0, 1, 2
     mm, mrad     = 1.0e-3, 1.0e-3
@@ -189,16 +189,17 @@ def set__waterbag_distribution( alpha=None, beta=None, eps_geom=None, \
         lambdaPx = lambda_p[x_], lambdaPy = lambda_p[y_], lambdaPt = lambda_p[t_],
         muxpx    = mu_qp[x_]   , muypy    = mu_qp[y_],    mutpt    = mu_qp[t_], 
     )
-    
-    print( "\n" + " ===     initial particle distribution    === " )
-    print( "  * alpha    :: ", alpha )
-    print( "  * beta     :: ", beta  )
-    print( "  * gamma    :: ", gamma )
-    print( "  * eps_geom :: ", eps_geom  )
-    print( "  * sigma    :: ", lambda_q  )
-    print( "  * sigma_p  :: ", lambda_p  )
-    print( "  * mu_qp    :: ", mu_qp     )
-    print( " ============================================ " + "\n" )
+
+    if ( verbose ) :
+        print( "\n" + " ===     initial particle distribution    === " )
+        print( "  * alpha    :: ", alpha )
+        print( "  * beta     :: ", beta  )
+        print( "  * gamma    :: ", gamma )
+        print( "  * eps_geom :: ", eps_geom  )
+        print( "  * sigma    :: ", lambda_q  )
+        print( "  * sigma_p  :: ", lambda_p  )
+        print( "  * mu_qp    :: ", mu_qp     )
+        print( " ============================================ " + "\n" )
     return( distri )
 
 
