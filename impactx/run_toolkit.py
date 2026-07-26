@@ -1,4 +1,4 @@
-import json5, h5py
+import copy, glob, os, shutil, time, json5
 import impactx
 import numpy         as np
 import pandas        as pd
@@ -11,8 +11,7 @@ import nk_toolkit.impactx.EBmapElement__RK as ebmrk
 # ========================================================= #
 
 def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx.json",
-                            add_bpm=True , nUse=None, logFile="beamline_log.json", \
-                            params ={}, ):
+                            add_bpm=True , nUse=None, params ={}, ):
 
     # ------------------------------------------------- #
     # --- [0] lattice element specifications        --- #
@@ -208,7 +207,7 @@ def set__waterbag_distribution( alpha=None, beta=None, eps_geom=None, \
 # ===  save__run_records                                === #
 # ========================================================= #
 
-def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
+def save__run_records( params=None, keys=None, recoFile="diags/records.json", verbose=True ):
 
     amu                    = 931.494
 
@@ -233,7 +232,8 @@ def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
     records = { key:params[key] for key in keys }
     with open( recoFile, "w" ) as f:
         json5.dump( records, f, indent=2 )
-        print( " records output :: {} \n".format( recoFile ) )
+        if ( verbose ):
+            print( " records output :: {} \n".format( recoFile ) )
     return( records )
 
 
@@ -241,7 +241,7 @@ def save__run_records( params=None, keys=None, recoFile="diags/records.json" ):
 # ===  save__latticeStructure                           === #
 # ========================================================= #
 
-def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, \
+def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, add_bpm=True, \
                             outFile="diags/lattice.csv", labelFile="diags/lattice_label.csv" ):
 
     # ------------------------------------------------- #
@@ -298,14 +298,152 @@ def save__latticeStructure( elements=None, beamlineFile=None, nUse=None, \
     # ------------------------------------------------- #
     # --- [5] save labels                           --- #
     # ------------------------------------------------- #
-    result = ["bpm"]
+    result = []
+    if ( add_bpm ):
+        result.append( "bpm" )
+
     for row in expanded:
         result.append( row["name"] )
-        if ( row["slice"] == row["nslice"] ):
-            result.append("bpm")
+        if ( add_bpm and row["slice"] == row["nslice"] ):
+            result.append( "bpm" )
     df            = pd.DataFrame( { "name":result } )
     df.index      = range(1, len(df)+1 )
     df.index.name = "id"
     df.to_csv( labelFile, index=True )
 
 
+
+# ========================================================= #
+# ===  execute__impactx                                 === #
+# ========================================================= #
+
+def execute__impactx( params=None, paramsFile="../dat/parameters.json",
+                      elements=None, beamlineFile="../dat/beamline_impactx.json",
+                      workDir=".", runMode=None, add_bpm=None, clearDiags=True,
+                      saveRecords=True, saveLattice=True, verbose=None ):
+    """Execute ImpactX tracking or envelope calculation."""
+
+    amu     = 931.494   # [MeV]
+    workDir = os.path.abspath( workDir )
+    cwd     = os.getcwd()
+
+    # ------------------------------------------------- #
+    # --- [1] load input                            --- #
+    # ------------------------------------------------- #
+    try:
+        os.chdir( workDir )
+
+        if ( params is None ):
+            with open( paramsFile, "r" ) as fk:
+                params_ = json5.load( fk )
+        else:
+            params_     = copy.deepcopy( params )
+
+        if ( elements is None ):
+            with open( beamlineFile, "r" ) as fk:
+                elements_ = json5.load( fk )
+        else:
+            elements_     = copy.deepcopy( elements )
+
+        if ( runMode is None ):
+            runMode     = params_["mode.run"]
+        if ( add_bpm is None ):
+            add_bpm     = params_["sim.add_bpm"]
+        if ( verbose is None ):
+            verbose     = int( params_["sim.verbose"] )
+        else:
+            verbose     = int( verbose )
+        runMode = runMode.lower()
+
+        # ------------------------------------------------- #
+        # --- [2] initialize ImpactX                    --- #
+        # ------------------------------------------------- #
+        if ( clearDiags and os.path.isdir( "diags" ) ):
+            shutil.rmtree( "diags" )
+
+        startTime                  = time.perf_counter()
+        sim                        = impactx.ImpactX()
+        sim.max_level              = params_["sim.max_level"]
+        sim.n_cell                 = params_["sim.n_cell"]
+        sim.blocking_factor        = params_["sim.blocking_factor"]
+        sim.particle_shape         = params_["sim.particle_shape"]
+        sim.slice_step_diagnostics = params_["sim.slice_step_diagnostics"]
+        sim.space_charge           = params_["mode.space_charge"]
+        sim.poisson_solver         = params_["sim.poisson_solver"]
+        sim.dynamic_size           = params_["sim.dynamic_size"]
+        sim.prob_relative          = params_["sim.prob_relative"]
+        sim.particle_lost_diagnostics_backend = params_["sim.particle_lost_diagnostics_backend"]
+        sim.verbose                = verbose
+        sim.mlmg_verbosity         = verbose          # MLMG std log
+        sim.tiny_profiler          = bool( verbose )  # profiler 
+        sim.init_grids()
+
+        # ------------------------------------------------- #
+        # --- [3] reference particle                   --- #
+        # ------------------------------------------------- #
+        Ek0  = params_["beam.Ek.MeV/u"] * params_["beam.u.nucleon"]
+        Em0  = params_["beam.mass.amu"] * amu
+        refp = sim.particle_container().ref_particle()
+        refp.set_charge_qe     ( params_["beam.charge.qe"] )
+        refp.set_mass_MeV      ( Em0 )
+        refp.set_kin_energy_MeV( Ek0 )
+
+        # ------------------------------------------------- #
+        # --- [4] initial distribution                  --- #
+        # ------------------------------------------------- #
+        distri = set__waterbag_distribution( alpha=np.array( params_["beam.twiss.alpha"] ),
+                                             beta =np.array( params_["beam.twiss.beta"] ),
+                                             eps_geom=np.array( params_["beam.emittance.geom"] ),
+                                             mm_mrad=True, full_emittance=False,
+                                             verbose=verbose )
+        bunch_charge_C           = params_["beam.current.A"] / params_["beam.freq.Hz"]
+        params_["beam.charge.C"] = bunch_charge_C
+        if ( runMode == "tracking" ):
+            sim.add_particles( bunch_charge_C, distri,int( params_["beam.nparticles"] ) )
+        elif ( runMode == "envelope" ):
+            sc_flag = params_["mode.space_charge"]
+            if   ( sc_flag is False or sc_flag is None ):
+                sim.init_envelope( refp, distri )
+            elif ( str( sc_flag ).upper() == "3D" ):
+                sim.init_envelope( refp, distri, bunch_charge_C )
+            elif ( str( sc_flag ).upper() == "2D" ):
+                sim.init_envelope( refp, distri, float( params_["beam.current.A"] ) )
+            else:
+                raise ValueError( "Unknown space-charge mode: {}".format( sc_flag ) )
+        else:
+            raise ValueError( "Unknown ImpactX run mode: {}".format( runMode ) )
+
+        # ------------------------------------------------- #
+        # --- [5] lattice and execution                 --- #
+        # ------------------------------------------------- #
+        beamline = set__latticeComponents( elements=elements_, beamlineFile=None, add_bpm=add_bpm,
+                                           nUse=params_["sim.nUse.elements"], params=params_ )
+        sim.lattice.extend( beamline )
+
+        if   ( runMode == "tracking" ):
+            sim.track_particles()
+        elif ( runMode == "envelope" ):
+            sim.track_envelope()
+        sim.finalize()
+        elapsedS = time.perf_counter() - startTime
+
+        # ------------------------------------------------- #
+        # --- [6] output                                --- #
+        # ------------------------------------------------- #
+        if ( saveRecords ):
+            save__run_records( params=params_, recoFile="diags/records.json", verbose=verbose )
+        if ( saveLattice ):
+            save__latticeStructure( elements=elements_, nUse=params_["sim.nUse.elements"],
+                                    outFile="diags/lattice.csv", add_bpm=add_bpm, 
+                                    labelFile="diags/lattice_label.csv" )
+        if ( verbose ):
+            print( "\n Elapsed time ::: {:10.5e} (s)\n".format( elapsedS ) )
+
+        statFile = sorted( glob.glob( "diags/reduced_beam_characteristics.*" ) )[0]
+        refpFile = sorted( glob.glob( "diags/ref_particle.*" ) )[0]
+        ret      = { "params":params_, "elements":elements_, "mode":runMode,
+                     "elapsedS":elapsedS, "statFile":os.path.abspath( statFile ),
+                     "refpFile":os.path.abspath( refpFile ) }
+    finally:
+        os.chdir( cwd )
+    return( ret )

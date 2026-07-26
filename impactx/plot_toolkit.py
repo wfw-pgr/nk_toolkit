@@ -14,7 +14,7 @@ import nk_toolkit.impactx.analyze_toolkit as atk
 # ========================================================= #
 
 def visualize__main( refp=False, stat=False, poincare=False, post=False, \
-                     trajectory=False, plot_conf=None ):
+                     trajectory=False, enve=False, plot_conf=None ):
     
     # ------------------------------------------------- #
     # --- [1] main routine                          --- #
@@ -63,6 +63,13 @@ def visualize__main( refp=False, stat=False, poincare=False, post=False, \
     # ------------------------------------------------- #
     if ( trajectory ):
         plot__trajectories( plot_conf=plot_conf )
+
+    # ------------------------------------------------- #
+    # --- [7] envelop plot                          --- #
+    # ------------------------------------------------- #
+    if ( enve ):
+        df_enve = itk.get__beamStats( statFile=files["stat"], refpFile=files["refp"] )
+        plot__beamStats( df=df_enve, plot_conf=plot_conf, kind="enve" )
 
     return()
 
@@ -173,7 +180,7 @@ def plot__beamStats( df=None, plot_conf=None, kind="refp" ):
     # ------------------------------------------------- #
     # --- [1] default settings                      --- #
     # ------------------------------------------------- #
-    if not( kind in ["refp","stat","post"] ):
+    if not( kind in ["refp","stat","post", "enve"] ):
         raise ValueError( f"[plot__beamStats] undefined kind. not in [refp,stat,post]: {kind}")
     pngbase  = f"png/{kind}/" + "{}.png"
     basedir  = os.path.dirname( pngbase.format("_") )
