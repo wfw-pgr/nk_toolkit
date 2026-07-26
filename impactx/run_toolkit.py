@@ -383,7 +383,7 @@ def execute__impactx( params=None, paramsFile="../dat/parameters.json",
         # ------------------------------------------------- #
         Ek0  = params_["beam.Ek.MeV/u"] * params_["beam.u.nucleon"]
         Em0  = params_["beam.mass.amu"] * amu
-        refp = sim.particle_container().ref_particle()
+        refp = sim.beam.ref
         refp.set_charge_qe     ( params_["beam.charge.qe"] )
         refp.set_mass_MeV      ( Em0 )
         refp.set_kin_energy_MeV( Ek0 )
