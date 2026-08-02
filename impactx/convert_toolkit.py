@@ -833,7 +833,171 @@ def translate__TrackDTLmap2impactx( eh_DTL="track/eh_DTL.#01"  , eh_PMQ=None, ax
     print( f"    output     :: {bfieldFile}" )
     print( "\n" + "-"*60 + "\n" )
     return( df_e, df_b )
+
+
+# ========================================================= #
+# ===  convert quadrupoles to hard-edge solenoids       === #
+# ========================================================= #
+def convert__quadrupolesToSolenoids( paramsFile   ="dat/parameters.json",
+                                     inpFile      ="dat/beamline_impactx.json",
+                                     outFile      ="dat/beamline_impactx_solenoid.json",
+                                     polarity     ="same",
+                                     field_scale  =1.0,    # -- 
+                                     length_scale =1.0,    # -- Ls/Lq = sol_len / qm_len
+                                     verbose      =True, ):
+    """Replace every quadrupole by a thin-lens-equivalent hard-edge solenoid.
+    For a QM with kq [1/m2] and length Lq [m],
+    the initial solenoid guess is defined by ::
+        (ks/2)^2 Ls = abs(kq) Lq,
+    ( ks = Bz/Brho, Ls = length_scale*Lq. ) 
+    """
+
+    amu_MeV         = 931.494
+    GeV_per_MeV     = 1.0e-3
+    Tm_per_GeV_c    = 3.3356409519815204
+
+    # ------------------------------------------------- #
+    # --- [1] validate options                      --- #
+    # ------------------------------------------------- #
+    polarity        = str( polarity ).lower()
+    polarityAliases = { "same"        : "same",
+                        "alternating" : "alternating",
+                        "alternate"   : "alternating",
+                        "quad"        : "quad",
+                        "quadrupole"  : "quad", }
+    if ( polarity not in polarityAliases ):
+        raise ValueError( "polarity must be one of: same, alternating, quad" )
+    polarity     = polarityAliases[polarity]
+    field_scale  = float( field_scale  )
+    length_scale = float( length_scale )
+    if ( field_scale <= 0.0 ):
+        raise ValueError( "field_scale must be positive" )
+    if ( length_scale <= 0.0 ):
+        raise ValueError( "length_scale must be positive" )
     
+    # ------------------------------------------------- #
+    # --- [2] load input                            --- #
+    # ------------------------------------------------- #
+    with open( paramsFile, "r" ) as f:
+        params = json5.load( f )
+    with open( inpFile, "r" ) as f:
+        elements = json5.load( f )
+
+    charge_qe = float( params["beam.charge.qe"] )
+    if ( np.isclose( charge_qe, 0.0 ) ):
+        raise ValueError( "beam.charge.qe must be non-zero" )
+    mass_MeV  = float( params["beam.mass.amu"] ) * amu_MeV
+    Ek_MeV    = float( params["beam.Ek.MeV/u"] ) * float( params["beam.u.nucleon"] )
+
+    def calc__Brho( kineticEnergy_MeV ):
+        if ( kineticEnergy_MeV < 0.0 ):
+            raise ValueError( "reference kinetic energy became negative: {} MeV"
+                              .format( kineticEnergy_MeV ) )
+        pc_GeV = np.sqrt( kineticEnergy_MeV * ( kineticEnergy_MeV + 2.0*mass_MeV ) ) * GeV_per_MeV
+        return( Tm_per_GeV_c * pc_GeV / abs( charge_qe ) )
+
+    # ------------------------------------------------- #
+    # --- [3] replace quadrupoles                   --- #
+    # ------------------------------------------------- #
+    converted = {}
+    solenoidCount = 0
+    BzList = []
+    for key, element in elements.items():
+        element_ = dict( element )
+        elemType = str( element_["type"] ).lower()
+
+        if ( elemType == "shortrf" ):
+            converted[key]    = element_
+            normalizedVoltage = float( element_["V"] )
+            phase_rad         = np.deg2rad( float( element_.get( "phase", -90.0 ) ) )
+            Ek_MeV           += normalizedVoltage * mass_MeV * np.cos( phase_rad )
+            if ( Ek_MeV < 0.0 ):
+                raise ValueError( "reference kinetic energy is negative after {}".format( key ) )
+            continue
+
+        if ( elemType in [ "rfcavity", "ebmap.rk", "chracc" ] ):
+            raise NotImplementedError(
+                "reference-energy update for '{}' is not implemented; "
+                "this converter currently supports ShortRF acceleration".format( elemType ) )
+
+        if ( elemType not in [ "quadrupole", "quadrupole.linear" ] ):
+            converted[key] = element_
+            continue
+
+        solenoidCount += 1
+        Brho_Tm = calc__Brho( Ek_MeV )
+        Lq      = float( element_["ds"] )
+        Ls      = length_scale * Lq
+        if ( Lq <= 0.0 ):
+            raise ValueError( "{} has non-positive ds".format( key ) )
+
+        if ( elemType == "quadrupole.linear" ):
+            quadUnit = 0
+        else:
+            quadUnit = int( element_.get( "unit", 0 ) )
+        if   ( quadUnit == 0 ):
+            kq_per_m2 = float( element_["k"] )
+        elif ( quadUnit == 1 ):
+            gradient_T_per_m = float( element_["k"] )
+            kq_per_m2        = gradient_T_per_m / Brho_Tm
+        else:
+            raise ValueError( "{} has unsupported quadrupole unit={}".format( key, quadUnit ) )
+
+        ks_abs = 2.0 * np.sqrt( abs( kq_per_m2 ) * Lq / Ls )
+        ks_abs = field_scale * ks_abs
+        if   ( polarity == "same" ):
+            sign = +1.0
+        elif ( polarity == "alternating" ):
+            sign = +1.0 if ( solenoidCount % 2 == 1 ) else -1.0
+        else:
+            sign = +1.0 if ( kq_per_m2 >= 0.0 ) else -1.0
+        ks_per_m = sign * ks_abs
+        Bz_T     = ks_per_m * Brho_Tm
+        BzList  += [ Bz_T ]
+
+        solKey  = "sol{}".format( solenoidCount )
+        solElem = {
+            "type"        : "solenoid",
+            "name"        : solKey,
+            "ds"          : Ls,
+            "ks"          : ks_per_m,
+            "aperture_x"  : float( element_.get( "aperture_x", 0.0 ) ),
+            "aperture_y"  : float( element_.get( "aperture_y", 0.0 ) ),
+            "nslice"      : int( element_.get( "nslice", 1 ) ),
+            "Bz_T"        : Bz_T,
+            "Brho_Tm"     : Brho_Tm,
+            "Ek_MeV"      : Ek_MeV,
+            "source_quad" : {
+                "key"  : key,
+                "name" : element_.get( "name", key ),
+                "k"    : float( element_["k"] ),
+                "unit" : quadUnit,
+            },
+        }
+        for option in [ "dx", "dy", "rotation" ]:
+            if ( option in element_ ):
+                solElem[option] = element_[option]
+        converted[solKey] = solElem
+
+    # ------------------------------------------------- #
+    # --- [4] save and report                       --- #
+    # ------------------------------------------------- #
+    if ( outFile is not None ):
+        outDir = os.path.dirname( os.path.abspath( outFile ) )
+        os.makedirs( outDir, exist_ok=True )
+        with open( outFile, "w" ) as f:
+            json5.dump( converted, f, indent=4 )
+    if ( verbose ):
+        if ( BzList ):
+            print( "[convert__quadrupolesToSolenoids] {} quadrupoles converted; "
+                   "|Bz| range = {:.6g} -- {:.6g} T"
+                   .format( solenoidCount,
+                            min( abs( value ) for value in BzList ),
+                            max( abs( value ) for value in BzList ), ) )
+        print( "[convert__quadrupolesToSolenoids] output :: {}".format( outFile ) )
+    return( converted )
+
+
 
 # ========================================================= #
 # ===   Execution of Pragram                            === #

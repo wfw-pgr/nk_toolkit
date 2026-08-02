@@ -5,6 +5,7 @@ import matplotlib.pyplot  as plt
 import matplotlib.patches as patches
 import nk_toolkit.plot.load__config       as lcf
 import nk_toolkit.plot.gplot1D            as gp1
+import nk_toolkit.plot.gplot2D            as gp2
 import nk_toolkit.impactx.io_toolkit      as itk
 import nk_toolkit.impactx.analyze_toolkit as atk
 
@@ -256,7 +257,7 @@ def plot__trajectories( plot_conf=None, pids=None ):
         
     else:
         sample = itk.get__particles( recoFile=files["record"], refpFile=files["refp"],
-                                     bpmsFile=files["bpms"], steps=[0] )
+                                     bpmsFile=files["bpms"], steps=[1] )
         pids   = np.array( sorted( sample["pid"].unique() ), dtype=np.int64 )
         
     # ------------------------------------------------- #
@@ -279,7 +280,6 @@ def plot__trajectories( plot_conf=None, pids=None ):
         fig.save__figure()
     return()
 
-    
 
 # ========================================================= #
 # ===  plot__poincareMap                                === #
@@ -319,3 +319,126 @@ def plot__poincareMap( df=None, plot_conf=None, step=0 ):
         
 
         
+# ========================================================= #
+# ===  plot__sr_dist                                    === #
+# ========================================================= #
+
+def plot__sr_dist( pids=None, nRandoms=None, nbin=200, pngFile="png/dist/dist.png", \
+                   normalize=True, log=True, r_mirror=True, colortable="Blues_r",
+                   cmpmode="tricontourf", \
+                   files={ "refp"  :"impactx/diags/ref_particle.0",
+                           "record":"impactx/diags/records.json",
+                           "bpms"  :"impactx/diags/openPMD/bpm.h5", } ):
+
+    m2mm = 1.0e3
+    
+    # ------------------------------------------------- #
+    # --- [1] settings                              --- #
+    # ------------------------------------------------- #
+    os.makedirs( os.path.dirname( pngFile ), exist_ok=True )
+
+    # ------------------------------------------------- #
+    # --- [2] select particles                      --- #
+    # ------------------------------------------------- #
+    if ( pids is None ):
+        sample  = itk.get__particles( recoFile=files["record"], refpFile=files["refp"],
+                                      bpmsFile=files["bpms"], steps=[1] )
+        allPids = np.asarray( sorted( sample["pid"].unique() ), dtype=np.int64 )
+        if ( nRandoms is None ):
+            pids = allPids
+        else:
+            if ( nRandoms > allPids.size ):
+                raise ValueError( f"nRandoms ({nRandoms}) > number of particles ({allPids.size})" )
+            pids = np.random.choice( allPids, size=nRandoms, replace=False )
+    else:
+        pids = np.asarray( pids, dtype=np.int64 )
+
+    # ------------------------------------------------- #
+    # --- [3] load particle positions               --- #
+    # ------------------------------------------------- #
+    part  = itk.get__particles( recoFile=files["record"], refpFile=files["refp"],
+                                bpmsFile=files["bpms"], pids=pids )
+    sAxis = part["ref_s"].to_numpy()
+    xAxis = part["xp"]   .to_numpy() * m2mm
+    yAxis = part["yp"]   .to_numpy() * m2mm
+    rAxis = np.sqrt( xAxis**2 + yAxis**2 )
+
+    # ------------------------------------------------- #
+    # --- [4] make s-r/x/y density                  --- #
+    # ------------------------------------------------- #
+    stepAxis = part["step"].to_numpy()
+    stepList = np.sort( np.unique( stepAxis ) )
+    maxXY    = max( np.max(np.abs(xAxis)), np.max(np.abs(yAxis)) )
+    plots    = { "r": { "axis":rAxis, "range":[ 0.0, maxXY ],
+                        "label":"$r$ [mm]", "unit":"mm$^{-2}$" },
+                 "x": { "axis":xAxis, "range":[ -maxXY, maxXY ],
+                        "label":"$x$ [mm]", "unit":"mm$^{-1}$" },
+                 "y": { "axis":yAxis, "range":[ -maxXY, maxXY ],
+                        "label":"$y$ [mm]", "unit":"mm$^{-1}$" }, }
+    for key, plot in plots.items():
+        edge    = np.linspace( *plot["range"], nbin+1 )
+        measure = np.diff( edge )
+        if ( key == "r" ):
+            measure = np.pi * ( edge[1:]**2 - edge[:-1]**2 )
+        hist    = np.zeros( ( len(stepList), nbin ) )
+        sCenter = np.zeros( len(stepList) )
+        for ik, step in enumerate( stepList ):
+            index       = ( stepAxis == step )
+            sCenter[ik] = np.median( sAxis[index] )
+            count, _    = np.histogram( plot["axis"][index], bins=edge, )
+            norm        = np.sum( count ) if normalize else 1.0
+            if ( norm > 0.0 ):
+                hist[ik,:] = count / ( norm * measure )
+        histPlot           = np.zeros_like( hist, dtype=float )
+        positive           = ( hist > 0.0 )
+        if ( log ):
+            histPlot[positive] = np.log10( hist[positive] )
+        plot["hist"]       = histPlot
+        plot["positive"]   = positive
+        plot["center"]     = 0.5 * ( edge[:-1] + edge[1:] )
+        
+    # ------------------------------------------------- #
+    # --- [5] plot                                  --- #
+    # ------------------------------------------------- #
+    root, ext = os.path.splitext( pngFile )
+    for key, plot in plots.items():
+        histPlot = plot["hist"]
+        positive = plot["positive"]
+        center   = plot["center"]
+        yRange   = plot["range"]
+        if ( key == "r" and r_mirror ):
+            histPlot = np.concatenate( [ plot["hist"][:,::-1], plot["hist"] ], axis=1 )
+            positive = np.concatenate( [ plot["positive"][:,::-1], plot["positive"] ], axis=1 )
+            center   = np.concatenate( [ -plot["center"][::-1], plot["center"] ] )
+            yRange   = [ -plot["range"][1], plot["range"][1] ]
+
+        sGrid, vGrid = np.meshgrid( sCenter, center, indexing="ij" )
+        valid        = histPlot[positive]
+        if ( valid.size == 0 ):
+            print( f"[plot__sr_dist] no valid data: {key}" )
+            continue
+        cMin = np.quantile( valid, 0.002 )
+        cMax = np.quantile( valid, 0.998 )
+        if ( cMin >= cMax ):
+            cMin -= 0.5
+            cMax += 0.5
+        config = { **lcf.load__config(),
+                   "figure.pngFile"  : "{}_s-{}{}".format( root, key, ext ),
+                   "figure.size"     : [ 10.0, 5.0 ],
+                   "figure.position" : [ 0.08, 0.14, 0.92, 0.86 ],
+                   "ax1.x.label"     : "$s$ [m]",
+                   "ax1.y.label"     : plot["label"],
+                   "ax1.x.range"     : { "auto":True, "min":0.0, "max":1.0, "num":11, },
+                   "ax1.y.range"     : { "auto":False, "min":yRange[0],
+                                         "max":yRange[1], "num":5, },
+                   "cmp.colortable"  : colortable,
+                   "cmp.level"       : { "auto":False, "min":cMin, "max":cMax, "num":100, },
+                   "clb.position"    : [ 0.93, 0.14, 0.95, 0.86 ],
+                   "clb.orientation" : "vertical", }
+        cMap                    = histPlot.copy()
+        cMap[~positive]         = np.nan
+        if ( cmpmode in [ "tricontourf" ] ):
+            sGrid, vGrid, cMap = sGrid.ravel(), vGrid.ravel(), cMap.ravel()
+        gp2.gplot2D( xAxis=sGrid, yAxis=vGrid, cMap=cMap,
+                     config=config, cmpmode=cmpmode, verbose=False, )
+    return()

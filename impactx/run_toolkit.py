@@ -40,7 +40,13 @@ def set__latticeComponents( elements=None, beamlineFile="../dat/beamline_impactx
             "allowed" : [ "ds", "k", "dx", "dy", "rotation",
                           "aperture_x", "aperture_y", "name", "nslice", ],  
             "options" : "translate.quad.options",
-        }, 
+        },
+        "solenoid" : {
+            "class"   : impactx.elements.Sol,
+            "allowed" : [ "ds", "ks", "dx", "dy", "rotation",
+                          "aperture_x", "aperture_y", "name", "nslice", ],
+            "options" : "translate.solenoid.options",
+        },
         "drift" : {
             "class"   : impactx.elements.ExactDrift,
             "allowed" : [ "ds", "dx", "dy", "rotation",

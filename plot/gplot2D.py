@@ -18,7 +18,7 @@ class gplot2D:
     def __init__( self, \
                   xAxis   = None, yAxis  = None, \
                   cMap    = None, Cntr   = None, vect    = None, \
-                  pngFile = None, config = None, cmpmode = None ):
+                  pngFile = None, config = None, cmpmode = None, verbose=True ):
         
         # ------------------------------------------------- #
         # --- 引数の引き渡し                            --- #
@@ -26,6 +26,7 @@ class gplot2D:
         self.xAxis, self.yAxis  = xAxis, yAxis
         self.cMap , self.Cntr   =  cMap, Cntr
         self.vect , self.config =  vect, config
+        self.verbose            = verbose
         
         # ------------------------------------------------- #
         # --- コンフィグの設定                          --- #
@@ -71,8 +72,8 @@ class gplot2D:
         instantOut = False
         #  -- もし cMap が渡されていたら，即，描く      --  #
         if ( self.cMap is not None ):
-            self.add__cMap( xAxis     = self.xAxis, yAxis   = self.yAxis,     \
-                            cMap      = self.cMap , levels  = self.cmpLevels  )
+            self.add__cMap( xAxis= self.xAxis, yAxis = self.yAxis,     \
+                            cMap = self.cMap , levels= self.cmpLevels, verbose=self.verbose )
             if ( self.config["clb.sw"]      ):
                 self.set__colorbar()
             if ( self.config["cmp.point.sw"] ):
@@ -87,18 +88,18 @@ class gplot2D:
         # -- もし xvec, yvec が渡されていたら，即，描く --  #
         #  -- revision need -- #
         if ( self.vect is not None ):
-            self.add__vector ( vect=self.vect )
+            self.add__vector ( vect=self.vect, verbose=self.verbose )
             instantOut = True
         # -- もし 何かを描いてたら，出力する．          --  #
         if ( instantOut ):
-            self.save__figure( pngFile=self.config["figure.pngFile"] )
+            self.save__figure( pngFile=self.config["figure.pngFile"], verbose=self.verbose )
 
             
     # ========================================================= #
     # === カラーマップ 追加 ルーチン  ( add__cMap )         === #
     # ========================================================= #
     def add__cMap( self, xAxis=None, yAxis=None, cMap=None, \
-                   levels=None, alpha=None, cmpmode=None ):
+                   levels=None, alpha=None, cmpmode=None, verbose=True ):
         
         # ------------------------------------------------- #
         # --- 引数情報 更新                             --- #
@@ -135,41 +136,49 @@ class gplot2D:
             if ( self.config["cmp.transparent"][1] is not None ):
                 index = np.where( self.cMap > float( self.config["cmp.transparent"][1] ) )
                 self.cMap[ index ] = np.nan
+        # -- transparent color -- #
+        colorTable = plt.get_cmap( self.config["cmp.colortable"] ).copy()
+        colorTable.set_bad( color="none" )
         if   ( self.config["cmp.cmpmode"].lower() in [ "pcolor", "pcolormesh" ] ):
             self.cImage = self.ax1.pcolormesh( xAxis_, yAxis_, self.cMap, \
-                                               alpha =self.config["cmp.alpha"], \
-                                               cmap  =self.config["cmp.colortable"], \
-                                               zorder=0 )
+                                               alpha=self.config["cmp.alpha"], \
+                                               cmap =colorTable, zorder=0 )
+            
         elif ( self.config["cmp.cmpmode"].lower() in [ "imshow" ] ):
-            self.cImage = self.ax1.imshow    ( self.cMap, \
-                                               alpha =self.config["cmp.alpha"], \
-                                               zorder=0 )
+            self.cImage = self.ax1.imshow( self.cMap, alpha =self.config["cmp.alpha"], \
+                                           cmap=colorTable, zorder=0 )
+            
         elif ( self.config["cmp.cmpmode"].lower() in [ "tricontourf" ] ):
             triangulated = mtr.Triangulation( xAxis_, yAxis_ )
-            self.cImage = self.ax1.tricontourf( triangulated, self.cMap, self.cmpLevels, \
+            pointMask    = ~np.isfinite( self.cMap )
+            if ( np.any( pointMask ) ):
+                triangleMask = np.any( pointMask[triangulated.triangles], axis=1 )
+                triangulated.set_mask( triangleMask )
+            cMap_ = np.nan_to_num( self.cMap, nan=self.cmpLevels[0] )
+            self.cImage = self.ax1.tricontourf( triangulated, cMap_, self.cmpLevels, \
                                                 alpha =self.config["cmp.alpha"], \
-                                                cmap  =self.config["cmp.colortable"], \
-                                                zorder=0, extend="both" )
+                                                cmap  =colorTable, zorder=0, extend="both" )
+            
         elif ( self.config["cmp.cmpmode"].lower() in [ "contourf" ] ):
             xAxis_, yAxis_ = np.reshape( xAxis_, cMap.shape ), np.reshape( yAxis_, cMap.shape )
             self.cImage = self.ax1.contourf( xAxis_, yAxis_, self.cMap, self.cmpLevels, \
                                              alpha =self.config["cmp.alpha"], \
-                                             cmap  =self.config["cmp.colortable"], \
-                                             zorder=0, extend="both" )
+                                             cmap  =colorTable, zorder=0, extend="both" )
         else:
-            sys.exit( "[add__cmap] cmp.cmpmode == ??? [tricontourf, pcolormesh, contourf]" )
+            raise ValueError( "[add__cmap] cmp.cmpmode == ??? [tricontourf, pcolormesh, contourf]" )
             
         # ------------------------------------------------- #
         # --- 軸調整 / 最大 / 最小 表示                 --- #
         # ------------------------------------------------- #
-        print( "[gplot2D] :: size :: x, y, z    =  "\
-               .format( xAxis_.shape, yAxis_.shape, self.cMap.shape ) )
-        print( "[gplot2D] :: ( min(x), max(x) ) = ( {0}, {1} ) "\
-               .format( np.min( self.xAxis ), np.max( self.xAxis ) ) )
-        print( "[gplot2D] :: ( min(y), max(y) ) = ( {0}, {1} ) "\
-               .format( np.min( self.yAxis ), np.max( self.yAxis ) ) )
-        print( "[gplot2D] :: ( min(z), max(z) ) = ( {0}, {1} ) "\
-               .format( np.min( self.cMap  ), np.max( self.cMap  ) ) )
+        if ( verbose ):
+            print( "[gplot2D] :: size :: x, y, z    =  "\
+                   .format( xAxis_.shape, yAxis_.shape, self.cMap.shape ) )
+            print( "[gplot2D] :: ( min(x), max(x) ) = ( {0}, {1} ) "\
+                   .format( np.min( self.xAxis ), np.max( self.xAxis ) ) )
+            print( "[gplot2D] :: ( min(y), max(y) ) = ( {0}, {1} ) "\
+                   .format( np.min( self.yAxis ), np.max( self.yAxis ) ) )
+            print( "[gplot2D] :: ( min(z), max(z) ) = ( {0}, {1} ) "\
+                   .format( np.min( self.cMap  ), np.max( self.cMap  ) ) )
         self.set__axis()
 
         
@@ -220,7 +229,7 @@ class gplot2D:
     # ========================================================= #
     # ===   ベクトル 追加  ルーチン                         === #
     # ========================================================= #
-    def add__vector( self, vect=None, ):
+    def add__vector( self, vect=None, verbose=True ):
 
         # -- vect :: [ nData, 4 ]   -- #
         #         :: [ x, y, u, v ]
@@ -229,7 +238,8 @@ class gplot2D:
         # --- [1] 引数チェック                          --- #
         # ------------------------------------------------- #
         if ( vect  is None ): sys.exit("[add__vector] vect  == ???")
-        print( vect.shape )
+        if ( verbose ):
+            print( "shape of the vector to plot :: {}".format( vect.shape ) )
         
         # ------------------------------------------------- #
         # --- [2] set datarange / down sampling         --- #
@@ -259,7 +269,8 @@ class gplot2D:
         if ( self.config["vec.scale.auto"] ):
             maxLength = np.max( np.sqrt( uxIntp**2 + vyIntp**2 ) )
             self.config["vec.scale"] = self.config["vec.scale.ref"] / maxLength
-            print( self.config["vec.scale"] )
+            if ( verbose ):
+                print( "vector scale :: {}".format( self.config["vec.scale"] ) )
             
         # ------------------------------------------------- #
         # -- ベクトルプロット                            -- #
@@ -684,7 +695,8 @@ class gplot2D:
     # ========================================================= #
     # ===  ファイル 保存                                    === #
     # ========================================================= #
-    def save__figure( self, pngFile=None, dpi=None, transparent=None, minimal=None ):
+    def save__figure( self, pngFile=None, dpi=None, transparent=None, \
+                      minimal=None, verbose=True ):
 
         # ------------------------------------------------- #
         # --- 引数設定                                  --- #
@@ -704,7 +716,8 @@ class gplot2D:
         else:
             # -- 通常プロット -- #
             self.fig.savefig( pngFile, dpi=dpi, pad_inches=0, transparent=transparent )
-        print( "[ save__figure() @gplot1D ] output :: {0}".format( pngFile ) )
+        if ( verbose ):
+            print( "[ save__figure() @gplot1D ] output :: {0}".format( pngFile ) )
         # plt.close()
         return()
 
