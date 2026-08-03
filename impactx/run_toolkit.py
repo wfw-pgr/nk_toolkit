@@ -359,7 +359,9 @@ def execute__impactx( params=None, paramsFile="../dat/parameters.json",
             verbose     = int( params_["sim.verbose"] )
         else:
             verbose     = int( verbose )
-        runMode = runMode.lower()
+        mlmg_verbosity      = params_.get( "sim.mlmg_verbosity"    ,     0 )
+        profiler_verbosity  = params_.get( "sim.profiler_verbosity", False )
+        runMode             = runMode.lower()
 
         # ------------------------------------------------- #
         # --- [2] initialize ImpactX                    --- #
@@ -380,8 +382,8 @@ def execute__impactx( params=None, paramsFile="../dat/parameters.json",
         sim.prob_relative          = params_["sim.prob_relative"]
         sim.particle_lost_diagnostics_backend = params_["sim.particle_lost_diagnostics_backend"]
         sim.verbose                = verbose
-        sim.mlmg_verbosity         = verbose          # MLMG std log
-        sim.tiny_profiler          = bool( verbose )  # profiler 
+        sim.mlmg_verbosity         = mlmg_verbosity      # MLMG verbosity
+        sim.tiny_profiler          = profiler_verbosity  # profiler 
         sim.init_grids()
 
         # ------------------------------------------------- #
