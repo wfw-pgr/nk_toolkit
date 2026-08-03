@@ -1,4 +1,4 @@
-import copy, os, time
+import copy, os, shutil, sys, time
 import json5
 import numpy          as np
 import pandas         as pd
@@ -8,7 +8,7 @@ import nk_toolkit.impactx.run_toolkit as rtk
 
 
 # ========================================================= #
-# ===  match_toolkit.py                                 === #
+# ===  optimize__quadFromEnvelope                       === #
 # ========================================================= #
 
 def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
@@ -113,14 +113,13 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 raise ValueError( "Unknown Twiss type: {}".format( twissType ) )
             _appendVariable( name="twiss.{}".format( twissName ), kind="twiss",
                              settings=settings, target=twissName, defaultValue=defaultValue )
-
+            
         activeNames = []
         for elemKey in activeKeys:
             activeNames += [ elemKey, elements[elemKey]["name"] ]
         for variable in variables:
             if ( variable["kind"] == "quadEach" and variable["target"] not in activeNames ):
-                raise ValueError( "QM variable is outside matching section: {}"
-                                  .format( variable["target"] ) )
+                raise ValueError( "QM variable is outside matching section: {}".format( variable["target"] ) )
         return( variables )
 
     # ------------------------------------------------- #
@@ -181,8 +180,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
     # ------------------------------------------------- #
     def _makeStats( rawStat=None, simElements=None, activeKeys=None, startIndex=0 ):
         elemKeys = list( simElements.keys() )
-        stat = rawStat.sort_values( "step" )
-        stat = stat.drop_duplicates( subset=["step"], keep="last" )
+        stat     = rawStat.sort_values( "step" ).drop_duplicates( subset=["step"], keep="last" )
         stat     = stat.reset_index( drop=True )
 
         expectedRows = 1
@@ -233,13 +231,11 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
     # ------------------------------------------------- #
     def _evaluateImpactX( vector=None, keepStat=False ):
         """ Evaluate ImpactX simulation """
-        params_, elements_ = _applyVariables( vector=vector, params=params,
-                                              elements=simElements, variables=variables,
-                                              activeKeys=activeKeys )
-        runResult = rtk.execute__impactx( params=params_, elements=elements_,
-                                          workDir=impactxDir,
-                                          runMode=config["matching"]["mode"],
-                                          clearDiags=True, add_bpm=False, saveRecords=False,
+        params_, elements_ = _applyVariables( vector=vector, params=params, elements=simElements,
+                                              variables=variables, activeKeys=activeKeys )
+        runResult = rtk.execute__impactx( params=params_, elements=elements_, workDir=impactxDir,
+                                          runMode=config["matching"]["mode"], clearDiags=True,
+                                          add_bpm=False, saveRecords=False,
                                           saveLattice=False, verbose=False )
         stat      = itk.get__beamStats  ( statFile=runResult["statFile"],
                                           refpFile=runResult["refpFile"] )
@@ -300,43 +296,33 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             return( values[[index]] )
         raise ValueError( "Unknown aggregate method: {}".format( method ) )
 
-    def _regularizationResidual( vector=None, initial=None ):
-        regularization = config["regularization"]
-        if ( regularization["normalization"] != "bounds" ):
-            raise ValueError( "regularization.normalization must be 'bounds'." )
-        lower  = np.array( [ variable["min"] for variable in variables ] )
-        upper  = np.array( [ variable["max"] for variable in variables ] )
-        span   = np.maximum( upper - lower, 1.0e-12 )
-        weight = float( regularization["weight"] )
-        return( np.sqrt( weight ) * ( vector - initial ) / span )
-
     def _evaluateResiduals( records=None, vector=None, initial=None,
                             includeRegularization=True ):
-        residualList = []
-
+        
         for objective in config["objectives"]:
             if ( not( objective["enabled"] ) ):
                 continue
+
             if ( objective["type"] == "periodicSigma" ):
                 locationList = objective["locations"]
                 residualPair = []
-                for locIndex in range( 1, len( locationList ) ):
-                    rowPrev = _selectRows( records=records,
-                                           location=locationList[locIndex-1] ).iloc[0]
-                    rowCurr = _selectRows( records=records,
-                                           location=locationList[locIndex] ).iloc[0]
-                    sigmaPrev = _sigmaMatrix( row=rowPrev )
-                    sigmaCurr = _sigmaMatrix( row=rowCurr )
-                    diagPrev  = np.abs( np.diag( sigmaPrev ) )
-                    scaleMat  = np.sqrt( np.outer( diagPrev, diagPrev ) )
-                    scaleMat  = np.maximum( scaleMat, 1.0e-30 )
-                    residualPair.append( ( sigmaCurr - sigmaPrev ).ravel()
-                                         / scaleMat.ravel() )
-                residual = np.concatenate( residualPair )
-                residualList.append( np.sqrt( float( objective["weight"] ) )
-                                     * residual / np.sqrt( len( residual ) ) )
-                continue
+                
+            for locIndex in range( 1, len( locationList ) ):
+                rowPrev = _selectRows( records=records, location=locationList[locIndex-1] ).iloc[0]
+                rowCurr = _selectRows( records=records, location=locationList[locIndex] ).iloc[0]
 
+            sigmaPrev = _sigmaMatrix( row=rowPrev )
+            sigmaCurr = _sigmaMatrix( row=rowCurr )
+            diagPrev  = np.abs( np.diag( sigmaPrev ) )
+            scaleMat  = np.sqrt( np.outer( diagPrev, diagPrev ) )
+            scaleMat  = np.maximum( scaleMat, 1.0e-30 )
+            
+            residualPair.append( ( sigmaCurr - sigmaPrev ).ravel() / scaleMat.ravel() )
+
+            residual = np.concatenate( residualPair )
+            residualList.append( np.sqrt( float( objective["weight"] ) ) * residual / np.sqrt( len( residual ) ) )
+            continue
+            
             rows      = _selectRows( records=records, location=objective["location"] )
             values    = _evaluateExpression( rows=rows, expression=objective["expr"] )
             objType   = objective["type"]
@@ -358,183 +344,29 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 normalized = values / scale
 
             elif ( objType == "maximize" ):
+            elif ( objType == "maximize" ):
                 if ( "target" not in objective ):
                     raise ValueError( "maximize requires target for least_squares/SVD: {}"
                                       .format( objective["name"] ) )
-                normalized = ( values - float( objective["target"] ) ) / scale
-
+                normalized = ( values - float( objective["target"] ) ) / scale            
             else:
                 raise ValueError( "Unknown least_squares objective: {}".format( objType ) )
 
             residual = _compressResidual( values=normalized, method=aggregate )
             residualList.append( np.sqrt( weight ) * residual )
 
-        if ( includeRegularization and config["regularization"]["enabled"] ):
-            residualList.append( _regularizationResidual( vector=vector,
-                                                          initial=initial ) )
+        regularization = config["regularization"]
+        if ( includeRegularization and regularization["enabled"] ):
+            lower  = np.array( [ variable["min"] for variable in variables ] )
+            upper  = np.array( [ variable["max"] for variable in variables ] )
+            span   = np.maximum( upper - lower, 1.0e-12 )
+            weight = float( regularization["weight"] )
+            residualList.append( np.sqrt( weight ) * ( vector - initial ) / span )
 
         return( np.concatenate( residualList ) )
-
-    # ------------------------------------------------- #
-    # --- [1-11] build SVD variable modes           --- #
-    # ------------------------------------------------- #
-    def _vectorToLatent( vector=None, lower=None, upper=None ):
-        midpoint = 0.5 * ( lower + upper )
-        halfspan = 0.5 * ( upper - lower )
-        scaled   = ( vector - midpoint ) / halfspan
-        scaled   = np.clip( scaled, -1.0 + 1.0e-12, 1.0 - 1.0e-12 )
-        return( np.arctanh( scaled ) )
-
-    def _latentToVector( latent=None, lower=None, upper=None ):
-        midpoint = 0.5 * ( lower + upper )
-        halfspan = 0.5 * ( upper - lower )
-        return( midpoint + halfspan * np.tanh( latent ) )
-    
-    def _buildSvdBasis( initial=None, lower=None, upper=None, variableIndex=None ):
-        svdCfg        = config["regularization"]["svd"]
-        latentInitial = _vectorToLatent( vector=initial, lower=lower, upper=upper )
-        step          = float( svdCfg["step"] )
-        jacobianList  = []
-
-        for varIndex in variableIndex:
-            latentPlus             = latentInitial.copy()
-            latentMinus            = latentInitial.copy()
-            latentPlus[varIndex]  += step
-            latentMinus[varIndex] -= step
-
-            vectorPlus  = _latentToVector( latent=latentPlus,
-                                           lower=lower, upper=upper )
-            vectorMinus = _latentToVector( latent=latentMinus,
-                                           lower=lower, upper=upper )
-
-            recordsPlus  = _evaluateImpactX( vector=vectorPlus, keepStat=False )
-            recordsMinus = _evaluateImpactX( vector=vectorMinus, keepStat=False )
-
-            residualPlus = _evaluateResiduals(
-                records=recordsPlus, vector=vectorPlus, initial=initial,
-                includeRegularization=False
-            )
-            residualMinus = _evaluateResiduals(
-                records=recordsMinus, vector=vectorMinus, initial=initial,
-                includeRegularization=False
-            )
-            jacobianList.append( ( residualPlus - residualMinus ) / ( 2.0 * step ) )
-
-        jacobian      = np.column_stack( jacobianList )
-        svdResult     = np.linalg.svd( jacobian, full_matrices=False )
-        singularValue = svdResult[1]
-        rightModeT    = svdResult[2]
-
-        if ( not( np.all( np.isfinite( singularValue ) ) ) ):
-            raise ValueError( "SVD contains non-finite singular values." )
-        if ( len( singularValue ) == 0 or singularValue[0] <= 0.0 ):
-            raise ValueError( "SVD Jacobian has no finite sensitivity." )
-
-        relativeValue = singularValue / singularValue[0]
-        modeIndex     = np.arange( len( singularValue ), dtype=int )
-        if ( svdCfg["relativeCutoff"] is not None ):
-            relativeCutoff = float( svdCfg["relativeCutoff"] )
-            modeIndex = modeIndex[relativeValue[modeIndex] >= relativeCutoff]
-        if ( svdCfg["nModes"] is not None ):
-            nModes    = int( svdCfg["nModes"] )
-            modeIndex = modeIndex[:nModes]
-        if ( len( modeIndex ) == 0 ):
-            raise ValueError( "No SVD mode satisfies the selection conditions." )
-        if ( len( modeIndex ) == 0 ):
-            modeIndex = np.array( [0], dtype=int )
-
-        variableName = [ variables[varIndex]["name"] for varIndex in variableIndex ]
-
-        jacobianData = pd.DataFrame( jacobian, columns=variableName )
-        jacobianData.insert( 0, "residual", np.arange( len( jacobian ) ) )
-        jacobianData.to_csv( config["files"]["jacobianFile"], index=False )
-
-        svdData = {
-            "mode"          : np.arange( 1, len( singularValue ) + 1 ),
-            "singularValue" : singularValue,
-            "relativeValue" : relativeValue,
-            "retained"      : np.isin( np.arange( len( singularValue ) ), modeIndex ),
-        }
-        for modeVarIndex, varName in enumerate( variableName ):
-            svdData[varName] = rightModeT[:,modeVarIndex]
-
-        pd.DataFrame( svdData ).to_csv( config["files"]["svdFile"], index=False )
-
-        return( { "latentInitial":latentInitial,
-                  "rightMode"    :rightModeT[modeIndex,:].T,
-                  "variableIndex":np.asarray( variableIndex, dtype=int ),
-                  "singularValue":singularValue,
-                  "relativeValue":relativeValue,
-                  "modeIndex"    :modeIndex,
-                  "nEval"        :2 * len( variableIndex ), } )
-
-    # ------------------------------------------------- #
-    # --- [1-12] print SVD summary                  --- #
-    # ------------------------------------------------- #
-    def _printSvdSummary( svdInfo=None, initial=None, lower=None, upper=None ):
-        svdCfg       = config["regularization"]["svd"]
-        variableIndex = svdInfo["variableIndex"]
-        modeIndex     = svdInfo["modeIndex"]
-        modeBound     = float( svdCfg["modeBound"] )
-        retainedMode  = set( modeIndex.tolist() )
-
-        print( "\n" + "==================================" )
-        print( "===         SVD summary        ===" )
-        print( "==================================" + "\n" )
-        print( " QM variables :: {}".format( len( variableIndex ) ) )
-        print( " SVD modes    :: {} / {}".format(
-            len( modeIndex ), len( svdInfo["singularValue"] )
-        ) )
-        print( " mode bound   :: +/- {:.4e}\n".format( modeBound ) )
-
-        print( " singular values:" )
-        print( "  mode       singularValue      relativeValue   retained" )
-        for modeNo in range( len( svdInfo["singularValue"] ) ):
-            retained = "yes" if ( modeNo in retainedMode ) else "no"
-            print( "  {:4d}   {:16.8e}   {:16.8e}   {:>8s}".format(
-                modeNo + 1, svdInfo["singularValue"][modeNo],
-                svdInfo["relativeValue"][modeNo], retained
-            ) )
-
-        latentInitial = svdInfo["latentInitial"][variableIndex]
-        rightMode     = svdInfo["rightMode"]
-
-        latentSpan = modeBound * np.sum( np.abs( rightMode ), axis=1 )
-        valueMin   = _latentToVector(
-            latent=latentInitial - latentSpan,
-            lower=lower[variableIndex], upper=upper[variableIndex]
-        )
-        valueMax = _latentToVector(
-            latent=latentInitial + latentSpan,
-            lower=lower[variableIndex], upper=upper[variableIndex]
-        )
-
-        initialQm = initial[variableIndex]
-        deltaMin  = 100.0 * ( valueMin - initialQm ) / initialQm
-        deltaMax  = 100.0 * ( valueMax - initialQm ) / initialQm
-
-        dominantIndex  = np.argmax( np.abs( rightMode ), axis=1 )
-        dominantMode   = modeIndex[dominantIndex] + 1
-        dominantWeight = rightMode[np.arange( len( variableIndex ) ), dominantIndex]
-
-        print( "\n QM reachable range:" )
-        print( "  variable                  initial        min        max"
-               "     dMin[%]    dMax[%]   main mode" )
-
-        for qmIndex, varIndex in enumerate( variableIndex ):
-            print( "  {:24s} {:10.5f} {:10.5f} {:10.5f}"
-                   " {:10.2f} {:10.2f}   {:3d} ({:+.3f})".format(
-                       variables[varIndex]["name"], initialQm[qmIndex],
-                       valueMin[qmIndex], valueMax[qmIndex],
-                       deltaMin[qmIndex], deltaMax[qmIndex],
-                       dominantMode[qmIndex], dominantWeight[qmIndex]
-                   ) )
-
-        print( "\n  min/max: each QM coordinate-wise reachable range" )
-        print( "  main mode: largest absolute SVD component for each QM\n" )
     
     # ------------------------------------------------- #
-    # --- [1-12] build sigma matrix                 --- #
+    # --- [1-10] build sigma matrix                --- #
     # ------------------------------------------------- #
     def _sigmaMatrix( row=None ):
         sigma     = np.zeros( (6,6) )
@@ -551,9 +383,127 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         return( sigma )
 
     # ------------------------------------------------- #
-    # --- [1-13] evaluate objectives               --- #
+    # --- [1-11] build SVD variable modes           --- #
     # ------------------------------------------------- #
-    def _evaluateObjectives( records=None, vector=None, initial=None ):
+    def _vectorToLatent( vector=None, lower=None, upper=None ):
+        midpoint = 0.5 * ( lower + upper )
+        halfspan = 0.5 * ( upper - lower )
+        scaled   = ( vector - midpoint ) / halfspan
+        scaled   = np.clip( scaled, -1.0 + 1.0e-12, 1.0 - 1.0e-12 )
+        return( np.arctanh( scaled ) )
+    
+
+    def _latentToVector( latent=None, lower=None, upper=None ):
+        midpoint = 0.5 * ( lower + upper )
+        halfspan = 0.5 * ( upper - lower )
+        return( midpoint + halfspan * np.tanh( latent ) )
+    
+
+    def _buildSvdBasis( initial=None, lower=None, upper=None ):
+        svdCfg        = config["diagnostics"]["svd"]
+        latentInitial = _vectorToLatent(
+            vector=initial, lower=lower, upper=upper
+        )
+        step         = float( svdCfg["step"] )
+        jacobianList = []
+        
+        for varIndex in range( len( variables ) ):
+            latentPlus  = latentInitial.copy()
+            latentMinus = latentInitial.copy()
+            
+            latentPlus[varIndex]  += step
+            latentMinus[varIndex] -= step
+            
+            vectorPlus = _latentToVector(
+                latent=latentPlus, lower=lower, upper=upper
+            )
+            vectorMinus = _latentToVector(
+                latent=latentMinus, lower=lower, upper=upper
+            )
+            
+            recordsPlus  = _evaluateImpactX(
+                vector=vectorPlus, keepStat=False
+            )
+            recordsMinus = _evaluateImpactX(
+                vector=vectorMinus, keepStat=False
+            )
+            
+            residualPlus = _evaluateResiduals(
+                records=recordsPlus, vector=vectorPlus, initial=initial,
+                includeRegularization=False
+            )
+            residualMinus = _evaluateResiduals(
+                records=recordsMinus, vector=vectorMinus, initial=initial,
+                includeRegularization=False
+            )
+            
+            jacobianList.append(
+                ( residualPlus - residualMinus ) / ( 2.0 * step )
+            )
+            
+        jacobian = np.column_stack( jacobianList )
+            
+        _, singularValue, rightModeT = np.linalg.svd(
+            jacobian, full_matrices=False
+        )
+        
+    if ( len( singularValue ) == 0 or singularValue[0] <= 0.0 ):
+        raise ValueError( "SVD Jacobian has no finite sensitivity." )
+
+    relativeValue = singularValue / singularValue[0]
+
+    if ( svdCfg["nModes"] is None ):
+        modeIndex = np.where(
+            relativeValue >= float( svdCfg["relativeCutoff"] )
+        )[0]
+    else:
+        nModes    = min( int( svdCfg["nModes"] ), len( singularValue ) )
+        modeIndex = np.arange( nModes, dtype=int )
+        
+    if ( len( modeIndex ) == 0 ):
+        modeIndex = np.array( [0], dtype=int )
+
+    jacobianData = pd.DataFrame(
+        jacobian, columns=[ variable["name"] for variable in variables ]
+    )
+    jacobianData.insert(
+        0, "residual", np.arange( len( jacobian ) )
+    )
+    jacobianData.to_csv(
+        config["files"]["jacobianFile"], index=False
+    )
+    
+    svdData = {
+        "mode"          : np.arange( 1, len( singularValue ) + 1 ),
+        "singularValue" : singularValue,
+        "relativeValue" : relativeValue,
+        "retained"      : np.isin(
+            np.arange( len( singularValue ) ), modeIndex
+        ),
+    }
+    
+    for varIndex, variable in enumerate( variables ):
+        svdData[variable["name"]] = rightModeT[:,varIndex]
+        
+    pd.DataFrame( svdData ).to_csv(
+        config["files"]["svdFile"], index=False
+    )
+
+    return(
+        {
+            "latentInitial" : latentInitial,
+            "rightMode"     : rightModeT[modeIndex,:].T,
+            "singularValue" : singularValue,
+            "relativeValue" : relativeValue,
+            "modeIndex"     : modeIndex,
+            "nEval"         : 2 * len( variables ),
+        }
+    )
+
+    # ------------------------------------------------- #
+    # --- [1-11] evaluate objectives               --- #
+    # ------------------------------------------------- #
+    def _evaluateObjectives( records=None ):
         total  = 0.0
         detail = {}
         for objective in config["objectives"]:
@@ -582,8 +532,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                     diagPrev  = np.abs( np.diag( sigmaPrev ) )
                     scaleMat  = np.sqrt( np.outer( diagPrev, diagPrev ) )
                     scaleMat  = np.maximum( scaleMat, 1.0e-30 )
-                    difference = ( sigmaCurr - sigmaPrev ) / scaleMat
-                    pairPenalty.append( np.mean( difference**2 ) )
+                    pairPenalty.append( np.mean( ( ( sigmaCurr-sigmaPrev ) / scaleMat )**2 ) )
 
                 basePenalty   = _aggregate( values=np.array( pairPenalty ), method=aggregate )
                 penalty       = weight * basePenalty
@@ -610,8 +559,8 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 elif ( objType == "range" ):
                     lower      = float( objective["min"] )
                     upper      = float( objective["max"] )
-                    violation  = np.maximum( lower - values, 0.0 ) \
-                               + np.maximum( values - upper, 0.0 )
+                    violation  = np.maximum( lower-values, 0.0 ) \
+                               + np.maximum( values-upper, 0.0 )
                     normalized = violation / scale
                     basePenalty = _aggregate( values=normalized**2, method=aggregate )
                     penalty     = weight * basePenalty
@@ -629,20 +578,10 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             metric["penalty"] = float( penalty )
             detail[name]       = metric
             total             += float( penalty )
-
-        if ( config["regularization"]["enabled"] and vector is not None ):
-            residual = _regularizationResidual( vector=vector, initial=initial )
-            normValue = residual / np.sqrt( float( config["regularization"]["weight"] ) )
-            penalty   = float( np.dot( residual, residual ) )
-            detail["regularization"] = {
-                "value"   :float( np.sqrt( np.mean( normValue**2 ) ) ), "target":0.0,
-                "residual":float( np.linalg.norm( normValue ) ), "penalty":penalty,
-                "normResidual":float( np.max( np.abs( normValue ) ) ), }
-            total += penalty
         return( total, detail )
 
     # ------------------------------------------------- #
-    # --- [1-14] run optimizer                      --- #
+    # --- [1-12] run optimizer                      --- #
     # ------------------------------------------------- #
     def _runOptimizer():
 
@@ -659,82 +598,77 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         prevObjective   = np.nan
 
         optimizerCfg = config["optimizer"]
-        initial = np.array( [ variable["initial"] for variable in variables ], dtype=float )
-        lower   = np.array( [ variable["min"] for variable in variables ], dtype=float )
-        upper   = np.array( [ variable["max"] for variable in variables ], dtype=float )
-        bounds  = list( zip( lower, upper ) )
+        initial = np.array(
+            [ variable["initial"] for variable in variables ], dtype=float
+        )
+        lower = np.array(
+            [ variable["min"] for variable in variables ], dtype=float
+        )
+        upper = np.array(
+            [ variable["max"] for variable in variables ], dtype=float
+        )
+        bounds = list( zip( lower, upper ) )
+        
+        for x0, ( xmin, xmax ), variable in zip( initial, bounds, variables ):
+            if not ( xmin <= x0 <= xmax ):
+                raise ValueError(
+                    "{} initial={} is outside [{}, {}]"
+                    .format( variable["name"], x0, xmin, xmax )
+                )
+            
+        svdCfg  = config["diagnostics"]["svd"]
+        svdInfo = None
+        
+        if ( svdCfg["enabled"] ):
+            svdInfo = _buildSvdBasis(
+                initial=initial, lower=lower, upper=upper
+            )
+            
+        if ( svdCfg["enabled"] and svdCfg["useModes"] ):
+            nModes              = len( svdInfo["modeIndex"] )
+            modeBound           = float( svdCfg["modeBound"] )
+            optimizationInitial = np.zeros( nModes )
+            optimizationBounds  = [ ( -modeBound, modeBound ) ] * nModes
+            
+            def _decodeVector( optimizationVector=None ):
+                latent = svdInfo["latentInitial"] \
+                    + np.dot( svdInfo["rightMode"], optimizationVector )
+                return(
+                    _latentToVector(
+                        latent=latent, lower=lower, upper=upper
+                    )
+                )
+        else:
+            optimizationInitial = initial.copy()
+            optimizationBounds  = bounds
 
+    def _decodeVector( optimizationVector=None ):
+        return( np.asarray( optimizationVector, dtype=float ) )
         for x0, ( xmin, xmax ), variable in zip( initial, bounds, variables ):
             if not ( xmin <= x0 <= xmax ):
                 raise ValueError( "{} initial={} is outside [{}, {}]"\
                                   .format( variable["name"], x0, xmin, xmax ) )
 
-        svdCfg  = config["regularization"]["svd"]
-        svdInfo = None
-
-        svdKind = [ "quadAll", "quadFD", "quadEach" ]
-        svdVariableIndex = np.array( [ varIndex for varIndex, variable in enumerate( variables )
-                                       if ( variable["kind"] in svdKind ) ], dtype=int )
-        directVariableIndex = np.array( [ varIndex for varIndex, variable in enumerate( variables )
-                                          if ( variable["kind"] not in svdKind ) ], dtype=int )
-        if ( svdCfg["enabled"] ):
-            if ( len( svdVariableIndex ) == 0 ):
-                raise ValueError( "No QM variable is enabled for SVD." )
-            
-            svdInfo = _buildSvdBasis( initial=initial, lower=lower, upper=upper,
-                                      variableIndex=svdVariableIndex )
-            _printSvdSummary( svdInfo=svdInfo, initial=initial,
-                              lower=lower, upper=upper )
-            
-        if ( svdCfg["enabled"] and svdCfg["useModes"] ):
-            nModes    = len( svdInfo["modeIndex"] )
-            modeBound = float( svdCfg["modeBound"] )
-            
-            optimizationInitial = np.concatenate( (np.zeros(nModes), initial[directVariableIndex]))
-            optimizationBounds  = [ ( -modeBound, modeBound ) ] * nModes + \
-                [ bounds[varIndex] for varIndex in directVariableIndex ]
-
-            def _decodeVector( optimizationVector=None ):
-                vector       = initial.copy()
-                modeVector   = optimizationVector[:nModes]
-                directVector = optimizationVector[nModes:]
-
-                latent = svdInfo["latentInitial"][svdVariableIndex] \
-                       + np.dot( svdInfo["rightMode"], modeVector )
-                vector[svdVariableIndex] = _latentToVector( latent=latent,
-                                                            lower=lower[svdVariableIndex],
-                                                            upper=upper[svdVariableIndex] )
-                vector[directVariableIndex] = directVector
-                return( vector )
-
-        else:
-            optimizationInitial = initial.copy()
-            optimizationBounds  = bounds
-
-            def _decodeVector( optimizationVector=None ):
-                return( np.asarray( optimizationVector, dtype=float ) )        
-            
         # ------------------------------------------------- #
         # --- [2] objective function                    --- #
         # ------------------------------------------------- #
-        def _objective( optimizationVector ):
+        def _objective( vector ):
             nonlocal evalCount, bestObjective, bestMaxResidual
             nonlocal bestVector, bestEvaluation, prevObjective
 
             evalCount += 1
-            vector         = _decodeVector( optimizationVector=optimizationVector )
+            
             records       = _evaluateImpactX( vector=vector, keepStat=False )
-            value, detail = _evaluateObjectives( records=records, vector=vector,
-                                                 initial=initial )
+            value, detail = _evaluateObjectives( records=records )
             value         = float( value )
-
+            
             residualList = [
                 metric["normResidual"] for metric in detail.values()
                 if ( "normResidual" in metric )
             ]
             maxResidual = max( residualList ) if residualList else np.nan
             prevBest    = bestObjective
-
+            
             if ( np.isfinite( value ) and value < bestObjective ):
                 bestObjective   = value
                 bestMaxResidual = maxResidual
@@ -746,13 +680,11 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 "evaluation"     : evalCount,
                 "objective"      : value,
                 "bestObjective"  : bestObjective,
-                "deltaObjective" : abs( value - prevObjective ) \
-                if np.isfinite( prevObjective ) else np.nan,
-                "deltaBest"      : abs( bestObjective - prevBest ) \
-                if np.isfinite( prevBest ) else np.nan,
+                "deltaObjective" : abs( value - prevObjective ) if np.isfinite( prevObjective ) else np.nan,
+                "deltaBest"      : abs( bestObjective - prevBest ) if np.isfinite( prevBest ) else np.nan,
             }
             prevObjective = value
-
+            
             for varIndex, variable in enumerate( variables ):
                 row[variable["name"]] = float( vector[varIndex] )
 
@@ -767,28 +699,33 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         # ------------------------------------------------- #
         # --- [3] callback                              --- #
         # ------------------------------------------------- #
-        def _callback( _optimizationVector ):
+        def _callback( vector ):
             nonlocal iterCount
 
             iterCount += 1
             printEvery = int( optimizerCfg["printEvery"] )
-
+            
             if ( printEvery > 0 and iterCount % printEvery == 0 ):
-                print( " iteration={:5d}  evaluation={:5d}  best={:.8e}"
-                       "  maxNormResidual={:.4e}"
-                       .format( iterCount, evalCount, bestObjective, bestMaxResidual ) )
+                print( " iteration={:5d}"
+                       "  evaluation={:5d}"
+                       "  best={:.8e}"
+                       "  maxNormResidual={:.4e}".format(
+                           iterCount, evalCount,
+                           bestObjective, bestMaxResidual ) )
 
         # ------------------------------------------------- #
         # --- [4] optimization                          --- #
         # ------------------------------------------------- #
         method = optimizerCfg["method"]
-
+        
         if ( method == "differential_evolution" ):
-            result = opt.differential_evolution( _objective, bounds=optimizationBounds,
-                                                  maxiter=int( optimizerCfg["maxIter"] ),
-                                                  popsize=int( optimizerCfg["popSize"] ),
-                                                  tol=float( optimizerCfg["tol"] ),
-                                                  polish=bool( optimizerCfg["polish"] ) )
+            result = opt.differential_evolution(
+                _objective, bounds=bounds,
+                maxiter=int( optimizerCfg["maxIter"] ),
+                popsize=int( optimizerCfg["popSize"] ),
+                tol=float( optimizerCfg["tol"] ),
+                polish=bool( optimizerCfg["polish"] ),
+            )
 
         elif ( method == "Nelder-Mead" ):
             options = {
@@ -799,9 +736,8 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             if ( "maxEval" in optimizerCfg ):
                 options["maxfev"] = int( optimizerCfg["maxEval"] )
 
-            result = opt.minimize( _objective, optimizationInitial, method="Nelder-Mead",
-                                   bounds=optimizationBounds, callback=_callback,
-                                   options=options )
+            result = opt.minimize( _objective, initial, method="Nelder-Mead",
+                                   bounds=bounds, callback=_callback, options=options )
 
         elif ( method == "Powell" ):
             options = {
@@ -811,45 +747,39 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             }
             if ( "maxEval" in optimizerCfg ):
                 options["maxfev"] = int( optimizerCfg["maxEval"] )
-
-            result = opt.minimize( _objective, optimizationInitial, method="Powell",
-                                   bounds=optimizationBounds, callback=_callback,
-                                   options=options )
-
+                
+            result = opt.minimize( _objective, initial, method="Powell",
+                                   bounds=bounds, callback=_callback, options=options )
+            
         elif ( method == "least_squares" ):
-            optimizationLower = np.array( [ bound[0] for bound in optimizationBounds ],
-                                          dtype=float )
-            optimizationUpper = np.array( [ bound[1] for bound in optimizationBounds ],
-                                          dtype=float )
+            lower = np.array( [ bound[0] for bound in bounds ], dtype=float )
+            upper = np.array( [ bound[1] for bound in bounds ], dtype=float )
 
-            def _residual( optimizationVector ):
+            def _residual( vector ):
                 nonlocal evalCount, bestObjective, bestMaxResidual
                 nonlocal bestVector, bestEvaluation, prevObjective
 
                 evalCount += 1
-                vector         = _decodeVector( optimizationVector=optimizationVector )
-                records       = _evaluateImpactX( vector=vector, keepStat=False )
-                residual      = _evaluateResiduals( records=records, vector=vector,
-                                                    initial=initial )
-                value         = float( 0.5 * np.dot( residual, residual ) )
-                _, detail     = _evaluateObjectives( records=records, vector=vector,
-                                                     initial=initial )
-                maxResidual   = float( np.max( np.abs( residual ) ) )
-                prevBest      = bestObjective
+
+                records     = _evaluateImpactX( vector=vector, keepStat=False )
+                residual    = _evaluateResiduals( records=records, vector=vector, initial=initial )
+                value       = float( 0.5 * np.dot( residual, residual ) )
+                _, detail   = _evaluateObjectives( records=records )
+                maxResidual = float( np.max( np.abs( residual ) ) )
+                prevBest    = bestObjective
 
                 if ( np.isfinite( value ) and value < bestObjective ):
                     bestObjective   = value
                     bestMaxResidual = maxResidual
                     bestVector      = np.asarray( vector, dtype=float ).copy()
                     bestEvaluation  = evalCount
-
                 row = { "iteration"      : np.nan,
                         "evaluation"     : evalCount,
                         "objective"      : value,
                         "bestObjective"  : bestObjective,
-                        "deltaObjective" : abs( value - prevObjective ) \
+                        "deltaObjective" : abs( value - prevObjective )
                         if np.isfinite( prevObjective ) else np.nan,
-                        "deltaBest"      : abs( bestObjective - prevBest ) \
+                        "deltaBest"      : abs( bestObjective - prevBest )
                         if np.isfinite( prevBest ) else np.nan, }
                 prevObjective = value
 
@@ -869,39 +799,37 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                            .format( evalCount, bestObjective, bestMaxResidual ) )
                 return( residual )
 
-            result = opt.least_squares( _residual, optimizationInitial,
-                                        bounds=( optimizationLower, optimizationUpper ),
-                                        method="trf", jac="2-point",
+            result = opt.least_squares( _residual, initial,
+                                        bounds=( lower, upper ),
+                                        method="trf",
+                                        jac="2-point",
                                         x_scale=optimizerCfg["xScale"],
                                         loss=optimizerCfg["loss"],
                                         max_nfev=int( optimizerCfg["maxEval"] ),
                                         xtol=float( optimizerCfg["xtol"] ),
                                         ftol=float( optimizerCfg["ftol"] ),
-                                        gtol=float( optimizerCfg["gtol"] ), verbose=0 )
-        else:
-            raise ValueError( "Unknown optimizer method: {}".format( method ) )
-
+                                        gtol=float( optimizerCfg["gtol"] ),
+                                        verbose=0, )
+            bestVector    = np.asarray( result.x, dtype=float ).copy()
+            bestObjective = float( result.cost )
+            
         # ------------------------------------------------- #
         # --- [5] return                                --- #
         # ------------------------------------------------- #
-        return( result, history, bestVector, bestEvaluation, evalCount, svdInfo )
-
-
+        return( result, history, bestVector, bestEvaluation, evalCount )
+    
+    
     # ------------------------------------------------- #
     # --- [2] load settings                         --- #
     # ------------------------------------------------- #
     with open( inpFile, "r" ) as fk:
         config = json5.load( fk )
 
-    outFileList = [ config["files"]["resultFile"],
-                    config["files"]["historyFile"],
-                    config["files"]["statFile"],
-                    config["files"]["matchedParamsFile"],
-                    config["files"]["matchedBeamlineFile"] ]
-    if ( config["regularization"]["svd"]["enabled"] ):
-        outFileList += [ config["files"]["jacobianFile"],
-                         config["files"]["svdFile"] ]
-    for outFile in outFileList:
+    for outFile in [ config["files"]["resultFile"], \
+                     config["files"]["historyFile"], \
+                     config["files"]["statFile"], \
+                     config["files"]["matchedParamsFile"], \
+                     config["files"]["matchedBeamlineFile"] ]:
         os.makedirs( os.path.dirname( outFile ), exist_ok=True )
     if ( os.path.exists( config["files"]["historyFile"] ) ):
         os.remove( config["files"]["historyFile"] )
@@ -920,13 +848,10 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
     # --- [3] matching section and variables        --- #
     # ------------------------------------------------- #
     sectionCfg = config["matching"]["section"]
-    simElements, activeKeys, startIndex = _selectSection( elements=elements,
-        startElement=sectionCfg["startElement"], endElement=sectionCfg["endElement"],
-        nUse=params["sim.nUse.elements"] )
-    variables     = _buildVariables( params=params, elements=simElements,
-                                     activeKeys=activeKeys )
-    initialVector = np.array( [ variable["initial"] for variable in variables ],
-                              dtype=float )
+    simElements, activeKeys, startIndex = _selectSection(
+        elements=elements, startElement=sectionCfg["startElement"],
+        endElement=sectionCfg["endElement"], nUse=params["sim.nUse.elements"] )
+    variables  = _buildVariables( params=params, elements=simElements, activeKeys=activeKeys )
 
     print( "\n === ImpactX matching ===" )
     print( " model   :: {}".format( config["matching"]["model"] ) )
@@ -939,21 +864,19 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
     # --- [4] optimization / evaluation             --- #
     # ------------------------------------------------- #
     startTime = time.perf_counter()
-    runMode  = config["matching"]["runMode"].lower()
-    svdInfo  = None
+    runMode = config["matching"]["runMode"].lower()
     if ( runMode == "optimize" ):
         if ( len( variables ) == 0 ):
             raise ValueError( "No optimization variable is enabled." )
-        result, history, bestVector, bestEvaluation, evalCount, svdInfo = _runOptimizer()
+        result, history, bestVector, bestEvaluation, evalCount = _runOptimizer()
         if ( bestVector is None ):
             raise RuntimeError( "Optimizer did not produce a finite objective." )
         success = bool( result.success )
         message = str( result.message )
     else:
-        bestVector = initialVector.copy()
+        bestVector = np.array( [ variable["initial"] for variable in variables ], dtype=float )
         records    = _evaluateImpactX( vector=bestVector, keepStat=False )
-        bestValue, detail = _evaluateObjectives( records=records, vector=bestVector,
-                                                 initial=initialVector )
+        bestValue,detail = _evaluateObjectives( records=records )
         history    = [ { "evaluation":1, "objective":float( bestValue ),
                          "bestObjective":float( bestValue ),
                          **{ "{}.{}".format( metricName, objName ):metricValue
@@ -963,8 +886,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         result, success, message = None, True, "single evaluation"
 
     bestRecords = _evaluateImpactX( vector=bestVector, keepStat=True )
-    bestValue, bestDetail = _evaluateObjectives( records=bestRecords, vector=bestVector,
-                                                 initial=initialVector )
+    bestValue, bestDetail = _evaluateObjectives( records=bestRecords )
 
     # ------------------------------------------------- #
     # --- [5] save results                          --- #
@@ -998,15 +920,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                                         "nIter" :int( result.nit ),
                                         "nEval" :int( evalCount ),
                                         "nfev"  :int( result.nfev ), }
-    if ( svdInfo is not None ):
-        resultData["svd"] = {
-            "useModes"      : bool( config["regularization"]["svd"]["useModes"] ),
-            "nModes"        : int( len( svdInfo["modeIndex"] ) ),
-            "nEval"         : int( svdInfo["nEval"] ),
-            "singularValue" : svdInfo["singularValue"].tolist(),
-            "relativeValue" : svdInfo["relativeValue"].tolist(),
-        }
-
+            
     with open( config["files"]["resultFile"], "w" ) as fk:
         json5.dump( resultData, fk, indent=4 )
     with open( config["files"]["matchedParamsFile"], "w" ) as fk:
@@ -1036,16 +950,13 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                    .format( float( history[0]["objective"] ), float( result.cost ) ) )
         else:
             print( " nIter     :: {}".format( int( result.nit ) ) )
-            print( " nEval     :: {}".format( int( evalCount ) ) )
+            print( " nEval     :: {}".format( int( result.nfev ) ) )
             print( " objective :: {:.8e} -> {:.8e}"
                    .format( float( history[0]["objective"] ), bestValue ) )
-
+            
         if ( config["optimizer"]["method"] == "Nelder-Mead" ):
             print( " xatol     :: {:.4e}".format( config["optimizer"]["xtol"] ) )
             print( " fatol     :: {:.4e}".format( config["optimizer"]["ftol"] ) )
-        if ( svdInfo is not None ):
-            print( " SVD modes :: {} / {}".format( len( svdInfo["modeIndex"] ), len( svdInfo["variableIndex"] ) ) )
-            print( " SVD nEval :: {}".format( svdInfo["nEval"] ) )
     else:
         print( " objective :: {:.8e}".format( bestValue ) )
 
