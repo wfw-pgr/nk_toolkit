@@ -3,6 +3,7 @@ import json5
 import numpy          as np
 import pandas         as pd
 import scipy.optimize as opt
+import scipy.stats    as stt
 import nk_toolkit.impactx.io_toolkit  as itk
 import nk_toolkit.impactx.run_toolkit as rtk
 
@@ -779,11 +780,122 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                        .format( iterCount, evalCount, bestObjective, bestMaxResidual ) )
 
         # ------------------------------------------------- #
-        # --- [4] optimization                          --- #
+        # --- [4] Bayesian optimization                 --- #
+        # ------------------------------------------------- #
+        def _runBayesian():
+            bayesCfg   = optimizerCfg["bayesian"]
+            maxEval    = int( bayesCfg["maxEval"] )
+            nInitial   = max( 1, min( int( bayesCfg["nInitial"] ), maxEval ) )
+            nCandidate = int( bayesCfg["nCandidate"] )
+            length     = float( bayesCfg["lengthScale"] )
+            noise      = float( bayesCfg["noise"] )
+            xi         = float( bayesCfg["xi"] )
+            patience   = int( bayesCfg["patience"] )
+            minImprove = float( bayesCfg["minImprovement"] )
+            localRatio = float( bayesCfg["localRatio"] )
+            localScale = float( bayesCfg["localScale"] )
+            seed       = int( bayesCfg["seed"] )
+
+            optLower = np.array( [ bound[0] for bound in optimizationBounds ], dtype=float )
+            optUpper = np.array( [ bound[1] for bound in optimizationBounds ], dtype=float )
+            optWidth = optUpper - optLower
+            nVariable = len( optimizationInitial )
+            rng       = np.random.default_rng( seed )
+
+            def _toNormalized( vector=None ):
+                return( ( np.asarray( vector ) - optLower ) / optWidth )
+
+            def _fromNormalized( normalized=None ):
+                return( optLower + np.asarray( normalized ) * optWidth )
+
+            def _kernel( first=None, second=None ):
+                delta    = ( first[:,None,:] - second[None,:,:] ) / length
+                distance = np.sqrt( np.sum( delta**2, axis=2 ) )
+                scaled   = np.sqrt( 5.0 ) * distance
+                return( ( 1.0 + scaled + scaled**2 / 3.0 ) * np.exp( -scaled ) )
+
+            initialNormalized = _toNormalized( vector=optimizationInitial )
+            sampleList = [ initialNormalized ]
+            if ( nInitial > 1 ):
+                sampler = stt.qmc.LatinHypercube( d=nVariable, seed=seed )
+                sampleList += list( sampler.random( n=nInitial - 1 ) )
+
+            valueList = []
+            for normalized in sampleList:
+                valueList.append( _objective( _fromNormalized( normalized=normalized ) ) )
+                _callback( normalized )
+
+            stallCount = 0
+            while ( len( valueList ) < maxEval and stallCount < patience ):
+                sample = np.asarray( sampleList, dtype=float )
+                value  = np.asarray( valueList, dtype=float )
+                if ( not( np.all( np.isfinite( value ) ) ) ):
+                    raise ValueError( "Bayesian optimization requires finite objectives." )
+
+                valueMean = float( np.mean( value ) )
+                valueStd  = float( np.std ( value ) )
+                if ( valueStd <= 0.0 ):
+                    valueStd = 1.0
+                target = ( value - valueMean ) / valueStd
+
+                covariance = _kernel( first=sample, second=sample )
+                covariance += noise * np.eye( len( sample ) )
+                cholesky = np.linalg.cholesky( covariance )
+                alpha    = np.linalg.solve( cholesky.T,
+                                           np.linalg.solve( cholesky, target ) )
+
+                nLocal  = int( nCandidate * localRatio )
+                nGlobal = nCandidate - nLocal
+                sampler = stt.qmc.LatinHypercube( d=nVariable,
+                                                  seed=seed + len( valueList ) )
+                candidate = sampler.random( n=nGlobal )
+                bestPoint = sample[int( np.argmin( value ) )]
+                local = bestPoint + localScale * rng.normal( size=( nLocal, nVariable ) )
+                candidate = np.vstack( ( candidate, np.clip( local, 0.0, 1.0 ) ) )
+
+                crossKernel = _kernel( first=candidate, second=sample )
+                predMean    = np.dot( crossKernel, alpha )
+                solved      = np.linalg.solve( cholesky, crossKernel.T )
+                predStd     = np.sqrt( np.maximum( 1.0 - np.sum( solved**2, axis=0 ),
+                                                   1.0e-14 ) )
+                improvement = np.min( target ) - predMean - xi
+                ratio       = improvement / predStd
+                acquisition = improvement * stt.norm.cdf( ratio ) \
+                            + predStd * stt.norm.pdf( ratio )
+                nextPoint = candidate[int( np.argmax( acquisition ) )]
+
+                previousBest = float( np.min( value ) )
+                nextValue    = _objective( _fromNormalized( normalized=nextPoint ) )
+                sampleList.append( nextPoint )
+                valueList.append( nextValue )
+                _callback( nextPoint )
+
+                threshold = minImprove * max( abs( previousBest ), 1.0 )
+                if ( previousBest - nextValue > threshold ):
+                    stallCount = 0
+                else:
+                    stallCount += 1
+
+            bestIndex = int( np.argmin( valueList ) )
+            message   = "maximum evaluations reached"
+            if ( stallCount >= patience ):
+                message = "no significant improvement for {} evaluations".format( patience )
+            result = opt.OptimizeResult( x=_fromNormalized( sampleList[bestIndex] ),
+                                         fun=float( valueList[bestIndex] ),
+                                         nit=len( valueList ) - nInitial,
+                                         nfev=len( valueList ), success=True,
+                                         status=0, message=message )
+            return( result )
+
+        # ------------------------------------------------- #
+        # --- [5] optimization                          --- #
         # ------------------------------------------------- #
         method = optimizerCfg["method"]
 
-        if ( method == "differential_evolution" ):
+        if ( method == "bayesian" ):
+            result = _runBayesian()
+
+        elif ( method == "differential_evolution" ):
             result = opt.differential_evolution( _objective, bounds=optimizationBounds,
                                                   maxiter=int( optimizerCfg["maxIter"] ),
                                                   popsize=int( optimizerCfg["popSize"] ),
@@ -882,7 +994,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             raise ValueError( "Unknown optimizer method: {}".format( method ) )
 
         # ------------------------------------------------- #
-        # --- [5] return                                --- #
+        # --- [6] return                                --- #
         # ------------------------------------------------- #
         return( result, history, bestVector, bestEvaluation, evalCount, svdInfo )
 
