@@ -9,6 +9,27 @@ import nk_toolkit.impactx.run_toolkit as rtk
 
 
 # ========================================================= #
+# ===  matching.elementType -> tunable element mapping  === #
+# ========================================================= #
+# -- selects which lattice elements the "quadAll"/"quadFD"/"quadEach"       -- #
+# -- variables act on. "quadrupole" (default) matches dat/beamline_impactx -- #
+# -- .json's quadrupole/quadrupole.linear elements ("k" [1/m2 or T/m]);    -- #
+# -- "solenoid" matches a quad2solenoid-converted lattice (dat/beamline_   -- #
+# -- impactx_solenoid.json)'s solenoid elements ("ks" [1/m]), keyed as     -- #
+# -- sol1, sol2, ... one-to-one with the qm1, qm2, ... it replaced. Select -- #
+# -- via matching.elementType in the matching config (e.g. matching_       -- #
+# -- solenoid.json); the variable schema (quadAll/quadFD/quadEach/twiss)   -- #
+# -- is unchanged between the two.                                        -- #
+# ========================================================= #
+ELEMENT_TYPE_CONFIG = {
+    "quadrupole" : { "types" : [ "quadrupole", "quadrupole.linear" ],
+                     "field" : "k",  "prefix" : "qm",  "label" : "QM", },
+    "solenoid"   : { "types" : [ "solenoid" ],
+                     "field" : "ks", "prefix" : "sol", "label" : "Solenoid", },
+}
+
+
+# ========================================================= #
 # ===  match_toolkit.py                                 === #
 # ========================================================= #
 #
@@ -93,6 +114,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
 
         def _expandQmID( qmID=None ):
             qmList  = []
+            prefix  = elementCfg["prefix"]
             for item in qmID:
                 item = str( item ).strip()
                 if ( "-" in item ):
@@ -101,9 +123,9 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                     endId         = int(   endId )
                     if ( startId > endId ):
                         raise ValueError( "Invalid qmID range: {}".format( item ) )
-                    qmList += [ "qm{}".format( qmId ) for qmId in range( startId, endId + 1 ) ]
+                    qmList += [ "{}{}".format( prefix, qmId ) for qmId in range( startId, endId + 1 ) ]
                 else:
-                    qmList.append( "qm{}".format( int( item ) ) )
+                    qmList.append( "{}{}".format( prefix, int( item ) ) )
             return( qmList )
 
         def _appendVariable( name=None, kind=None, settings=None,
@@ -130,7 +152,8 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             qmList = _expandQmID( qmID=settings["qmID"] )
             for qmName in qmList:
                 if ( qmName in usedQmNames ):
-                    raise ValueError( "QM is already assigned : {}".format( qmName ) )
+                    raise ValueError( "{} is already assigned : {}"
+                                      .format( elementCfg["label"], qmName ) )
                 usedQmNames.add( qmName )
                 _appendVariable( name="quadEach.{}".format( qmName ), kind="quadEach",
                                  settings=settings, target=qmName )
@@ -156,8 +179,8 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
             activeNames += [ elemKey, elements[elemKey]["name"] ]
         for variable in variables:
             if ( variable["kind"] == "quadEach" and variable["target"] not in activeNames ):
-                raise ValueError( "QM variable is outside matching section: {}"
-                                  .format( variable["target"] ) )
+                raise ValueError( "{} variable is outside matching section: {}"
+                                  .format( elementCfg["label"], variable["target"] ) )
         return( variables )
 
     # ------------------------------------------------- #
@@ -192,13 +215,15 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 else:
                     raise ValueError( "Unknown Twiss type: {}".format( twissType ) )
 
+        elementTypes = elementCfg["types"]
+        elementField = elementCfg["field"]
         for elemKey in activeKeys:
             elem = elements_[elemKey]
-            if ( elem["type"] not in [ "quadrupole", "quadrupole.linear" ] ):
+            if ( elem["type"] not in elementTypes ):
                 continue
 
             elemName = elem["name"]
-            k0       = float( elements[elemKey]["k"] )
+            k0       = float( elements[elemKey][elementField] )
             factor   = factors["quadAll"]
             if   ( k0 > 0.0 ):
                 factor *= factors["quadFD"]["QF"]
@@ -209,7 +234,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 factor *= factors["quadEach"][elemKey]
             if ( elemName in factors["quadEach"] ):
                 factor *= factors["quadEach"][elemName]
-            elem["k"] = k0 * factor
+            elem[elementField] = k0 * factor
 
         return( params_, elements_ )
 
@@ -517,10 +542,11 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         if ( modeBoundVec is None ):
             modeBoundVec = np.full( len( modeIndex ), float( svdCfg["modeBound"] ) )
 
+        elemLabel = elementCfg["label"]
         print( "\n" + "==================================" )
         print( "===  SVD summary (round {:2d})     ===".format( outerRound ) )
         print( "==================================" + "\n" )
-        print( " QM variables :: {}".format( len( variableIndex ) ) )
+        print( " {} variables :: {}".format( elemLabel, len( variableIndex ) ) )
         print( " SVD modes    :: {} / {}".format(
             len( modeIndex ), len( svdInfo["singularValue"] )
         ) )
@@ -560,7 +586,7 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         dominantMode   = modeIndex[dominantIndex] + 1
         dominantWeight = rightMode[np.arange( len( variableIndex ) ), dominantIndex]
 
-        print( "\n QM reachable range:" )
+        print( "\n {} reachable range:".format( elemLabel ) )
         print( "  variable                  initial        min        max"
                "     dMin[%]    dMax[%]   main mode" )
 
@@ -573,8 +599,8 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                        dominantMode[qmIndex], dominantWeight[qmIndex]
                    ) )
 
-        print( "\n  min/max: each QM coordinate-wise reachable range" )
-        print( "  main mode: largest absolute SVD component for each QM\n" )
+        print( "\n  min/max: each {} coordinate-wise reachable range".format( elemLabel ) )
+        print( "  main mode: largest absolute SVD component for each {}\n".format( elemLabel ) )
     
     # ------------------------------------------------- #
     # --- [1-12] build sigma matrix                 --- #
@@ -1430,8 +1456,23 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
                 nonlocal evalCount
 
                 evalCount += 1
-                records, params_, elements_ = _evaluateImpactX( vector=vector, mode=mode )
-                total, detail = _evaluateCost( records=records, vector=vector, mode=mode )
+                # -- ImpactX's Poisson solver (MLMG) can throw instead of just    -- #
+                # -- returning a bad answer when a candidate point pushes the     -- #
+                # -- beam envelope somewhere the mesh can't represent (seen in    -- #
+                # -- practice: "tracking" mode at high current, inside the local  -- #
+                # -- refine stage). Treat that the same as any other bad point --  -- #
+                # -- a large fixed penalty -- instead of letting it kill the      -- #
+                # -- whole optimization run and lose every evaluation so far.     -- #
+                try:
+                    records, params_, elements_ = _evaluateImpactX( vector=vector, mode=mode )
+                    total, detail = _evaluateCost( records=records, vector=vector, mode=mode )
+                except Exception as excInfo:
+                    total  = 1.0e8
+                    detail = { "simulationFailure": { "value":1.0, "target":0.0,
+                                                      "residual":1.0, "normResidual":1.0,
+                                                      "penalty":total } }
+                    print( "  [evaluation {:5d} failed: {}: {}] -> penalty={:.1e}".format(
+                        evalCount, type( excInfo ).__name__, excInfo, total ) )
 
                 if ( total < stageBest["value"] ):
                     stageBest["value"]  = total
@@ -1713,6 +1754,12 @@ def optimize__quadFromEnvelope( inpFile   ="dat/matching.json",
         raise ValueError( "matching.runMode must be 'evaluate' or 'optimize'." )
     if ( config["matching"]["mode"].lower() not in [ "envelope", "tracking" ] ):
         raise ValueError( "matching.mode must be 'envelope' or 'tracking'." )
+
+    elementTypeKey = str( config["matching"].get( "elementType", "quadrupole" ) ).lower()
+    if ( elementTypeKey not in ELEMENT_TYPE_CONFIG ):
+        raise ValueError( "matching.elementType must be one of: {}"
+                          .format( list( ELEMENT_TYPE_CONFIG.keys() ) ) )
+    elementCfg = ELEMENT_TYPE_CONFIG[elementTypeKey]
 
     # ------------------------------------------------- #
     # --- [3] matching section and variables        --- #
