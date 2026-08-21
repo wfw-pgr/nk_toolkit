@@ -121,7 +121,6 @@ def generate__materialFile( outFile="inp/materials_phits.inp", matDB=None, \
     # ------------------------------------------------- #
     with open( outFile, "w" ) as f:
         f.write( block )
-    print( "[materials__fromJSON.py] outFile :: {} ".format( outFile ) )
     return( block )
 
 
@@ -174,5 +173,4 @@ def show__section( section=None, length=71, bar_mark="-", comment_mark="#", \
 if ( __name__=="__main__" ):
     matFile = "test/materials__fromJSON/materials.json"
     materials__fromJSON( matFile=matFile )
-
 

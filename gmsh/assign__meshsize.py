@@ -51,16 +51,23 @@ def assign__meshsize( config =None, configFile="mesh.json", \
     given_ents  = sorted( [ ( default_dim,ent ) for ent in given_ents ] )
     missing     = set( found_ents ) - set( given_ents )
     extra       = set( given_ents ) - set( found_ents )
-    print()
-    print( "  -- found_ents :: {}".format( found_ents ) )
-    print( "  -- given_ents :: {}".format( given_ents ) )
-    print( "  -- missing    :: {}".format( missing    ) )
-    print( "  -- extra      :: {}".format( extra      ) )
-    print()
+    duplicated  = sorted( set( item for item in given_ents if given_ents.count( item ) > 1 ) )
+    matched     = ( found_ents == given_ents )
+    print( "Entity consistency: found_ents = {} | given_ents = {} | matched = {}".format(
+        len( found_ents ), len( given_ents ), matched ) )
+    print( "Entity differences: missing = {} | extra = {} | duplicated = {}".format(
+        len( missing ), len( extra ), len( duplicated ) ) )
+    print( "found_ents: {}".format( found_ents ) )
+    print( "given_ents: {}".format( given_ents ) )
+    print( "missing:    {}".format( sorted( missing ) if ( len( missing ) > 0 ) else "none" ) )
+    print( "extra:      {}".format( sorted( extra ) if ( len( extra ) > 0 ) else "none" ) )
+    print( "duplicated: {}".format( duplicated if ( len( duplicated ) > 0 ) else "none" ) )
     if ( len( missing ) > 0 ):
         raise ValueError( "Entity info. are missing...  :: {}".format( missing ) )
     if ( len( extra   ) > 0 ):
         raise ValueError( "Entity info. are too many... :: {}".format( extra   ) )
+    if ( len( duplicated ) > 0 ):
+        raise ValueError( "Entity info. are duplicated... :: {}".format( duplicated ) )
     
     # ------------------------------------------------- #
     # --- [4] assign mesh size                      --- #
@@ -150,8 +157,7 @@ def assign__meshsize_on_each_dimtags( dimtags=None, meshsize=None, target="volu"
         gmsh.model.mesh.field.setNumbers( fieldrest, "CurvesList", edges     )
         # -- future change ??  InField, SurfacesList, CurvesList, VolumesList ?? -- #
     else:
-        print( "[assign__meshsize_on_each_volume] ONLY volu & surf is implemented..." )
-        sys.exit()
+        sys.exit( "[assign__meshsize_on_each_volume] ONLY volu & surf is implemented..." )
     return( fieldrest )
 
 
