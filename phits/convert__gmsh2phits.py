@@ -131,7 +131,13 @@ def convert__gmsh2phits( mshFile="msh/model.msh", bdfFile="msh/model.bdf", \
     MAT1_zeroData1  = np.zeros( (nMAT1,3) )
     MAT1_zeroData2  = np.zeros( (nMAT1,3) )
     keys            = [ physNums_names[str(val)] for val in physNums_order ]
-    MAT1_density    = np.array( [ config[key]["density"] for key in keys ] )
+    # PHITS reads NASTRAN GRID coordinates as m and MAT1 density as a positive
+    # value in kg/m3.  The shared material DB uses PHITS cell convention
+    # (negative g/cm3 for mass density), so remove that sign and convert units.
+    # A negative MAT1 value makes the itetauto cell density positive, which
+    # PHITS interprets as atomic density rather than mass density.
+    MAT1_density    = np.array(
+        [ abs( config[key]["density"] ) * 1.0e3 for key in keys ] )
     MAT1_Data       = np.concatenate( [ MAT1_cards[:,None], MAT1_MIDs[:,None], \
                                         MAT1_zeroData1, MAT1_returns[:,None], \
                                         MAT1_continues[:,None], MAT1_density[:,None], \
