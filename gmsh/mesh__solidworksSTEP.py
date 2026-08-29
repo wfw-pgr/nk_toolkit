@@ -2,6 +2,7 @@ import json, os, time
 import gmsh, json5
 import numpy as np
 import nk_toolkit.gmsh.assign__meshsize     as ams
+import nk_toolkit.gmsh.show__meshSummary    as sms
 import nk_toolkit.io.show__activity         as sha
 import nk_toolkit.phits.convert__gmsh2phits as g2p
 import nk_toolkit.phits.materials__fromJSON as mfj
@@ -205,17 +206,19 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json",
     _show__stage( number=4, title="generate tetrahedral mesh" )
     stageStart = time.perf_counter()
     with sha.show__activity( label="Meshing tetrahedra" ):
-        gmsh.model.mesh.generate(3)
-    _record__timing( stage="generate_mesh_3d", start=stageStart )
+        gmsh.model.mesh.generate( 3 )
+    meshElapsed = _record__timing( stage="generate_mesh_3d", start=stageStart )
     stageStart = time.perf_counter()
     gmsh.write( mshFile )
     _record__timing( stage="write_msh", start=stageStart )
     warningCount = _save__gmshLog()
     gmsh.finalize()
-    print( "Generated and saved the mesh. ({:.3f} s)".format(
-        sum( item["elapsed_s"] for item in timings
-             if ( item["stage"] in
-                  [ "assign_mesh_size", "generate_mesh_3d", "write_msh" ] ) ) ) )
+
+    meshSummary = sms.show__meshSummary( mshFile=mshFile, elapsedTime_s=meshElapsed )
+    for item in timings:
+        if ( item["stage"] == "generate_mesh_3d" ):
+            item["mesh_elements"] = meshSummary["total_mesh_size"]
+            break
 
     # ------------------------------------------------- #
     # --- [5] gmsh -> phits (.bdf)                  --- #
@@ -282,7 +285,6 @@ def mesh__solidworksSTEP( stpFile="msh/model.stp", configFile="dat/mesh.json",
             json.dump( timings, outFile, indent=2 )
     _show__heading( title="completed", mark="=" )
     print( "Gmsh mesh generation completed." )
-    print( "Elapsed:  {:.3f} s".format( time.perf_counter() - totalStart ) )
     print( "Gmsh warnings: {} ( details: {} )".format( warningCount, logFile ) )
     print( "\nOutputs:" )
     print( "- {}".format( mshFile ) )
